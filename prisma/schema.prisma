@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Movie {
+  id          Int      @id @default(autoincrement())
+  imdbId      String?  @unique
+  title       String
+  originalTitle String?
+  overview    String?
+  posterPath  String?
+  backdropPath String?
+  releaseDate DateTime?
+  runtime     Int?
+  status      String
+  popularity  Float    @default(0)
+  voteAverage Float    @default(0)
+  voteCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([imdbId])
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+} 
