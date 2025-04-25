@@ -1,30 +1,74 @@
-import winston from 'winston';
-import config from '@/config';
+import * as Sentry from "@sentry/node";
+import pino from 'pino';
+import path from 'path';
+import fs from 'fs';
 
-const logger = winston.createLogger({
-  level: config.LOG_LEVEL,
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json(),
-  ),
-  defaultMeta: { service: 'episodify-crawler' },
-  transports: [
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' }),
-  ],
-});
-
-// If we're not in production, log to the console with colors
-if (!config.isProduction) {
-  logger.add(
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple(),
-      ),
-    }),
-  );
+const logsDir = path.join(process.cwd(), 'logs');
+if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir);
 }
 
+// Configure Pino logger
+const transport = pino.transport({
+    targets: [
+        {
+            target: 'pino-pretty',
+            options: {
+                colorize: true,
+                translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
+                ignore: 'pid,hostname',
+            },
+            level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
+        },
+        {
+            target: 'pino/file',
+            options: { destination: path.join(logsDir, 'app.log'), mkdir: true },
+            level: 'error', // Only log errors to file
+        },
+    ],
+});
+
+const logger = pino(transport);
+
+// Configure Sentry
+// !! IMPORTANT: Replace 'YOUR_SENTRY_DSN' with your actual Sentry DSN !!
+// It's recommended to use an environment variable for this (e.g., process.env.SENTRY_DSN)
+const sentryDsn = process.env.SENTRY_DSN || 'YOUR_SENTRY_DSN';
+
+if (sentryDsn !== 'YOUR_SENTRY_DSN') {
+    Sentry.init({
+        dsn: sentryDsn,
+        tracesSampleRate: 1.0, // Capture 100% of transactions for performance monitoring
+        profilesSampleRate: 1.0, // Capture 100% of transactions for profiling
+        integrations: [
+            // Add any necessary Sentry integrations here
+        ],
+        // Adjust sample rates and add other configurations as needed for production
+    });
+    logger.info('Sentry initialized.');
+} else {
+    logger.warn('SENTRY_DSN not found. Sentry reporting is disabled.');
+}
+
+
+/**
+ * Logs an error to the console/file and reports it to Sentry.
+ * @param error - The error object to log and report.
+ * @param context - Optional additional context to include with the log and Sentry report.
+ */
+export function saveError(error: any, context?: Record<string, any>): void {
+    if (error instanceof Error) {
+        logger.error({ err: error, context }, `Error occurred: ${error.message}`);
+    } else {
+        logger.error({ error, context }, 'An unknown error occurred');
+    }
+
+    if (sentryDsn !== 'YOUR_SENTRY_DSN') {
+        Sentry.captureException(error, {
+            extra: context,
+        });
+    }
+}
+
+// Export the logger instance if needed elsewhere
 export default logger; 
