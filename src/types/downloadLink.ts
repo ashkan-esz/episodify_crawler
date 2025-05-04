@@ -5,6 +5,9 @@ export type DownloadLink = {
     type: string;
     season: number;
     episode: number;
-    // size: number;
-    // isDubbed: boolean;
+};
+
+export type SeasonEpisode = {
+    season: number;
+    episode: number;
 };

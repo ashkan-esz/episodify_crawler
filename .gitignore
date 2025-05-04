@@ -43,3 +43,5 @@ docker/data/
 # Bun
 bun.lockb
 bun.lock
+
+manualTest.*
