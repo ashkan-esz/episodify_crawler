@@ -143,7 +143,7 @@ async function saveCrawlData(
     sourceConfig: SourceConfig,
     extraConfigs: CrawlerExtraConfigs,
 ): Promise<void> {
-    addPageLinkToCrawlerStatus('#' + titleData.title.replace(/\s+/g, '-'), 1);
+    await addPageLinkToCrawlerStatus('#' + titleData.title.replace(/\s+/g, '-'), 1);
     const extractedData: SourceExtractedData = {
         title: titleData.title,
         type: titleData.type || MovieType.SERIAL,

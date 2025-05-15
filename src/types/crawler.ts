@@ -17,3 +17,10 @@ export enum PageState {
     // retryUnEscapedCharacters = 'retryUnEscapedCharacters',
     // fromCache = 'fromCache',
 }
+
+export enum CrawlerPauseReason {
+    OK = '',
+    Manual_PAUSE = 'Manual_PAUSE',
+    HIGH_MEMORY_USAGE = 'HIGH_MEMORY_USAGE',
+    HIGH_CPU_USAGE = 'HIGH_CPU_USAGE',
+}

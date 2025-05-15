@@ -34,7 +34,7 @@ const configSchema = z.object({
   RABBITMQ_VHOST: z.string().default('/'),
 
   // Crawler Settings
-  CRAWLER_CONCURRENCY: z.coerce.number().default(10),
+  // CRAWLER_CONCURRENCY: z.coerce.number().default(10),
   CRAWLER_DELAY: z.coerce.number().default(1000),
   USER_AGENT: z.string(),
 
@@ -44,6 +44,22 @@ const configSchema = z.object({
 
   // Logging
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
+  DEBUG_MODE: z.coerce.boolean().default(false),
+
+  // Crawler
+  CRAWLER_CONCURRENCY: z.coerce.number().default(4),
+  DISABLE_CRAWLER: z.coerce.boolean().default(false),
+  DISABLE_TORRENT_CRAWLER: z.coerce.boolean().default(false),
+  PAUSE_CRAWLER_ON_HIGH_LOAD: z.coerce.boolean().default(true) ,
+  CRAWLER_TOTAL_MEMORY: z.coerce.number().default(1024),
+  CRAWLER_MEMORY_LIMIT: z.coerce.number().default(0),
+  CRAWLER_CPU_LIMIT: z.coerce.number().default(95),
+  CRAWLER_PAUSE_DURATION_LIMIT: z.coerce.number().default(10),
+  CRAWLER_MANUAL_GC_ON_HIGH_LOAD: z.coerce.boolean().default(false),
+
+  // Disk
+  TOTAL_DISK_SPACE: z.coerce.number().default(1024),
+  DEFAULT_USED_DISK_SPACE: z.coerce.number().default(1024),
 });
 
 // Parse and validate configuration
