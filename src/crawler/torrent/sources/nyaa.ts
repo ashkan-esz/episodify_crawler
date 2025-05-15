@@ -2,8 +2,8 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import {
     CrawlerExtraConfigs,
-    CrawlerLink,
     CrawlerLinkType,
+    DownloadLink,
     MovieType,
     PageState,
     PageType,
@@ -189,7 +189,7 @@ function extractLinks($: any, sourceUrl: string, sourceConfig: SourceConfig): To
                 const sizeText = $($($a[i]).parent().next())?.text() || '';
                 const size = Torrent.getFixedFileSize($, sizeText);
 
-                const link: CrawlerLink = {
+                const link: DownloadLink = {
                     link: sourceUrl.split(/\/\?/)[0] + href,
                     info: info,
                     season: se.season,

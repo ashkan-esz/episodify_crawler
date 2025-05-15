@@ -541,7 +541,7 @@ export function removeDuplicateLinks(
     for (let i = 0; i < input.length; i++) {
         let exist = false;
         for (let j = 0; j < result.length; j++) {
-            if ((input[i].link || input[i].url) === (result[j].link || result[j].url)) {
+            if (input[i].link === result[j].link) {
                 if (replaceInfo && input[i].info.length > result[j].info.length) {
                     if (replaceBadInfoOnly) {
                         if (

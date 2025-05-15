@@ -1,3 +1,7 @@
+import { DownloadLink } from '@/types/downloadLink';
+import { MovieRating } from '@/types/movie';
+import { Subtitle } from '@/types/subtitle';
+
 export type SourceConfig = {
     movie_url: string;
     serial_url: string;
@@ -27,16 +31,18 @@ export type SourceConfig = {
         //------------------
         needHeadlessBrowser: boolean;
         sourceAuthStatus: SourceAuthStatus;
-        vpnStatus: {
-            poster: VPNStatus;
-            trailer: VPNStatus;
-            downloadLink: VPNStatus;
-        };
+        vpnStatus: SourceVpnStatus;
         isTorrent: boolean;
         replaceInfoOnDuplicate: boolean;
         removeScriptAndStyleFromHtml: boolean;
     };
 };
+
+export type SourceVpnStatus = {
+    poster: VPNStatus;
+    trailer: VPNStatus;
+    downloadLink: VPNStatus;
+}
 
 export type SourceExtractedData = {
     title: string;
@@ -44,46 +50,21 @@ export type SourceExtractedData = {
     year: string;
     pageNumber: number;
     pageLink: string;
-    downloadLinks: CrawlerLink[];
-    watchOnlineLinks: CrawlerLink[];
-    torrentLinks: CrawlerLink[];
+    downloadLinks: DownloadLink[];
+    watchOnlineLinks: DownloadLink[];
+    torrentLinks: DownloadLink[];
     persianSummary: string;
     poster: string;
     trailers: Trailer[];
     subtitles: Subtitle[];
-    rating: Rating | null;
+    rating: MovieRating | null;
     cookies: [];
-};
-
-export type Rating = {
-    imdb: number;
-    tvmaze: number;
-    mal: number;
-    omdb: number;
 };
 
 export type Trailer = {
     url: string;
     info: string;
     sourceName: string;
-};
-
-export type Subtitle = {
-    url: string;
-};
-
-export type CrawlerLink = {
-    link: string;
-    info: string;
-    season: number;
-    episode: number;
-    sourceName: string;
-    type: CrawlerLinkType;
-    size: number;
-    localLink: string;
-    localLinkExpire: number | Date;
-    okCount: number;
-    badCount: number;
 };
 
 export enum MovieType {

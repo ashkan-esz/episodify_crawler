@@ -1,7 +1,6 @@
 import {
     CrawlerExtraConfigs,
-    CrawlerLink,
-    CrawlerLinkType,
+    CrawlerLinkType, DownloadLink,
     MovieType,
     PageState,
     PageType,
@@ -196,7 +195,7 @@ function extractLinks($: any, sourceUrl: string, sourceConfig: SourceConfig): To
                     continue;
                 }
 
-                const link: CrawlerLink = {
+                const link: DownloadLink = {
                     link: href,
                     info: info,
                     season: se.season,

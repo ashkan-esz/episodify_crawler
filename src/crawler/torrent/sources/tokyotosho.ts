@@ -3,8 +3,8 @@ import * as cheerio from 'cheerio';
 import { saveLinksStatus } from '@/crawler/searchTools';
 import {
     CrawlerExtraConfigs,
-    CrawlerLink,
     CrawlerLinkType,
+    DownloadLink,
     MovieType,
     PageState,
     PageType,
@@ -220,7 +220,7 @@ function extractLinks($: any, sourceUrl: string, sourceConfig: SourceConfig): To
                     continue;
                 }
 
-                const link: CrawlerLink = {
+                const link: DownloadLink = {
                     link: href,
                     info: info.replace(/\.+\s+/g, ' '),
                     season: se.season,

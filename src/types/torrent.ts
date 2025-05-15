@@ -1,8 +1,9 @@
-import { CrawlerLink, MovieType } from './source';
+import { DownloadLink } from '@/types/downloadLink';
+import {  MovieType } from './source';
 
 export type TorrentTitle = {
     title: string;
     type: MovieType;
     year: string;
-    links: CrawlerLink[];
+    links: DownloadLink[];
 };
