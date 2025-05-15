@@ -3,6 +3,12 @@ export const CrawlerErrorMessages = Object.freeze({
     crawlerPauseLimit: (minute: number, info: string) => {
         return `Maximum duration for crawler pause exceeded (${minute}min) [${info}]`;
     },
+    sourceStatus: {
+        badDownloadLinks: (source: string) => `Source (${source}): badDownloadLinks`,
+        badPosters: (source: string) => `Source (${source}): badPosters`,
+        badPersianSummary: (source: string) => `Source (${source}): badPersianSummary`,
+        possibleVip: (source: string) => `Source (${source}): possible vip conversion`,
+    },
 });
 
 export function getCrawlerWarningMessages(
@@ -38,12 +44,6 @@ export function getCrawlerWarningMessages(
     sourceLastPage: string;
     sourceDisabled: string;
     sourceErrors: { axios403: string };
-    sourceStatus: {
-        badDownloadLinks: string;
-        badPosters: string;
-        badPersianSummary: string;
-        possibleVip: string;
-    };
 } {
     //TODO : remove or refactor
     return {
@@ -92,12 +92,6 @@ export function getCrawlerWarningMessages(
         sourceDisabled: `Source (${data1}): Disabled, reasons: ${data2}`,
         sourceErrors: {
             axios403: `Source (${data1}): 403 Error (Axios)`,
-        },
-        sourceStatus: {
-            badDownloadLinks: `Source (${data1}): badDownloadLinks`,
-            badPosters: `Source (${data1}): badPosters`,
-            badPersianSummary: `Source (${data1}): badPersianSummary`,
-            possibleVip: `Source (${data1}): possible vip conversion`,
         },
     };
 }

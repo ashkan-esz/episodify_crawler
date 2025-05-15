@@ -70,5 +70,20 @@ export function saveError(error: any, context?: Record<string, any>): void {
     }
 }
 
+export async function saveErrorIfNeeded(error: any): Promise<void> {
+    if (
+        (!error.response || error.response.status !== 404) &&
+        (!error.request || !error.request.res || error.request.res.statusCode !== 404) &&
+        error.code !== 'ENOTFOUND' &&
+        error.code !== 'EPROTO' &&
+        error.code !== 'Z_BUF_ERROR' &&
+        error.code !== 'DEPTH_ZERO_SELF_SIGNED_CERT' &&
+        error.message !== 'certificate has expired' &&
+        error.code !== "ERR_TLS_CERT_ALTNAME_INVALID"
+    ) {
+        await saveError(error);
+    }
+}
+
 // Export the logger instance if needed elsewhere
 export default logger; 
