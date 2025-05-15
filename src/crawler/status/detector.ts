@@ -1,4 +1,4 @@
-import { CrawlerLink, SourceConfig } from '@/types';
+import { DownloadLink, SourceConfig } from '@/types';
 import { CrawlerErrorMessages } from '@crawler/status/warnings';
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 
@@ -17,8 +17,8 @@ const changesStatus: {
 export function checkCrawledDataForChanges(
     sourceConfig: SourceConfig,
     pageLink: string,
-    downloadLinks: CrawlerLink[],
-    badLinks: CrawlerLink[],
+    downloadLinks: DownloadLink[],
+    badLinks: DownloadLink[],
     poster: string,
     persianSummary: string,
 ): void {
