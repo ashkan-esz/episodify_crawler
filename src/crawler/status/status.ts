@@ -271,7 +271,7 @@ export function checkForceStopCrawler(): boolean {
 
 export function updatePageNumberCrawlerStatus(
     pageNumber: number,
-    pageCount: number,
+    pageCount: number | null,
     concurrencyNumber: number,
     extraConfigs: CrawlerExtraConfigs,
 ): void {

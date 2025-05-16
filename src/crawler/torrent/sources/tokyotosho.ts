@@ -19,10 +19,9 @@ import { addPageLinkToCrawlerStatus } from '@crawler/status/status';
 import * as Torrent from '@crawler/torrent/torrent';
 import { saveError } from '@utils/logger';
 
-
 export default async function tokyotosho(
     sourceConfig: SourceConfig,
-    pageCount: number,
+    pageCount: number | null,
     extraConfigs: CrawlerExtraConfigs,
 ): Promise<number[]> {
     try {

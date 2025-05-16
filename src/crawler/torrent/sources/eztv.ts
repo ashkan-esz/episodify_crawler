@@ -21,7 +21,7 @@ import * as Torrent from '../torrent';
 
 export default async function eztv(
     sourceConfig: SourceConfig,
-    pageCount: number,
+    pageCount: number | null,
     extraConfigs: CrawlerExtraConfigs,
 ): Promise<number[]> {
     try {

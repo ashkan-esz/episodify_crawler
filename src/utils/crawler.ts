@@ -244,9 +244,7 @@ export function getSeasonEpisode(input: string, isLinkInput: boolean = false) {
                 // e01e05 | s01s01
                 const case2 = input.match(/\.([se])\d+([se])\d+\./gi)?.pop();
                 if (case2) {
-                    [, season, episode] = case2
-                        .replace(/^\.|\.$/gi, '')
-                        .split(/[se]/gi);
+                    [, season, episode] = case2.replace(/^\.|\.$/gi, '').split(/[se]/gi);
                 } else {
                     const case3 = input.match(/(%20)s\d+(%20)?b\d+(%20)/gi)?.pop();
                     if (case3) {
@@ -261,9 +259,7 @@ export function getSeasonEpisode(input: string, isLinkInput: boolean = false) {
         if (season === 0 || episode === 0) {
             const seasonEpisodeMatch = editedInput.match(/\.s\d\d?\.e?\d\d?\./gi)?.pop();
             if (seasonEpisodeMatch) {
-                [season, episode] = seasonEpisodeMatch
-                    .replace(/\.s|\.$/gi, '')
-                    .split('.');
+                [season, episode] = seasonEpisodeMatch.replace(/\.s|\.$/gi, '').split('.');
             }
         }
 
@@ -273,9 +269,13 @@ export function getSeasonEpisode(input: string, isLinkInput: boolean = false) {
             const episodeMatch = editedInput.match(episodeRegex);
             if (episodeMatch) {
                 const match = episodeMatch.find((item) => item.includes('e')) || episodeMatch.pop();
-                episode = match?.replace(/^(\.\d{4})*\.e?/i, '').split('.')[0] || "";
+                episode = match?.replace(/^(\.\d{4})*\.e?/i, '').split('.')[0] || '';
                 if (episodeMatch.length > 0 && (episode === '' || Number(episode) > 1900)) {
-                    episode = episodeMatch.pop()?.replace(/^(\.\d{4})*\.e?/i, '').split('.')[0] || "";
+                    episode =
+                        episodeMatch
+                            .pop()
+                            ?.replace(/^(\.\d{4})*\.e?/i, '')
+                            .split('.')[0] || '';
                 }
                 if (episode.endsWith('p')) {
                     episode = 0;
@@ -283,7 +283,7 @@ export function getSeasonEpisode(input: string, isLinkInput: boolean = false) {
             }
             const seasonMatch = input.match(/([/.])s\d+([/.])/gi);
             if (seasonMatch) {
-                const temp = seasonMatch.pop()?.match(/\d+/)?.[0] || "";
+                const temp = seasonMatch.pop()?.match(/\d+/)?.[0] || '';
                 const missedEpisodeMatch = temp.match(/0\d\d\d/); // case: S0409 --> S04E09
                 if (missedEpisodeMatch && episode === 0) {
                     const se = missedEpisodeMatch[0];
@@ -380,7 +380,10 @@ export function getSeasonEpisode(input: string, isLinkInput: boolean = false) {
                 season = Number(temp?.[0]);
                 episode = Number(temp?.[1]);
             }
-            const seasonMatch = input.match(/\/s\d+\//gi)?.pop()?.match(/\d+/)?.[0];
+            const seasonMatch = input
+                .match(/\/s\d+\//gi)
+                ?.pop()
+                ?.match(/\d+/)?.[0];
             if (seasonMatch) {
                 season = Number(seasonMatch);
             }
@@ -532,16 +535,18 @@ export function checkBetterQuality(
     return isBetter;
 }
 
-export function removeDuplicateLinks(
-    input: DownloadLink[],
-    replaceInfo: boolean = false,
-    replaceBadInfoOnly: boolean = false,
-): DownloadLink[] {
-    const result: DownloadLink[] = [];
+export function removeDuplicateLinks<
+    T extends {
+        link?: string;
+        url?: string;
+        info: string;
+    },
+>(input: T[], replaceInfo: boolean = false, replaceBadInfoOnly: boolean = false): T[] {
+    const result: T[] = [];
     for (let i = 0; i < input.length; i++) {
         let exist = false;
         for (let j = 0; j < result.length; j++) {
-            if (input[i].link === result[j].link) {
+            if ((input[i].link || input[i].url) === (result[j].link || result[j].url)) {
                 if (replaceInfo && input[i].info.length > result[j].info.length) {
                     if (replaceBadInfoOnly) {
                         if (
@@ -637,7 +642,7 @@ export function getDecodedLink(link: string): string {
 
 export function sortLinks(links: DownloadLink[]): DownloadLink[] {
     return links.sort((a, b) => {
-        return ((a.season > b.season) || (a.season === b.season && a.episode > b.episode)) ? 1 : -1;
+        return a.season > b.season || (a.season === b.season && a.episode > b.episode) ? 1 : -1;
     });
 }
 

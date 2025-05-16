@@ -58,7 +58,7 @@ export type CrawlerStatus = {
     //---------------------
     crawlMode: number;
     pageNumber: number;
-    pageCount: number;
+    pageCount: number | null;
     //---------------------
     crawlId: string;
     isCrawling: boolean;

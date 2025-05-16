@@ -11,7 +11,7 @@ export const _japaneseCharactersRegex =
 export async function handleCrawledTitles(
     titles: TorrentTitle[],
     pageNumber: number,
-    pageCount: number,
+    pageCount: number | null,
     saveCrawlDataFunc: TorrentSaveCrawlDataFunc,
     sourceConfig: SourceConfig,
     extraConfigs: CrawlerExtraConfigs,

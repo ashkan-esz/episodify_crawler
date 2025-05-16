@@ -21,7 +21,7 @@ import * as Torrent from '@crawler/torrent/torrent';
 
 export default async function nyaa(
     sourceConfig: SourceConfig,
-    pageCount: number,
+    pageCount: number | null,
     extraConfigs: CrawlerExtraConfigs,
 ): Promise<number[]> {
     try {

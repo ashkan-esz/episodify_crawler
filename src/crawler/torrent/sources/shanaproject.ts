@@ -20,7 +20,7 @@ import { saveError } from '@utils/logger';
 
 export default async function shanaproject(
     sourceConfig: SourceConfig,
-    pageCount: number,
+    pageCount: number | null,
     extraConfigs: CrawlerExtraConfigs,
 ): Promise<number[]> {
     try {
