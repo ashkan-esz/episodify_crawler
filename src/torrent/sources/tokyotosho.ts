@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { saveLinksStatus } from '@/crawler/searchTools';
+import { saveLinksStatus } from '@/searchTools';
 import {
     CrawlerExtraConfigs,
     CrawlerLinkType,
@@ -12,11 +12,11 @@ import {
     SourceExtractedData,
     TorrentTitle,
 } from '@/types';
-import { replaceSpecialCharacters } from '@/utils/crawler';
-import { releaseRegex, releaseRegex2 } from '@/utils/linkInfo';
-import save from '@crawler/save';
-import { addPageLinkToCrawlerStatus } from '@crawler/status/status';
-import * as Torrent from '@crawler/torrent/torrent';
+import { replaceSpecialCharacters } from '@utils/crawler';
+import { releaseRegex, releaseRegex2 } from '@utils/linkInfo';
+import save from '@/save';
+import { addPageLinkToCrawlerStatus } from '@/status/status';
+import * as Torrent from '@/torrent/torrent';
 import { saveError } from '@utils/logger';
 
 export default async function tokyotosho(

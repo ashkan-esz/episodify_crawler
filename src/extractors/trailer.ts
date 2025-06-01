@@ -3,9 +3,9 @@ import { MovieTrailer } from '@/types/movie';
 import {
     getSourcePagesSamples,
     updateSourcePageData,
-} from '@crawler/samples/sourcePages/sourcePageSample';
-import { hasSidebarClass } from '@crawler/sources/generic';
-import { sourcesNames } from '@crawler/sourcesArray';
+} from '@/samples/sourcePages/sourcePageSample';
+import { hasSidebarClass } from '@/sources/generic';
+import { sourcesNames } from '@/sourcesArray';
 import { removeDuplicateLinks } from '@utils/crawler';
 import { saveError } from '@utils/logger';
 import * as cheerio from 'cheerio';

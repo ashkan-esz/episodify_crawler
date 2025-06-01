@@ -1,5 +1,5 @@
 import { DownloadLink, SourceConfig } from '@/types';
-import { CrawlerErrorMessages } from '@crawler/status/warnings';
+import { CrawlerErrorMessages } from '@/status/warnings';
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 
 const changesStatus: {

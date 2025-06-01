@@ -1,7 +1,7 @@
 import config from '@/config';
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 import { CrawlerPauseReason } from '@/types';
-import { CrawlerErrorMessages } from '@crawler/status/warnings';
+import { CrawlerErrorMessages } from '@/status/warnings';
 import { averageCpu, getMemoryStatus } from '@utils/serverStatus';
 import {
     checkForceResume,

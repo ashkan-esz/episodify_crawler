@@ -1,7 +1,7 @@
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 import { Episode, EpisodeInfo, getEpisodeModel, MovieType } from '@/types';
-import { getFixedGenres, getFixedSummary } from '@crawler/extractors';
-import { CrawlerErrorMessages } from '@crawler/status/warnings';
+import { getFixedGenres, getFixedSummary } from '@/extractors';
+import { CrawlerErrorMessages } from '@/status/warnings';
 import { saveError } from '@utils/logger';
 import axios from 'axios';
 import { MediaProvider } from './index';

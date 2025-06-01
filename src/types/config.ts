@@ -1,4 +1,4 @@
-import { RemoteBrowser } from '@/crawler/remoteHeadlessBrowser';
+import { RemoteBrowser } from '@/remoteHeadlessBrowser';
 import { CrawlerExtraConfigs, CrawlerPauseReason } from '@/types/crawler';
 
 export type SourcePageStatus = {

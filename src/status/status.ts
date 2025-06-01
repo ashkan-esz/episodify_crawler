@@ -9,12 +9,12 @@ import {
     CrawlerStatusSource,
 } from '@/types';
 import { logger } from '@/utils';
-import { getDatesBetween, getDecodedLink } from '@/utils/crawler';
-import { averageCpu, getMemoryStatus } from '@/utils/serverStatus';
-import { linkStateMessages } from '@crawler/status/warnings';
+import { getDatesBetween, getDecodedLink } from '@utils/crawler';
+import { averageCpu, getMemoryStatus } from '@utils/serverStatus';
+import { linkStateMessages } from '@/status/warnings';
 import { v4 as uuidv4 } from 'uuid';
-import { blackListSources, remoteBrowsers } from '@crawler/remoteHeadlessBrowser';
-import { axiosBlackListSources } from '@crawler/searchTools';
+import { blackListSources, remoteBrowsers } from '@/remoteHeadlessBrowser';
+import { axiosBlackListSources } from '@/searchTools';
 
 export const crawlerMemoryLimit = config.CRAWLER_MEMORY_LIMIT || config.CRAWLER_TOTAL_MEMORY * 0.85;
 

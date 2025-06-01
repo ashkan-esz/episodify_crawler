@@ -9,7 +9,7 @@ import {
     saveNewSampleData,
     updateSampleData,
     updateSampleData_batch,
-} from '@/crawler/samples/utils';
+} from '@/samples/utils';
 
 const __filename = fileURLToPath(import.meta.url);
 const pathToFiles = Path.dirname(__filename);

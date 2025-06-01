@@ -12,17 +12,17 @@ import {
     TitleObj,
 } from '@/types/movie';
 import { Crawler as CrawlerUtils } from '@/utils';
-import { getFixedGenres, getFixedSummary } from '@crawler/extractors';
-import { isValidNumberString } from '@crawler/movieTitle';
+import { getFixedGenres, getFixedSummary } from '@/extractors';
+import { isValidNumberString } from '@/movieTitle';
 import {
     checkNeedTrailerUpload,
     uploadTitlePosterAndAddToTitleModel,
     uploadTitleYoutubeTrailerAndAddToTitleModel,
-} from '@crawler/posterAndTrailer';
-import { MediaProvider } from '@crawler/providers';
-import * as kitsu from '@crawler/providers/kitsu.provider';
-import { addStaffAndCharacters } from '@crawler/providers/staffAndCharacter';
-import { CrawlerErrorMessages } from '@crawler/status/warnings';
+} from '@/posterAndTrailer';
+import { MediaProvider } from '@/providers/index';
+import * as kitsu from '@/providers/kitsu.provider';
+import { addStaffAndCharacters } from '@/providers/staffAndCharacter';
+import { CrawlerErrorMessages } from '@/status/warnings';
 import { saveError } from '@utils/logger';
 import axios from 'axios';
 import { LRUCache } from 'lru-cache';

@@ -3,12 +3,12 @@ import {
     ExtraConfigsSwitchState,
 } from '@/types';
 import { Credit } from '@/types/staff';
-import { Jikan } from '@crawler/providers/index';
-import { extractStaffDataFromJikanAbout } from '@crawler/providers/utils';
+import { Jikan } from '@/providers/index';
+import { extractStaffDataFromJikanAbout } from '@/providers/utils';
 import {
     changePageLinkStateFromCrawlerStatus,
     checkForceStopCrawler,
-} from '@crawler/status/status';
+} from '@/status/status';
 import { saveError } from '@utils/logger';
 import PQueue from 'p-queue';
 import { StaffDB } from '@/repo';

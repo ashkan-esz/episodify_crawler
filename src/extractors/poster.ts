@@ -1,5 +1,5 @@
-import { hasSidebarClass } from '@crawler/sources/generic';
-import { sourcesNames } from '@crawler/sourcesArray';
+import { hasSidebarClass } from '@/sources/generic';
+import { sourcesNames } from '@/sourcesArray';
 import { getDecodedLink } from '@utils/crawler';
 import { saveError } from '@utils/logger';
 import * as cheerio from 'cheerio';
@@ -10,7 +10,7 @@ import inquirer from 'inquirer';
 import {
     updateSourcePageData,
     getSourcePagesSamples,
-} from '@crawler/samples/sourcePages/sourcePageSample';
+} from '@/samples/sourcePages/sourcePageSample';
 
 const badPosterRegex = /https:\/\/image\.salamdl\.[a-zA-Z]+\/t\/p\/w\d+_and_h\d+_bestv\d+/i;
 

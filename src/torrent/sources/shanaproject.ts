@@ -1,38 +1,31 @@
+import axios from 'axios';
+import * as cheerio from 'cheerio';
+import { saveLinksStatus } from '@/searchTools';
 import {
     CrawlerExtraConfigs,
-    CrawlerLinkType, DownloadLink,
-    MovieType,
-    PageState,
-    PageType,
+    CrawlerLinkType,
+    DownloadLink,
+    MovieType, PageState, PageType,
     SourceConfig,
     SourceExtractedData,
     TorrentTitle,
 } from '@/types';
-import save from '@crawler/save';
-import { saveLinksStatus } from '@crawler/searchTools';
-import { addPageLinkToCrawlerStatus } from '@crawler/status/status';
 import { replaceSpecialCharacters } from '@utils/crawler';
+import { releaseRegex, releaseRegex2 } from '@utils/linkInfo';
+import save from '@/save';
+import { addPageLinkToCrawlerStatus } from '@/status/status';
+import * as Torrent from '@/torrent/torrent';
 import { saveError } from '@utils/logger';
-import axios from 'axios';
-import { wrapper } from 'axios-cookiejar-support';
-import * as cheerio from 'cheerio';
-import { CookieJar } from 'tough-cookie';
-import * as Torrent from '../torrent';
 
-export default async function eztv(
+
+export default async function shanaproject(
     sourceConfig: SourceConfig,
     pageCount: number | null,
     extraConfigs: CrawlerExtraConfigs,
 ): Promise<number[]> {
     try {
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_Start);
-        const jar = new CookieJar();
-        const client = wrapper(axios.create({ jar }));
-        const res = await client.get(sourceConfig.movie_url, {
-            headers: {
-                Cookie: 'layout=def_wlinks;',
-            },
-        });
+        const res = await axios.get(sourceConfig.movie_url);
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_End);
 
         const $ = cheerio.load(res.data);
@@ -61,7 +54,7 @@ export default async function eztv(
             if (extraConfigs.retryCounter < 2) {
                 await new Promise((resolve) => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
-                return await eztv(sourceConfig, pageCount, extraConfigs);
+                return await shanaproject(sourceConfig, pageCount, extraConfigs);
             }
             return [1, 0];
         }
@@ -71,7 +64,7 @@ export default async function eztv(
         ) {
             await new Promise((resolve) => setTimeout(resolve, 3000));
             extraConfigs.retryCounter++;
-            return await eztv(sourceConfig, pageCount, extraConfigs);
+            return await shanaproject(sourceConfig, pageCount, extraConfigs);
         }
         if (![521, 522, 525].includes(error.response?.status)) {
             saveError(error);
@@ -88,16 +81,10 @@ export async function searchByTitle(
 ): Promise<number[] | TorrentTitle[]> {
     try {
         const searchTitle = title.replace(/\s+/g, '+');
-        const searchUrl = sourceUrl.split('/home')[0] + '/search/' + searchTitle;
-        saveLinksStatus(searchUrl, PageType.MainPage, PageState.Fetching_Start);
-        const jar = new CookieJar();
-        const client = wrapper(axios.create({ jar }));
-        const res = await client.get(searchUrl, {
-            headers: {
-                Cookie: 'layout=def_wlinks;',
-            },
-        });
-        saveLinksStatus(searchUrl, PageType.MainPage, PageState.Fetching_End);
+        const searchUrl = `${sourceUrl.split('/?')[0].replace(/\/$/, '')}/search/?title=${searchTitle}&subber=`;
+        saveLinksStatus(sourceUrl, PageType.MainPage, PageState.Fetching_Start);
+        const res = await axios.get(searchUrl);
+        saveLinksStatus(sourceUrl, PageType.MainPage, PageState.Fetching_End);
 
         const $ = cheerio.load(res.data);
         let titles = extractLinks($, sourceUrl, sourceConfig);
@@ -110,7 +97,8 @@ export async function searchByTitle(
 
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
-        // console.log(JSON.stringify(titles, null, 4));
+        // console.log(JSON.stringify(titles, null, 4))
+        // return
 
         if (extraConfigs.returnTitlesOnly) {
             return titles;
@@ -129,10 +117,8 @@ export async function searchByTitle(
         );
 
         return [1, linksCount]; //pageNumber
-    } catch (error: any) {
-        if (error.response?.status !== 521 && error.response?.status !== 522) {
-            saveError(error);
-        }
+    } catch (error) {
+        saveError(error);
         return [1, 0];
     }
 }
@@ -145,7 +131,7 @@ async function saveCrawlData(
     await addPageLinkToCrawlerStatus('#' + titleData.title.replace(/\s+/g, '-'), 1);
     const extractedData: SourceExtractedData = {
         title: titleData.title,
-        type: titleData.type || MovieType.SERIAL,
+        type: titleData.type || MovieType.ANIME_SERIAL,
         year: titleData.year,
         pageNumber: 1,
         //----------
@@ -170,33 +156,52 @@ function extractLinks($: any, sourceUrl: string, sourceConfig: SourceConfig): To
 
     for (let i = 0; i < $a.length; i++) {
         try {
-            const href = $($a[i]).attr('href');
-            if (href?.match(/\.torrent$/i)) {
-                let info = $($($a[i]).parent().prev()).text();
+            if ($($a[i]).children().hasClass('release_download')) {
+                const href = $($a[i]).attr('href');
+                let info = $($($($a[i]).parent().next().children()[1]).children()[2]).text();
                 info = fixLinkInfo(info);
-                if (info.match(/\(\d{4}\)/)) {
+                if (info.match(/\(\d{4}\)/) || info.match(/\s\d+ ~/) || info.includes('~hr-gz')) {
                     continue;
                 }
 
-                let title = getTitle(info);
-                const yearMatch = title.match(/(?<!(at|of))\s\d\d\d\d/i);
-                let year: string = '';
+                let title = $($($a[i]).prev().prev().prev().children().children()[0])
+                    .text()
+                    .toLowerCase();
+                title = getTitle(title);
+
+                if (title.includes('tv complete')) {
+                    continue;
+                }
+
+                const yearMatch = title.match(/(?<!(at|of))\s\d\d\d\d$/i);
+                let year = '';
                 if (yearMatch?.[0] && Number(yearMatch[0]) >= 1999 && Number(yearMatch[0]) < 2050) {
                     title = title.replace(yearMatch[0], '').trim();
                     year = Number(yearMatch[0]).toString();
                 }
-                title = Torrent.removeSeasonText(title);
 
                 const se = Torrent.fixSeasonEpisode(info, false);
-                const sizeText = $($($a[i]).parent().next())?.text() || '';
+                const sizeText = $($($a[i]).prev())?.text() || '';
                 const size = Torrent.getFixedFileSize($, sizeText);
 
-                if ((se.season === 1 && se.episode === 0) || href.includes('.COMPLETE.')) {
+                if (size > 10 * 1024) {
+                    //size > 10gb
                     continue;
                 }
 
+                if (se.episode === 0) {
+                    const temp = $($($a[i]).prev().prev().prev().prev()).text();
+                    if (!isNaN(temp)) {
+                        se.episode = Number(temp);
+                    } else if (temp.match(/\d+v\d/)) {
+                        se.episode = Number(temp.toLowerCase().split('v')[0]);
+                    } else if (temp.match(/\d+-\d+/)) {
+                        continue;
+                    }
+                }
+
                 const link: DownloadLink = {
-                    link: href,
+                    link: sourceUrl.replace(/\/$/, '') + href,
                     info: info,
                     season: se.season,
                     episode: se.episode,
@@ -212,13 +217,12 @@ function extractLinks($: any, sourceUrl: string, sourceConfig: SourceConfig): To
                 const findResult = titles.find(
                     (item) => item.title.replace(/\s+/g, '') === title.replace(/\s+/g, ''),
                 );
-
                 if (findResult) {
                     findResult.links.push(link);
                 } else {
                     titles.push({
                         title: title,
-                        type: MovieType.SERIAL,
+                        type: MovieType.ANIME_SERIAL,
                         year: year,
                         links: [link],
                     });
@@ -229,13 +233,23 @@ function extractLinks($: any, sourceUrl: string, sourceConfig: SourceConfig): To
         }
     }
 
+    for (let i = 0; i < titles.length; i++) {
+        const seasonMatch = titles[i].title.match(/\ss\d+$/gi);
+        if (seasonMatch) {
+            titles[i].title = titles[i].title.replace(seasonMatch[0], '');
+            const season = Number(seasonMatch[0].replace(' s', ''));
+            for (let j = 0; j < titles[i].links.length; j++) {
+                titles[i].links[j].season = season;
+            }
+        }
+    }
+
     titles = Torrent.mergeTitleLinks(titles);
     return titles;
 }
 
 function fixLinkInfo(info: string): string {
     info = info
-        .trim()
         .replace(/^\[[a-zA-Z\-\s\d]+]\s?/i, '')
         .replace(/\s?\[[a-zA-Z\s\d]+](?=\.)/i, '')
         .replace(/s\d+\s+-\s+\d+/i, (r) => r.replace(/\s+-\s+/, 'E')) // S2 - 13
@@ -244,6 +258,8 @@ function fixLinkInfo(info: string): string {
         ) // 12 - 13
         .replace(/\s-\s(?=s\d+e\d+)/i, '.')
         .replace(/\.\s?(mkv|mp4|avi|wmv)/g, '')
+        .replace(/\s\(?(ja|ca|sp|op)\)?\s*$/, '')
+        .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
         .trim();
 
     info = Torrent.normalizeSeasonText(info.toLowerCase());
@@ -259,29 +275,27 @@ function fixLinkInfo(info: string): string {
     return info;
 }
 
-function getTitle(text: string): string {
-    text = text
-        .split(' - ')[0]
+function getTitle(title: string): string {
+    const currentYear = new Date().getFullYear();
+
+    title = title.split(' - ')[0];
+    title = replaceSpecialCharacters(title)
+        .replace(' ' + currentYear, '')
+        .replace(' ' + (currentYear - 1), '');
+
+    title = title
+        .replace(/ blu ray/, '')
+        .split(/(\s|\.|_)s\d+e\d+/gi)[0]
+        .split(new RegExp(`[\(\\[](${releaseRegex.source}|BD)`, 'i'))[0]
+        .split(new RegExp(`[\(\\[](${releaseRegex2.source}|BD)`, 'i'))[0]
         .split(Torrent._japaneseCharactersRegex)[0]
         .split(/_-_\d+/g)[0]
         .split(/_\d+-\d+_/g)[0]
-        .replace(/^zip\./, '')
-        .replace(/^\d\d\d\d?p\./, '')
-        .replace(/(\s\d\d+)?\.\s?(mkv|mp4|avi|wmv)/, '')
-        .replace(/\s\(\d{4}\)/, '')
-        .split(/[\[？]/g)[0]
-        .replace(/\s\((ja|ca|au|uk|us|nz|afl|sp|op)\)$/, '')
-        .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
-        .replace(/\s(au|uk|us|ca|nz|afl|sp|op)(?=(\ss\d+e\d+|$))/, '')
-        .replace(/(?<=[a-zA-Z])\ss\s(?=[a-zA-Z])/, 's ')
-        .replace(/\sin l a/, ' in la')
+        .split(/(\.|\s)sdr(\.|\s)/g)[0]
         .replace(/\ss0?1$/, '')
-        .trim();
+        .replace(/\sfilms?$/, '')
+        .replace(/\s\(?(ja|ca|sp|op)\)?\s*$/, '');
 
-    const splitArr = text.split(/\s|\./g);
-    const index = splitArr.findIndex((item) => item.match(/s\d+e\d+/));
-    if (index !== -1) {
-        return replaceSpecialCharacters(splitArr.slice(0, index).join(' '));
-    }
-    return replaceSpecialCharacters(text);
+    title = Torrent.removeSeasonText(title);
+    return title;
 }

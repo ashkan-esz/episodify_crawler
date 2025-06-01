@@ -7,13 +7,13 @@ import {
     handleRedundantPartNumber,
     linkInfoRegex,
     specialRegex,
-} from '@/utils/linkInfo';
+} from '@utils/linkInfo';
 import {
     getSourcePagesSamples,
     updateSourcePageData,
     updateSourcePageData_batch,
-} from '@crawler/samples/sourcePages/sourcePageSample';
-import { getSourcesMethods, sourcesNames } from '@crawler/sourcesArray';
+} from '@/samples/sourcePages/sourcePageSample';
+import { getSourcesMethods, sourcesNames } from '@/sourcesArray';
 import { getSeasonEpisode, removeDuplicateLinks } from '@utils/crawler';
 import { checkFormat } from '@utils/link';
 import { saveError } from '@utils/logger';

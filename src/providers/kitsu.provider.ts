@@ -1,9 +1,9 @@
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 import { MovieType } from '@/types';
 import { TitleObj } from '@/types/movie';
-import { getFixedSummary } from '@crawler/extractors';
-import { MediaProvider } from '@crawler/providers/index';
-import { CrawlerErrorMessages } from '@crawler/status/warnings';
+import { getFixedSummary } from '@/extractors';
+import { MediaProvider } from '@/providers/index';
+import { CrawlerErrorMessages } from '@/status/warnings';
 import { saveError } from '@utils/logger';
 import axios from 'axios';
 import { Crawler as CrawlerUtils } from '@/utils';

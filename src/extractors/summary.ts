@@ -1,14 +1,14 @@
 import * as cheerio from 'cheerio';
 import * as Diff from 'diff';
 import chalk from 'chalk';
-import { sourcesNames } from '@crawler/sourcesArray';
+import { sourcesNames } from '@/sourcesArray';
 import { saveError } from '@utils/logger';
 // @ts-expect-error ...
 import inquirer from 'inquirer';
 import {
     updateSourcePageData,
     getSourcePagesSamples,
-} from '@crawler/samples/sourcePages/sourcePageSample';
+} from '@/samples/sourcePages/sourcePageSample';
 
 export function getPersianSummary($: any, title: string, year: string): string {
     try {
