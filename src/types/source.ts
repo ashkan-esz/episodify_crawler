@@ -1,5 +1,5 @@
 import { DownloadLink } from '@/types/downloadLink';
-import { MovieRating } from '@/types/movie';
+import { MovieRates } from '@/types/movie';
 import { Subtitle } from '@/types/subtitle';
 
 export type SourceConfig = {
@@ -10,13 +10,23 @@ export type SourceConfig = {
     crawlCycle: number;
     cookies: [];
     disabled: boolean;
+    isManualDisable: boolean;
     disabledDate: Date;
+    addDate: Date;
+    lastDomainChangeDate: Date,
+    lastConfigUpdateDate: Date,
+    userData: any;
+    description: string;
+    status: {
+        notRespondingFrom: number;
+        lastCheck: number;
+    };
     config: {
         sourceName: string;
         //------------------
         isGeneric: boolean;
         checkTrailers: boolean;
-        header: string | boolean;
+        headers: string | boolean;
         is_censored: boolean;
         is_half_network: boolean;
         dontRemoveDimensions: boolean;
@@ -57,7 +67,7 @@ export type SourceExtractedData = {
     poster: string;
     trailers: Trailer[];
     subtitles: Subtitle[];
-    rating: MovieRating | null;
+    rating: MovieRates | null;
     cookies: [];
 };
 

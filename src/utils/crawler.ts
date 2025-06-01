@@ -607,7 +607,7 @@ export function convertHourToMinute(input: string): string {
     }
 }
 
-export function purgeObjFalsyValues(obj: Record<string, any>) {
+export function purgeObjFalsyValues(obj: Record<string, any>): Record<string, any> {
     try {
         const newObj: Record<string, any> = {};
         const keys = Object.keys(obj);

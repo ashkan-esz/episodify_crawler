@@ -3,11 +3,17 @@ export type CrawlerExtraConfigs = {
     retryCounter: number;
     equalTitlesOnly: boolean;
     returnTitlesOnly: boolean;
+    castUpdateState: ExtraConfigsSwitchState;
 };
+
+export enum ExtraConfigsSwitchState {
+    NONE = 'none',
+    IGNORE = 'ignore',
+    FORCE = 'force',
+}
 
 export enum PageType {
     MainPage = 'MainPage',
-
 }
 
 export enum PageState {

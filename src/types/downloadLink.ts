@@ -58,6 +58,14 @@ export type Episode = {
     torrentLinks: DownloadLink[];
 };
 
+export type EpisodeInfo = {
+    title: string;
+    releaseStamp: string;
+    season?: number;
+    episode?: number;
+    summary?: string;
+};
+
 //-----------------------------------------------------
 //-----------------------------------------------------
 
@@ -93,7 +101,7 @@ export function getEpisodeModel(
     released: string,
     releaseStamp: string,
     duration: string,
-    season: string,
+    season: number,
     episode: number,
     imdbRating: string,
     imdbID: string,

@@ -10,3 +10,4 @@ export * as Axios from "./axios";
 // export * from './string';
 // export * from './rate-limiter';
 export { default as logger } from "./logger";
+export * as JapanRegions from "./japanRegions";

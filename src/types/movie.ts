@@ -11,15 +11,18 @@ import { groupSubtitles } from '@/crawler/subtitle';
 import { GroupedSubtitle, Subtitle } from '@/types/subtitle';
 import { getLatestData } from '@crawler/latestData';
 
+
 export enum MovieReleaseState {
     DONE = 'done',
     IN_THEATERS = 'inTheaters',
     COMING_SOON = 'comingSoon',
+    WAITING = 'waiting',
     BOX_OFFICE = 'boxOffice',
 }
 
 export enum MovieStatus {
     ENDED = 'ended',
+    RUNNING = 'running',
     UNKNWON = 'unknown',
 }
 
@@ -94,14 +97,18 @@ export type MoviesLatestData = {
     torrentLinks: string;
 };
 
-export type MovieRating = {
+export type MovieRates = {
     imdb: number;
-    tvmaze: number;
-    mal: number;
-    omdb: number;
+    rottenTomatoes: number;
+    metacritic: number;
+    myAnimeList: number;
+    tvmaze?: number;
+    mal?: number;
+    omdb?: number;
 };
 
 export type Movie = {
+    _id: string;
     releaseState: MovieReleaseState;
     rank: MovieRank;
     title: string;
@@ -115,9 +122,9 @@ export type Movie = {
     seasonEpisode: SeasonEpisode[];
     add_date: Date;
     insert_date: Date;
-    update_date: Date;
+    update_date: Date | null;
     apiUpdateDate: Date;
-    castUpdateDate: Date;
+    castUpdateDate: Date | null;
     posters: MoviePoster[];
     poster_s3: MoviePosterS3 | null;
     poster_wide_s3: MoviePosterS3 | null;
@@ -171,6 +178,8 @@ export type Movie = {
     torrentDownloaderConfig: MovieTorrentDownloaderConfig | null;
     removeTorrentLinks: string[];
     downloadTorrentLinks: string[];
+    //
+    tempRank_anime?: number;
 };
 
 export type TitleObj = {
@@ -205,6 +214,7 @@ export function getMovieModel(
     );
 
     return {
+        _id: '',
         releaseState: MovieReleaseState.DONE,
         rank: {
             animeTopComingSoon: -1,
@@ -237,9 +247,9 @@ export function getMovieModel(
         seasonEpisode: [],
         add_date: new Date(),
         insert_date: new Date(),
-        update_date: new Date(0),
+        update_date: null,
         apiUpdateDate: new Date(),
-        castUpdateDate: new Date(0),
+        castUpdateDate: null,
         posters: [
             {
                 url: poster,

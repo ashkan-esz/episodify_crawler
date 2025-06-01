@@ -57,9 +57,12 @@ const configSchema = z.object({
   CRAWLER_PAUSE_DURATION_LIMIT: z.coerce.number().default(10),
   CRAWLER_MANUAL_GC_ON_HIGH_LOAD: z.coerce.boolean().default(false),
 
+  IGNORE_HENTAI: z.coerce.boolean().default(false),
+
   // Disk
   TOTAL_DISK_SPACE: z.coerce.number().default(1024),
   DEFAULT_USED_DISK_SPACE: z.coerce.number().default(1024),
+
 });
 
 // Parse and validate configuration
@@ -75,6 +78,27 @@ const DATABASE_URL = `postgresql://${config.POSTGRES_USER}:${config.POSTGRES_PAS
 const REDIS_URL = `redis://${config.REDIS_PASSWORD ? `:${config.REDIS_PASSWORD}@` : ''}${config.REDIS_HOST}:${config.REDIS_PORT}`;
 const RABBITMQ_URL = `amqp://${config.RABBITMQ_USER}:${config.RABBITMQ_PASSWORD}@${config.RABBITMQ_HOST}:${config.RABBITMQ_PORT}${config.RABBITMQ_VHOST}`;
 
+const API_KEYS = Object.freeze({
+  omdbApiKeys: getOmdbApiKeys(),
+  googleApiKey: process.env.GOOGLE_API_KEY || '',
+})
+
+
+function getOmdbApiKeys(): string[] {
+  const omdbApiKeys: string[] = [];
+  let i = 1;
+  while (true) {
+    let keys = process.env[`OMDB_API_KEY${i}`];
+    if (!keys) {
+      break;
+    }
+    omdbApiKeys.push(...keys.split('-'));
+    i++;
+  }
+  return omdbApiKeys;
+}
+
+
 export default {
   ...config,
   isDevelopment,
@@ -83,4 +107,5 @@ export default {
   DATABASE_URL,
   REDIS_URL,
   RABBITMQ_URL,
+  API_KEYS,
 }; 

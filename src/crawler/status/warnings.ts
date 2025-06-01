@@ -9,6 +9,27 @@ export const CrawlerErrorMessages = Object.freeze({
         badPersianSummary: (source: string) => `Source (${source}): badPersianSummary`,
         possibleVip: (source: string) => `Source (${source}): possible vip conversion`,
     },
+    apiCalls: {
+        omdb: {
+            invalid: (d1: string, d2: string) => `Invalid omdb api key: ${d1}, (${d2})`,
+            moreApiKeyNeeded: 'More omdb api keys are needed',
+            eaiError: 'EAI_AGAIN error on omdb api call',
+        },
+        tvmaze: {
+            lotsOfApiCall: `lots of tvmaze api call`,
+        },
+        jikan: {
+            lotsOfApiCall: `lots of jikan api call`,
+            eaiError: 'EAI_AGAIN error on jikan api call',
+        },
+        kitsu: {
+            lotsOfApiCall: `lots of kitsu api call`,
+        },
+        amv: {
+            lotsOfApiCall: `lots of amv api call`,
+            eaiError: 'EAI_AGAIN error on amv api call',
+        },
+    },
 });
 
 export function getCrawlerWarningMessages(
