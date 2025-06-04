@@ -19,7 +19,7 @@ const configSchema = z.object({
   POSTGRES_DB: z.string(),
 
   // MongoDB
-  MONGODB_URI: z.string(),
+  MONGODB_DATABASE_URL: z.string(),
 
   // Redis
   REDIS_HOST: z.string(),
@@ -32,6 +32,13 @@ const configSchema = z.object({
   RABBITMQ_USER: z.string(),
   RABBITMQ_PASSWORD: z.string(),
   RABBITMQ_VHOST: z.string().default('/'),
+
+  // S3
+  CLOUAD_STORAGE_ENDPOINT: z.string(),
+  CLOUAD_STORAGE_ACCESS_KEY: z.string(),
+  CLOUAD_STORAGE_SECRET_ACCESS_KEY: z.string(),
+  CLOUAD_STORAGE_WEBSITE_ENDPOINT: z.string(),
+  BUCKET_NAME_PREFIX: z.string().default(''),
 
   // Crawler Settings
   // CRAWLER_CONCURRENCY: z.coerce.number().default(10),
