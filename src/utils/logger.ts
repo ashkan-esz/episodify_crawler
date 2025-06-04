@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/node";
+import * as Sentry from "@sentry/bun";
 import pino from 'pino';
 import path from 'path';
 import fs from 'fs';
@@ -39,7 +39,8 @@ if (sentryDsn !== 'YOUR_SENTRY_DSN') {
     Sentry.init({
         dsn: sentryDsn,
         tracesSampleRate: 1.0, // Capture 100% of transactions for performance monitoring
-        profilesSampleRate: 1.0, // Capture 100% of transactions for profiling
+        // profilesSampleRate: 1.0, // Capture 100% of transactions for profiling
+        sampleRate: 1.0,
         integrations: [
             // Add any necessary Sentry integrations here
         ],

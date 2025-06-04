@@ -58,6 +58,7 @@ const configSchema = z.object({
   CRAWLER_MANUAL_GC_ON_HIGH_LOAD: z.coerce.boolean().default(false),
 
   IGNORE_HENTAI: z.coerce.boolean().default(false),
+  DISABLE_THUMBNAIL_CREATE: z.coerce.boolean().default(false),
 
   // Disk
   TOTAL_DISK_SPACE: z.coerce.number().default(1024),

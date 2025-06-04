@@ -30,6 +30,7 @@ export const CrawlerErrorMessages = Object.freeze({
             eaiError: 'EAI_AGAIN error on amv api call',
         },
     },
+    imageOperationsHighWait: (seconds: number) => `High wait for image operation to start (${seconds})`,
 });
 
 export function getCrawlerWarningMessages(
