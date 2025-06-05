@@ -1,5 +1,5 @@
 import {
-    DownloadLink,
+    DownloadLink, Episode,
     getEpisodeModelPlaceholder,
     MoviesGroupedLink,
     Quality,
@@ -360,7 +360,7 @@ export function updateMoviesGroupedLinks(
 }
 
 export function updateSerialLinks(
-    checkEpisode: MoviesGroupedLink,
+    checkEpisode: MoviesGroupedLink | Episode,
     prevLinks: DownloadLink[],
     prevOnlineLinks: DownloadLink[],
     prevTorrentLinks: DownloadLink[],

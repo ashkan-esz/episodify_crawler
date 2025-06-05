@@ -305,7 +305,7 @@ export function addS3TrailerToTitleModel(
 }
 
 export function checkNeedTrailerUpload(
-    s3Trailer: MovieTrailerS3,
+    s3Trailer: MovieTrailerS3 | null,
     trailers: MovieTrailer[],
     ): boolean {
     if (s3Trailer) {

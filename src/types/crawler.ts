@@ -4,6 +4,8 @@ export type CrawlerExtraConfigs = {
     equalTitlesOnly: boolean;
     returnTitlesOnly: boolean;
     castUpdateState: ExtraConfigsSwitchState;
+    apiUpdateState: ExtraConfigsSwitchState;
+    trailerUploadState: ExtraConfigsSwitchState;
     axiosBlockThreshHold: number;
     crawlerConcurrency: number;
     dontUseRemoteBrowser: boolean;

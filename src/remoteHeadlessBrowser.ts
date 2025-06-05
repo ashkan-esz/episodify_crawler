@@ -10,8 +10,6 @@
 // import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 // import {removeScriptAndStyle} from "./searchTools.js";
 
-import { CrawlerExtraConfigs } from '@/types';
-
 export type RemoteBrowser = {
     password: string;
     endpoint: string;

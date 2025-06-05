@@ -1,6 +1,6 @@
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 import { MovieType } from '@/types';
-import { TitleObj } from '@/types/movie';
+import { MovieStatus, TitleObj } from '@/types/movie';
 import { getFixedSummary } from '@/extractors';
 import { MediaProvider } from '@/providers/index';
 import { CrawlerErrorMessages } from '@/status/warnings';
@@ -330,7 +330,7 @@ export type KITSUFields = {
     titleObj: TitleObj;
     kitsuID: number;
     summary_en: string;
-    status: string;
+    status: MovieStatus;
     endYear: string;
     youtubeTrailer: string;
     rated: string;

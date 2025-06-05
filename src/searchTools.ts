@@ -1,5 +1,5 @@
 import config from '@/config';
-import { getFromGoogleCache } from '@/externalServices/googleCache';
+import { getFromGoogleCache } from '@services/external/googleCache';
 import { saveCrawlerWarning, saveServerLog } from '@/repo/serverAnalysis';
 import { hasSidebarClass } from '@/sources/generic';
 import { checkServerIsIdle, pauseCrawler } from '@/status/controller';

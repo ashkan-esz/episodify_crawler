@@ -1,6 +1,6 @@
 import {
     DownloadLink,
-    Episode,
+    EpisodeInfo,
     MoviesGroupedLink,
     Quality,
     Season,
@@ -141,7 +141,7 @@ export type Movie = {
     endYear: string;
     officialSite: string;
     webChannel: string;
-    nextEpisode: Episode | null;
+    nextEpisode: EpisodeInfo | null;
     duration: string;
     totalDuration: string;
     //3rd party api data

@@ -43,6 +43,11 @@ export type Season = {
     episodes: Episode[];
 };
 
+export type SeasonWithEpisodesCount = {
+    seasonNumber: number;
+    episodes: number;
+};
+
 export type Episode = {
     title: string;
     released: string;
@@ -56,6 +61,8 @@ export type Episode = {
     links: DownloadLink[];
     watchOnlineLinks: DownloadLink[];
     torrentLinks: DownloadLink[];
+
+    checked?: boolean;
 };
 
 export type EpisodeInfo = {

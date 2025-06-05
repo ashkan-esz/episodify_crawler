@@ -407,8 +407,8 @@ export class TVMazeProvider implements MediaProvider {
 export type TVMazeFields = {
     imdbID: string;
     tvmazeID: number;
-    posters: string[];
-    backgroundPosters: string[];
+    posters: any[];
+    backgroundPosters: any[];
     cast: any[];
     nextEpisode: EpisodeInfo | null;
     episodes: Episode[];
