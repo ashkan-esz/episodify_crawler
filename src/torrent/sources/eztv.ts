@@ -8,8 +8,8 @@ import {
     SourceExtractedData,
     TorrentTitle,
 } from '@/types';
-import save from '@/save';
-import { saveLinksStatus } from '@/searchTools';
+import save from '@services/crawler/save';
+import { saveLinksStatus } from '@services/crawler/searchTools';
 import { addPageLinkToCrawlerStatus } from '@/status/status';
 import { replaceSpecialCharacters } from '@utils/crawler';
 import { saveError } from '@utils/logger';

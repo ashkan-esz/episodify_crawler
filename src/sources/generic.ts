@@ -1,6 +1,6 @@
 import config from '@/config';
 import { Jikan } from '@/providers';
-import { search_in_title_page, wrapper_module } from '@/searchTools';
+import { search_in_title_page, wrapper_module } from '@services/crawler/searchTools';
 import {
     CrawlerExtraConfigs,
     DownloadLink, getWatchOnlineLinksModel,
@@ -9,8 +9,8 @@ import {
 } from '@/types';
 import { MovieRates, MovieTrailer } from '@/types/movie';
 import { getSubtitleModel, Subtitle } from '@/types/subtitle';
-import save from '@/save';
-import { subtitleFormatsRegex } from '@/subtitle';
+import save from '@services/crawler/save';
+import { subtitleFormatsRegex } from '@services/crawler/subtitle';
 import {
     convertTypeMovieToSerial,
     convertTypeSerialToMovie, convertTypeToAnime,
@@ -27,7 +27,7 @@ import {
     releaseRegex,
     specialWords,
 } from '@utils/linkInfo';
-import { getTitleAndYear } from '@/movieTitle';
+import { getTitleAndYear } from '@services/crawler/movieTitle';
 import { Crawler as CrawlerUtils, Axios as AxiosUtils } from '@/utils';
 // import { search_in_title_page, wrapper_module } from '../searchTools.js';
 //@ts-expect-error ...

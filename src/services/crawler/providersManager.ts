@@ -2,7 +2,7 @@ import {
     checkNeedTrailerUpload,
     sortPosters,
     uploadTitleYoutubeTrailerAndAddToTitleModel,
-} from '@/posterAndTrailer';
+} from '@services/crawler/posterAndTrailer';
 import { Jikan, KITSU, OMDB, TVMaze } from '@/providers';
 import { JikanFields } from '@/providers/jikan.provider';
 import { KITSUFields } from '@/providers/kitsu.provider';

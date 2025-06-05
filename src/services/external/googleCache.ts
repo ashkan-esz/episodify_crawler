@@ -1,6 +1,6 @@
 import config from '@/config';
 import { saveGoogleCacheCall } from '@/repo/serverAnalysis';
-import { removeScriptAndStyle } from '@/searchTools';
+import { removeScriptAndStyle } from '@services/crawler/searchTools';
 import { getDecodedLink } from '@utils/crawler';
 import { saveError } from '@utils/logger';
 import axios from 'axios';

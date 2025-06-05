@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import * as Diff from 'diff';
 import chalk from 'chalk';
-import { sourcesNames } from '@/sourcesArray';
+import { sourcesNames } from '@services/crawler/sourcesArray';
 import { saveError } from '@utils/logger';
 // @ts-expect-error ...
 import inquirer from 'inquirer';

@@ -13,7 +13,7 @@ import {
     updateSourcePageData,
     updateSourcePageData_batch,
 } from '@/samples/sourcePages/sourcePageSample';
-import { getSourcesMethods, sourcesNames } from '@/sourcesArray';
+import { getSourcesMethods, sourcesNames } from '@services/crawler/sourcesArray';
 import { getSeasonEpisode, removeDuplicateLinks } from '@utils/crawler';
 import { checkFormat } from '@utils/link';
 import { saveError } from '@utils/logger';

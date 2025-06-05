@@ -13,12 +13,12 @@ import {
 } from '@/types/movie';
 import { Crawler as CrawlerUtils } from '@/utils';
 import { getFixedGenres, getFixedSummary } from '@/extractors';
-import { isValidNumberString } from '@/movieTitle';
+import { isValidNumberString } from '@services/crawler/movieTitle';
 import {
     checkNeedTrailerUpload,
     uploadTitlePosterAndAddToTitleModel,
     uploadTitleYoutubeTrailerAndAddToTitleModel,
-} from '@/posterAndTrailer';
+} from '@services/crawler/posterAndTrailer';
 import { MediaProvider } from '@/providers/index';
 import * as kitsu from '@/providers/kitsu.provider';
 import { addStaffAndCharacters } from '@/providers/staffAndCharacter';

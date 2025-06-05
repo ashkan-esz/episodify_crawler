@@ -1,7 +1,7 @@
 import config from "../../../config/index.js";
-import {search_in_title_page, wrapper_module} from "../../searchTools.js";
+import {search_in_title_page, wrapper_module} from "../../services/crawler/searchTools.js";
 import {getType, removeDuplicateLinks, replacePersianNumbers} from "../../utils/utils.js";
-import {getTitleAndYear} from "../../movieTitle.js";
+import {getTitleAndYear} from "../../services/crawler/movieTitle.ts";
 import {purgeSizeText, fixLinkInfoOrder, fixLinkInfo, addDubAndSub} from "../../linkInfoUtils.js";
 import {posterExtractor, summaryExtractor, trailerExtractor} from "../../extractors/index.js";
 import save from "../../save_changes_db.js";

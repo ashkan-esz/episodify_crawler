@@ -1,4 +1,4 @@
-import { sortPostersOrder, sortTrailersOrder } from '@/sourcesArray';
+import { sortPostersOrder, sortTrailersOrder } from '@services/crawler/sourcesArray';
 import { SourceVpnStatus } from '@/types';
 import {
     Movie, MoviePoster,

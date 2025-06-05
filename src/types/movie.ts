@@ -7,9 +7,9 @@ import {
     SeasonEpisode,
 } from '@/types/downloadLink';
 import { MovieType, SourceVpnStatus, VPNStatus } from '@/types/source';
-import { groupSubtitles } from '@/subtitle';
+import { groupSubtitles } from '@services/crawler/subtitle';
 import { GroupedSubtitle, Subtitle } from '@/types/subtitle';
-import { getLatestData } from '@/latestData';
+import { getLatestData } from '@services/crawler/latestData';
 
 
 export enum MovieReleaseState {

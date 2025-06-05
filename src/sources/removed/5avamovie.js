@@ -1,7 +1,7 @@
 import config from "../../../config/index.js";
-import {search_in_title_page, wrapper_module} from "../../searchTools.js";
+import {search_in_title_page, wrapper_module} from "../../services/crawler/searchTools.js";
 import {validateYear, getType, replacePersianNumbers, removeDuplicateLinks} from "../../utils/utils.js";
-import {getTitleAndYear} from "../../movieTitle.js";
+import {getTitleAndYear} from "../../services/crawler/movieTitle.ts";
 import {
     purgeEncoderText,
     purgeSizeText,

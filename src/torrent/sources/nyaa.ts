@@ -14,8 +14,8 @@ import {
 import { saveError } from '@utils/logger';
 import { replaceSpecialCharacters } from '@utils/crawler';
 import { releaseRegex, releaseRegex2 } from '@utils/linkInfo';
-import { saveLinksStatus } from '@/searchTools';
-import save from '@/save';
+import { saveLinksStatus } from '@services/crawler/searchTools';
+import save from '@services/crawler/save';
 import { addPageLinkToCrawlerStatus } from '@/status/status';
 import * as Torrent from '@/torrent/torrent';
 

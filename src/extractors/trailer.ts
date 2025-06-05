@@ -5,7 +5,7 @@ import {
     updateSourcePageData,
 } from '@/samples/sourcePages/sourcePageSample';
 import { hasSidebarClass } from '@/sources/generic';
-import { sourcesNames } from '@/sourcesArray';
+import { sourcesNames } from '@services/crawler/sourcesArray';
 import { removeDuplicateLinks } from '@utils/crawler';
 import { saveError } from '@utils/logger';
 import * as cheerio from 'cheerio';

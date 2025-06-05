@@ -1,5 +1,5 @@
 import config from "../../../config/index.js";
-import {search_in_title_page, wrapper_module} from "../../searchTools.js";
+import {search_in_title_page, wrapper_module} from "../../services/crawler/searchTools.js";
 import {
     validateYear,
     checkDubbed,
@@ -8,11 +8,11 @@ import {
     getDecodedLink,
     sortLinks
 } from "../../utils/utils.js";
-import {getTitleAndYear} from "../../movieTitle.js";
+import {getTitleAndYear} from "../../services/crawler/movieTitle.ts";
 import {purgeSizeText} from "../../linkInfoUtils.js";
 import save from "../../save_changes_db.js";
 import {getSubtitleModel} from "../../../models/subtitle.js";
-import {subtitleFormatsRegex} from "../../subtitle.js";
+import {subtitleFormatsRegex} from "../../services/crawler/subtitle.ts";
 import {saveError} from "../../../error/saveError.js";
 
 const sourceName = "animelist";

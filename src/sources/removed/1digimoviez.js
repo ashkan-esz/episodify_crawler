@@ -1,12 +1,12 @@
 import config from "../../../config/index.js";
-import {search_in_title_page, wrapper_module} from "../../searchTools.js";
+import {search_in_title_page, wrapper_module} from "../../services/crawler/searchTools.js";
 import {
     getType,
     removeDuplicateLinks,
     getYear,
     getSeasonEpisode
 } from "../../utils/utils.js";
-import {getTitleAndYear, purgeTitle} from "../../movieTitle.js";
+import {getTitleAndYear, purgeTitle} from "../../services/crawler/movieTitle.ts";
 import {
     purgeEncoderText,
     purgeSizeText,

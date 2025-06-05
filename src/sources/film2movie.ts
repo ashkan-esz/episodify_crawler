@@ -1,9 +1,9 @@
 import config from '@/config';
 import { PosterExtractor, SummaryExtractor, TrailerExtractor } from '@/extractors';
-import { getTitleAndYear } from '@/movieTitle';
-import save from '@/save';
-import { search_in_title_page, wrapper_module } from '@/searchTools';
-import { subtitleFormatsRegex } from '@/subtitle';
+import { getTitleAndYear } from '@services/crawler/movieTitle';
+import save from '@services/crawler/save';
+import { search_in_title_page, wrapper_module } from '@services/crawler/searchTools';
+import { subtitleFormatsRegex } from '@services/crawler/subtitle';
 import {
     CrawlerExtraConfigs,
     DownloadLink,

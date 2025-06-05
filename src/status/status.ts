@@ -1,7 +1,7 @@
 import config from '@/config';
-import { blackListSources, remoteBrowsers } from '@/remoteHeadlessBrowser';
+import { blackListSources, remoteBrowsers } from '@services/crawler/remoteHeadlessBrowser';
 import { Configs as ConfigsDB, ServerAnalysis } from '@/repo';
-import { axiosBlackListSources } from '@/searchTools';
+import { axiosBlackListSources } from '@services/crawler/searchTools';
 import { linkStateMessages } from '@/status/warnings';
 import {
     CrawlerExtraConfigs,

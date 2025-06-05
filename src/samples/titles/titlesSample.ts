@@ -1,5 +1,5 @@
 import { MovieType } from '@/types';
-import { getTitleAndYear } from '@/movieTitle';
+import { getTitleAndYear } from '@services/crawler/movieTitle';
 import { saveError } from '@utils/logger';
 import fs from 'fs';
 import * as Path from 'path';

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { saveLinksStatus } from '@/searchTools';
+import { saveLinksStatus } from '@services/crawler/searchTools';
 import {
     CrawlerExtraConfigs,
     CrawlerLinkType,
@@ -14,7 +14,7 @@ import {
 } from '@/types';
 import { replaceSpecialCharacters } from '@utils/crawler';
 import { releaseRegex, releaseRegex2 } from '@utils/linkInfo';
-import save from '@/save';
+import save from '@services/crawler/save';
 import { addPageLinkToCrawlerStatus } from '@/status/status';
 import * as Torrent from '@/torrent/torrent';
 import { saveError } from '@utils/logger';

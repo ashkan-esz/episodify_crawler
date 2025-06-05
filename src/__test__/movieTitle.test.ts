@@ -1,6 +1,6 @@
 import { MovieType } from '@/types';
 import { expect, test } from 'bun:test';
-import { getTitleAndYear } from '@/movieTitle';
+import { getTitleAndYear } from '@services/crawler/movieTitle';
 
 test('test function getTitleAndYear -duplicate movie numbers', () => {
     expect(
