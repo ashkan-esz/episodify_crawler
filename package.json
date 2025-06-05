@@ -28,6 +28,7 @@
     "amqplib": "^0.10.7",
     "axios": "^1.8.4",
     "axios-cookiejar-support": "^6.0.2",
+    "axios-retry": "^4.5.0",
     "check-disk-space": "^3.4.0",
     "cheerio": "^1.0.0",
     "diff": "^8.0.1",

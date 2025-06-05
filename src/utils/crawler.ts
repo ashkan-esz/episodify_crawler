@@ -1,4 +1,4 @@
-import { DateRange, DownloadLink } from '@/types';
+import { DateRange, DownloadLink, MovieType } from '@/types';
 import { saveError } from './logger';
 
 export function replaceSpecialCharacters(input: string, whiteList: string[] = []): string {
@@ -48,7 +48,64 @@ export function replacePersianNumbers(input: string): string {
     return input;
 }
 
-export function getType(title: string): string {
+export function convertTypeSerialToMovie(type: MovieType): MovieType {
+    switch (type) {
+        case MovieType.MOVIE:
+            return MovieType.MOVIE;
+
+        case MovieType.SERIAL:
+            return MovieType.MOVIE;
+
+        case MovieType.ANIME_MOVIE:
+            return MovieType.ANIME_MOVIE;
+
+        case MovieType.ANIME_SERIAL:
+            return MovieType.ANIME_MOVIE;
+
+        default:
+            return type;
+    }
+}
+
+export function convertTypeMovieToSerial(type: MovieType): MovieType {
+    switch (type) {
+        case MovieType.MOVIE:
+            return MovieType.SERIAL;
+
+        case MovieType.SERIAL:
+            return MovieType.SERIAL;
+
+        case MovieType.ANIME_MOVIE:
+            return MovieType.ANIME_SERIAL;
+
+        case MovieType.ANIME_SERIAL:
+            return MovieType.ANIME_SERIAL;
+
+        default:
+            return type;
+    }
+}
+
+export function convertTypeToAnime(type: MovieType): MovieType {
+    switch (type) {
+        case MovieType.MOVIE:
+            return MovieType.ANIME_MOVIE;
+
+        case MovieType.SERIAL:
+            return MovieType.ANIME_SERIAL;
+
+        case MovieType.ANIME_MOVIE:
+            return MovieType.ANIME_MOVIE;
+
+        case MovieType.ANIME_SERIAL:
+            return MovieType.ANIME_SERIAL;
+
+        default:
+            return type;
+    }
+}
+
+export function getType(title: string): MovieType {
     if (
         title.includes('فیلم') ||
         title.includes('فيلم') || //it's not duplicate
@@ -58,7 +115,7 @@ export function getType(title: string): string {
         title.includes('دانلود مراسم') ||
         title.includes('دانلود کنسرت')
     ) {
-        return 'movie';
+        return MovieType.MOVIE;
     }
 
     if (
@@ -67,11 +124,11 @@ export function getType(title: string): string {
         !title.includes('انیم')
     ) {
         //case: دانلود دوبله فارسی Wonder 2017
-        return 'movie';
+        return MovieType.MOVIE;
     }
     if (title.includes('دانلود ویژه برنامه') && !title.includes('سریال')) {
         //case: دانلود ویژه برنامه Harry Potter 20th Anniversary: Return to Hogwarts
-        return 'movie';
+        return MovieType.MOVIE;
     }
 
     if (
@@ -83,14 +140,14 @@ export function getType(title: string): string {
         title.includes('انیمیشین') ||
         title.includes('کارتون')
     ) {
-        return title.includes('سریال') ? 'serial' : 'movie';
+        return title.includes('سریال') ? MovieType.SERIAL : MovieType.MOVIE;
     }
 
     if (title.includes('انیمه')) {
         if (title.includes('سینمایی')) {
-            return 'anime_movie';
+            return MovieType.ANIME_MOVIE;
         }
-        return title.includes('سریال') ? 'anime_serial' : 'anime_movie';
+        return title.includes('سریال') ? MovieType.ANIME_SERIAL : MovieType.ANIME_MOVIE;
     }
 
     if (
@@ -99,17 +156,17 @@ export function getType(title: string): string {
         (title.includes('دانلود مستند') && !title.includes('دانلود مستند سریالی')) ||
         (title.includes('نمایش') && !title.includes('سریالی'))
     ) {
-        return 'movie';
+        return MovieType.MOVIE;
     }
 
-    return 'serial';
+    return MovieType.SERIAL;
 }
 
 export function validateYear(year: string | number): string {
     year = year.toString().trim().slice(0, 4);
-    let yearNumber = Number(year);
+    const yearNumber = Number(year);
     if (yearNumber > 1900) {
-        let currentYear = new Date().getFullYear();
+        const currentYear = new Date().getFullYear();
         if (yearNumber === currentYear + 1) {
             year = currentYear.toString();
         } else if (yearNumber > currentYear + 1) {

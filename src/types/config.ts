@@ -89,7 +89,7 @@ export type CrawlerStatus = {
     sourcePage: SourcePageStatus;
     pageLinks: {
         url: string;
-        pageNumber: number;
+        pageNumber: number | null;
         state: string;
         stateTime: number | Date;
         time: Date;

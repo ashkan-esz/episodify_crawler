@@ -114,7 +114,7 @@ export async function getResponseWithCookie(
     url: string,
     cookie: any,
     sourceHeaders: [],
-    timeout = null,
+    timeout?: number,
 ): Promise<any> {
     const config: any = {
         headers: {

@@ -4,6 +4,9 @@ export type CrawlerExtraConfigs = {
     equalTitlesOnly: boolean;
     returnTitlesOnly: boolean;
     castUpdateState: ExtraConfigsSwitchState;
+    axiosBlockThreshHold: number;
+    crawlerConcurrency: number;
+    dontUseRemoteBrowser: boolean;
 };
 
 export enum ExtraConfigsSwitchState {
@@ -14,6 +17,8 @@ export enum ExtraConfigsSwitchState {
 
 export enum PageType {
     MainPage = 'MainPage',
+    // ListPage = 'ListPage',
+    MovieDataPage = 'MovieDataPage',
 }
 
 export enum PageState {

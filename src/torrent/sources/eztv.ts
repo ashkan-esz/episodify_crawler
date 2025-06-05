@@ -155,6 +155,7 @@ async function saveCrawlData(
         torrentLinks: titleData.links,
         persianSummary: '',
         poster: '',
+        widePoster: '',
         trailers: [],
         subtitles: [],
         rating: null,

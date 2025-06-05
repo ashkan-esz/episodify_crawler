@@ -32,6 +32,16 @@ export const CrawlerErrorMessages = Object.freeze({
     },
     imageOperationsHighWait: (seconds: number) => `High wait for image operation to start (${seconds})`,
     trailerUploadHighWait: (seconds: number) => `High wait for trailer upload to start (${seconds})`,
+    axiosTimeoutError: (time: string, sourceName: string) => `Axios timeout error (${time}): ${sourceName}`,
+    axiosAbortError: (sourceName: string) => `Axios aborted error: ${sourceName}`,
+    axiosEaiError: (sourceName: string) => `Axios EAI_AGAIN error: ${sourceName}`,
+    sourceErrors: {
+        axios403: (sourceName: string) => `Source (${sourceName}): 403 Error (Axios)`,
+    },
+    axiosTimeoutError: (time: string, err: string) => `Axios timeout error (${time}): ${err}`,
+    crawlerBadLink: (sourceName: string) => `Crawler generated badLink (${sourceName})`,
+    sourceLastPage: (sourceName: string, page: number | null) => `Source (${sourceName}) lastPage: ${page}`,
+    sourceDisabled: (sourceName: string, err: string) => `Source (${sourceName}): Disabled, reasons: ${err}`,
 });
 
 export function getCrawlerWarningMessages(
@@ -106,15 +116,8 @@ export function getCrawlerWarningMessages(
         remoteBrowserTimeoutError: `Remote Browser timeout error (50s/70s): ${data1}`,
         crawlerCancelled: 'Crawling cancelled : sourcesObj is null',
         crawlerCycleCancelled: 'Crawler cycle cancelled : sourcesObj is null',
-        axiosTimeoutError: `Axios timeout error (${data1}): ${data2}`,
-        axiosAbortError: `Axios aborted error: ${data1}`,
-        axiosEaiError: `Axios EAI_AGAIN error: ${data1}`,
-        crawlerBadLink: `Crawler generated badLink (${data1})`,
-        sourceLastPage: `Source (${data1}) lastPage: ${data2}`,
-        sourceDisabled: `Source (${data1}): Disabled, reasons: ${data2}`,
-        sourceErrors: {
-            axios403: `Source (${data1}): 403 Error (Axios)`,
-        },
+
+
     };
 }
 

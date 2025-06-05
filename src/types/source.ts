@@ -1,5 +1,5 @@
 import { DownloadLink } from '@/types/downloadLink';
-import { MovieRates } from '@/types/movie';
+import { MovieRates, MovieTrailer } from '@/types/movie';
 import { Subtitle } from '@/types/subtitle';
 
 export type SourceConfig = {
@@ -21,32 +21,34 @@ export type SourceConfig = {
         notRespondingFrom: number;
         lastCheck: number;
     };
-    config: {
-        sourceName: string;
-        //------------------
-        isGeneric: boolean;
-        checkTrailers: boolean;
-        headers: string | boolean;
-        is_censored: boolean;
-        is_half_network: boolean;
-        dontRemoveDimensions: boolean;
-        //------------------
-        has_watch_online: boolean;
-        has_summary: boolean;
-        has_poster: boolean;
-        has_wide_poster: boolean;
-        has_trailer: boolean;
-        has_subtitle: boolean;
-        use_google_cache: boolean;
-        //------------------
-        needHeadlessBrowser: boolean;
-        sourceAuthStatus: SourceAuthStatus;
-        vpnStatus: SourceVpnStatus;
-        isTorrent: boolean;
-        replaceInfoOnDuplicate: boolean;
-        removeScriptAndStyleFromHtml: boolean;
-    };
+    config: SourceConfigC;
 };
+
+export type SourceConfigC = {
+    sourceName: string;
+    //------------------
+    isGeneric: boolean;
+    checkTrailers: boolean;
+    headers: string | boolean;
+    is_censored: boolean;
+    is_half_network: boolean;
+    dontRemoveDimensions: boolean;
+    //------------------
+    has_watch_online: boolean;
+    has_summary: boolean;
+    has_poster: boolean;
+    has_wide_poster: boolean;
+    has_trailer: boolean;
+    has_subtitle: boolean;
+    use_google_cache: boolean;
+    //------------------
+    needHeadlessBrowser: boolean;
+    sourceAuthStatus: SourceAuthStatus;
+    vpnStatus: SourceVpnStatus;
+    isTorrent: boolean;
+    replaceInfoOnDuplicate: boolean;
+    removeScriptAndStyleFromHtml: boolean;
+}
 
 export type SourceVpnStatus = {
     poster: VPNStatus;
@@ -65,16 +67,11 @@ export type SourceExtractedData = {
     torrentLinks: DownloadLink[];
     persianSummary: string;
     poster: string;
-    trailers: Trailer[];
+    widePoster: string;
+    trailers: MovieTrailer[];
     subtitles: Subtitle[];
     rating: MovieRates | null;
     cookies: [];
-};
-
-export type Trailer = {
-    url: string;
-    info: string;
-    sourceName: string;
 };
 
 export enum MovieType {

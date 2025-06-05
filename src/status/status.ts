@@ -1,5 +1,8 @@
 import config from '@/config';
+import { blackListSources, remoteBrowsers } from '@/remoteHeadlessBrowser';
 import { Configs as ConfigsDB, ServerAnalysis } from '@/repo';
+import { axiosBlackListSources } from '@/searchTools';
+import { linkStateMessages } from '@/status/warnings';
 import {
     CrawlerExtraConfigs,
     CrawlerLog,
@@ -7,14 +10,12 @@ import {
     CrawlerState,
     CrawlerStatus,
     CrawlerStatusSource,
+    ExtraConfigsSwitchState,
 } from '@/types';
 import { logger } from '@/utils';
 import { getDatesBetween, getDecodedLink } from '@utils/crawler';
 import { averageCpu, getMemoryStatus } from '@utils/serverStatus';
-import { linkStateMessages } from '@/status/warnings';
 import { v4 as uuidv4 } from 'uuid';
-import { blackListSources, remoteBrowsers } from '@/remoteHeadlessBrowser';
-import { axiosBlackListSources } from '@/searchTools';
 
 export const crawlerMemoryLimit = config.CRAWLER_MEMORY_LIMIT || config.CRAWLER_TOTAL_MEMORY * 0.85;
 
@@ -101,6 +102,10 @@ function getDefaultCrawlerStatus(): CrawlerStatus {
             equalTitlesOnly: false,
             returnAfterExtraction: false,
             retryCounter: 0,
+            castUpdateState: ExtraConfigsSwitchState.NONE,
+            dontUseRemoteBrowser: false,
+            crawlerConcurrency: 0,
+            axiosBlockThreshHold: 0,
         },
     };
 }
@@ -283,7 +288,7 @@ export function updatePageNumberCrawlerStatus(
 
 export async function addPageLinkToCrawlerStatus(
     pageLink: string,
-    pageNumber: number,
+    pageNumber: number | null,
 ): Promise<void> {
     if (config.DEBUG_MODE) {
         logger.info(`[PAGE_LINK]: [${pageNumber}]: ${pageLink}`);

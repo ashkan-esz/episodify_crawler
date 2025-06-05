@@ -1,10 +1,10 @@
 import {
     CrawlerExtraConfigs,
     SourceAuthStatus,
-    SourceConfig,
+    SourceConfig, SourceConfigC,
     VPNStatus,
 } from '@/types';
-import * as film2movie  from '@crawler/sources/film2movie';
+import * as film2movie  from '@/sources/film2movie';
 import * as tokyotosho  from '@/torrent/sources/tokyotosho';
 import * as shanaproject  from '@/torrent/sources/shanaproject';
 import * as nyaa  from '@/torrent/sources/nyaa';
@@ -38,12 +38,18 @@ export function getSourcesMethods(): {
 }
 
 export function getSourcesArray(
-    sourcesObj: any,
+    sourcesObj: {
+        film2movie: SourceConfig,
+        tokyotosho: SourceConfig,
+        shanaproject: SourceConfig,
+        nyaa: SourceConfig,
+        eztv: SourceConfig,
+    },
     crawlMode: number,
     extraConfigs: CrawlerExtraConfigs,
     ): {
     name: string;
-    configs: SourceConfig;
+    configs: SourceConfigC;
     starter: () => Promise<number[]>;
 }[] {
     const pageCount = crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : null;

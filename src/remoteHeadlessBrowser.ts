@@ -43,7 +43,7 @@ export const remoteBrowsers: RemoteBrowser[] = [];
 // let sourcesObject = await getSourcesObjDB();
 // let sourcesObject = {};
 // let sourcesObject_date = Date.now();
-// export let blackListSources = [];
+export let blackListSources = [];
 
 // type ErrorAndTime = {
 //     errorMessage: string,
