@@ -1,3 +1,4 @@
+
 export type CrawlerExtraConfigs = {
     returnAfterExtraction: boolean;
     retryCounter: number;
@@ -6,7 +7,9 @@ export type CrawlerExtraConfigs = {
     castUpdateState: ExtraConfigsSwitchState;
     apiUpdateState: ExtraConfigsSwitchState;
     trailerUploadState: ExtraConfigsSwitchState;
+    torrentState: ExtraConfigsSwitchState;
     axiosBlockThreshHold: number;
+    remoteBrowserBlockThreshHold: number;
     crawlerConcurrency: number;
     dontUseRemoteBrowser: boolean;
 };
@@ -15,7 +18,23 @@ export enum ExtraConfigsSwitchState {
     NONE = 'none',
     IGNORE = 'ignore',
     FORCE = 'force',
+    ONLY = 'only',
 }
+
+export const defaultCrawlerExtraConfigs: CrawlerExtraConfigs = Object.freeze({
+    returnAfterExtraction: false,
+    retryCounter: 3,
+    equalTitlesOnly: false,
+    returnTitlesOnly: false,
+    castUpdateState: ExtraConfigsSwitchState.NONE,
+    apiUpdateState: ExtraConfigsSwitchState.NONE,
+    trailerUploadState: ExtraConfigsSwitchState.NONE,
+    torrentState: ExtraConfigsSwitchState.NONE,
+    axiosBlockThreshHold: 0,
+    remoteBrowserBlockThreshHold: 0,
+    crawlerConcurrency: 0,
+    dontUseRemoteBrowser: false,
+});
 
 export enum PageType {
     MainPage = 'MainPage',

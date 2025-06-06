@@ -105,6 +105,25 @@ export function convertTypeToAnime(type: MovieType): MovieType {
     }
 }
 
+export function removeAnimeFromType(type: MovieType): MovieType {
+    switch (type) {
+        case MovieType.MOVIE:
+            return MovieType.MOVIE;
+
+        case MovieType.SERIAL:
+            return MovieType.SERIAL;
+
+        case MovieType.ANIME_MOVIE:
+            return MovieType.MOVIE;
+
+        case MovieType.ANIME_SERIAL:
+            return MovieType.SERIAL;
+
+        default:
+            return type;
+    }
+}
+
 export function getType(title: string): MovieType {
     if (
         title.includes('فیلم') ||

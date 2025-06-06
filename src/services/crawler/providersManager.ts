@@ -48,7 +48,7 @@ export async function addApiData(
     torrentLinks: DownloadLink[],
     sourceName: string,
     pageLink: string,
-    siteRating: MovieRates,
+    siteRating: MovieRates | null,
     extraConfigs: CrawlerExtraConfigs,
     ): Promise<any> {
 
@@ -346,7 +346,7 @@ export async function apiDataUpdate(
     sitePoster: string,
     sourceName: string,
     pageLink: string,
-    siteRating: MovieRates,
+    siteRating: MovieRates | null,
     extraConfigs: CrawlerExtraConfigs,
     ): Promise<any> {
     

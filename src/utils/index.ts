@@ -3,6 +3,7 @@ export * from "./http";
 export * from "./validation";
 export * as Crawler from "./crawler";
 export * as LinkInfo from "./linkInfo";
+export * as LinkUtils from "./link";
 export * as ServerStatus from "./serverStatus";
 export * as TitlesList from "./titlesList";
 export * as Axios from "./axios";

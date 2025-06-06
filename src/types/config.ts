@@ -165,7 +165,32 @@ export type ConfigsDB = {
     crawlerDisabled: boolean;
     disableCrawlerForDuration: number | Date;
     disableCrawlerStart: number | Date;
+    torrentDownloadMaxFileSize: number;
+    defaultTorrentDownloaderConfig: DefaultTorrentDownloaderConfig;
 };
+
+export type DefaultTorrentDownloaderConfig = {
+    status: TorrentDownloaderStatus;
+    minImdbScore: number;
+    minMalScore: number;
+    newEpisodeQualities: string;
+    newEpisodeLinkLimit: number;
+    movieQualities: string;
+    movieLinkLimit: number;
+    disabled: string[];
+    // torrentFilesExpireHour: number;
+    bypassIfHasDownloadLink: boolean;
+}
+
+export enum TorrentDownloaderStatus {
+    IGNORE = 'ignore',
+    FORCE = 'force',
+    DEFAULT = 'default',
+}
+
+export enum TorrentDownloaderDisabledState {
+    ALL = 'all',
+}
 
 export enum CrawlerState {
     OK = 'ok',
