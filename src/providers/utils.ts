@@ -70,7 +70,7 @@ function normalizeJikanData(jikanData: any): void {
         .replace(/kg|kilograms/gi, 'kg')
         .replace(/\[/g, '(')
         .replace(/]/g, ')')
-        .replace(/^[A-Z][a-z]+(\s[A-Z][a-z]+)? - /gm, r => r.replace(' -', ':'))
+        .replace(/^[A-Z][a-z]+(\s[A-Z][a-z]+)? - /gm, (r: string) => r.replace(' -', ':'))
         .replace(/- (?=([A-Z][a-z][a-z]))/g, '')
         .replace(/^- (?=(\d\d\d\d))/gm, '')
         .replace(/[A-Z][a-z]+: ((\?\?)|(Unknown)|(N\/A)|(n\/a))(.+)?\n/g, '')
@@ -262,20 +262,20 @@ function getHeightFromJikan(jikanData: any): string {
         .match(/((\d+([,.]\d+)?(\s?-\s?\d+(\.\d+)?\s?)?)|(\d+\s?m\s?\d+)|(\d+(\.\d+)?m))\s?(cm|\s(?!M)|$)/)?.[0]
         .replace(',', '')
         .trim()
-        .replace(/\d\d\d\s?-\s?\d\d\d/, r => r.replace(/\s?-\s?\d\d\d/, ''))
+        .replace(/\d\d\d\s?-\s?\d\d\d/, (r: string) => r.replace(/\s?-\s?\d\d\d/, ''))
         .replace(/\dcm/, (r: string) => r.replace('cm', ' cm'))
         .replace(/\d$/, (r: string) => r + ' cm') || '';
 
     if (!height) {
         heightMatch = jikanData.about.match(/Height: \d+['"]+\s?(\d+\s?['"]*)?(\s?ft\.)?\n/)?.[0] || '';
         if (heightMatch) {
-            const temp = heightMatch.replace('Height: ', '').split(/['"]/g).filter(item => item && !isNaN(item));
-            let number = Number(temp[0]) * 30.48 + Number(temp[1] || 0) * 2.54;
+            const temp = heightMatch.replace('Height: ', '').split(/['"]/g).filter((item: string) => item && !isNaN(Number(item)));
+            const number = Number(temp[0]) * 30.48 + Number(temp[1] || 0) * 2.54;
             height = number.toFixed(1) + ' cm';
         }
     } else if (height.match(/\d+(\.\d+)?m/)) {
-        let meter = Number(height.match(/\d+(\.\d+)?m/)[0].replace('m', '')) * 100;
-        let centimeter = Number(height.match(/\d+(\.\d+)?\s/)?.[0] || '');
+        const meter = Number(height.match(/\d+(\.\d+)?m/)[0].replace('m', '')) * 100;
+        const centimeter = Number(height.match(/\d+(\.\d+)?\s/)?.[0] || '');
         height = (meter + centimeter) + ' cm';
     }
 
@@ -301,7 +301,7 @@ function getWeightFromJikan(jikanData: any): string {
 
     let weight = weightMatch
         .match(/\d+(\.\d+)?\s?kg/)?.[0]
-        .replace(/\dkg/, r => r.replace('kg', ' kg'))
+        .replace(/\dkg/, (r: string) => r.replace('kg', ' kg'))
         .trim() || '';
 
     if (!weight) {
@@ -344,7 +344,7 @@ function getBirthdayAndAgeFromJikan(jikanData: any): {
         .replace(/Age: \d+( years)(\s\(according to books.+\))?/, (r: string) => r.replace(/( years)(\s\(according to books.+\))?/, ''))
         .replace(/Age: \d+\/\d+\n/, (r: string) => r.replace('/', '-'))
         .replace(/Age: \d+.+(\s\?)?\s\(appears \d+\)\n/i, (r: string) => r.replace(/(\s\?)?\s\(appears \d+\)/i, ''))
-        .replace(/Age: \d+ \(((\d+(th|rd|nd))|first|second|third) year.+\)\n/, r => r.replace(/\s\(.+\)/, ''));
+        .replace(/Age: \d+ \(((\d+(th|rd|nd))|first|second|third) year.+\)\n/, (r: string) => r.replace(/\s\(.+\)/, ''));
 
     const birthdayRegex = /Birthday: [a-zA-Z]{3,10}[.,]?\s\d\d?(,?\s{1,3}\d\d\d\d)?(\s?\([A-Z][a-z]+(\s[A-Z][a-z]+)?\))?\s*\.?(,|(?=(\s[A-Z][a-z][a-z]))|\n|$)/;
     let birthdayMatch = jikanData.about.match(birthdayRegex)?.[0] || '';
@@ -435,7 +435,7 @@ function getDeathDayAndAgeFromJikan(jikanData: any): {
         .replace(/((Termination date)|(Date of [Dd]eath)):/, 'Died:')
         .replace(/Died \(.+\):/, 'Died:')
         .replace(/Died (?=[A-Z][a-z]+\s\d\d?)/, 'Birthday: ')
-        .replace(/Died: .*\d\d?(th|st|nd|rd|,)/, r => r.replace(/(?<=\d)(th|st|nd|rd|,)/, ''))
+        .replace(/Died: .*\d\d?(th|st|nd|rd|,)/, (r: string) => r.replace(/(?<=\d)(th|st|nd|rd|,)/, ''))
         .replace('Died: Not official', '');
 
     const deathDayRegex = /Died: [a-zA-Z]{3,10},?\s\d\d?(,?\s{1,3}\d\d\d\d)?(\s\(age \d+(\s?[-–→,\s]\s?\d+)?\))?(\s?\([A-Z][a-z]+(\s[A-Z][a-z]+)?\))?\s*\.?(,|(?=(\s[A-Z][a-z][a-z]))|\n|$)/;
@@ -519,7 +519,7 @@ function getHairColorFromJikan(jikanData: any): string {
         .replace('Hair: Ebony', 'Hair:')
         .replace(/Hair [Cc]olou?r:(?!\s)/, 'Hair: ')
         .replace(/Hair [Cc]olou?r:/, 'Hair:')
-        .replace(/Hair: .+ \(.+\)\n/, r => r.replace(/\s\(.+\)/, ''))
+        .replace(/Hair: .+ \(.+\)\n/, (r: string) => r.replace(/\s\(.+\)/, ''))
         .replace(/\s?,/, '');
 
     const hairRegex = /Hair: [a-zA-Z]{3,10}(([^\S\r\n]|\/)[a-zA-Z]{3,10})*(,|(?=(\s[A-Z][a-z][a-z]))|\n|$)/;

@@ -10,7 +10,7 @@ import {
     CrawlerState,
     CrawlerStatus,
     CrawlerStatusSource,
-    ExtraConfigsSwitchState,
+    defaultCrawlerExtraConfigs,
 } from '@/types';
 import { logger } from '@/utils';
 import { getDatesBetween, getDecodedLink } from '@utils/crawler';
@@ -97,16 +97,7 @@ function getDefaultCrawlerStatus(): CrawlerStatus {
             default: [],
             remoteBrowsers: [],
         },
-        extraConfigs: {
-            returnTitlesOnly: false,
-            equalTitlesOnly: false,
-            returnAfterExtraction: false,
-            retryCounter: 0,
-            castUpdateState: ExtraConfigsSwitchState.NONE,
-            dontUseRemoteBrowser: false,
-            crawlerConcurrency: 0,
-            axiosBlockThreshHold: 0,
-        },
+        extraConfigs: defaultCrawlerExtraConfigs,
     };
 }
 

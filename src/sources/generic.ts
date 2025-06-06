@@ -971,7 +971,7 @@ export function extra_link_checker($: any, link: any, title: string, type: Movie
 function extraSearchMatch($: any, link: any, title: string): boolean {
     //TODO : implement
     try {
-        const linkHref = utils
+        const linkHref = CrawlerUtils
             .replacePersianNumbers(CrawlerUtils.getDecodedLink($(link).attr('href')))
             .toLowerCase();
 

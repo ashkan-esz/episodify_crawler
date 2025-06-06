@@ -23,7 +23,7 @@ export enum ExtraConfigsSwitchState {
 
 export const defaultCrawlerExtraConfigs: CrawlerExtraConfigs = Object.freeze({
     returnAfterExtraction: false,
-    retryCounter: 3,
+    retryCounter: 0,
     equalTitlesOnly: false,
     returnTitlesOnly: false,
     castUpdateState: ExtraConfigsSwitchState.NONE,

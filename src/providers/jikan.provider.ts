@@ -943,7 +943,7 @@ export class JikanProvider implements MediaProvider {
             if (kitsuApiData) {
                 const kitsuApiFields = KITSU.getApiFields(kitsuApiData);
                 if (kitsuApiFields && kitsuApiFields.kitsuPosterCover) {
-                    const s3WidePoster = await S3Storage.uploadTitlePoster(
+                    const s3WidePoster = await S3Storage.uploadTitlePosterToS3(
                         titleModel.title,
                         titleModel.type,
                         titleModel.year,

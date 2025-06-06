@@ -30,6 +30,7 @@ import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
 import PQueue from 'p-queue';
 
+//TODO : remove this
 axiosRetry(axios, {
     retries: 2, // number of retries
     shouldResetTimeout: true,
@@ -39,6 +40,7 @@ axiosRetry(axios, {
     // onRetry: (retryCount, error, config) => {
     //     // delete config.headers;
     // },
+    // @ts-expect-error ...
     retryCondition: (error) =>
         error.code === 'ECONNRESET' ||
         error.code === 'ENOTFOUND' ||
