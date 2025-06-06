@@ -7,7 +7,7 @@ import {
     checkForceStopCrawler,
     removePageLinkToCrawlerStatus,
 } from '@/status/status';
-import { CrawlerErrorMessages, linkStateMessages } from '@/status/warnings';
+import { CrawlerErrors, linkStateMessages } from '@/status/warnings';
 import { S3Storage } from '@/storage';
 import {
     CrawlerExtraConfigs,
@@ -86,7 +86,7 @@ export default async function save(
             badLinks = getLinksDoesntMatchLinkRegex(downloadLinks, type);
             if (badLinks.length > 0) {
                 await ServerAnalysisDB.saveCrawlerBadLink(sourceConfig.config.sourceName, pageLink, badLinks.slice(0, 10));
-                await ServerAnalysisDB.saveCrawlerWarning(CrawlerErrorMessages.crawlerBadLink(sourceConfig.config.sourceName));
+                await ServerAnalysisDB.saveCrawlerWarning(CrawlerErrors.crawler.crawlerBadLink(sourceConfig.config.sourceName));
             }
         }
 

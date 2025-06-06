@@ -1,7 +1,7 @@
 import config from '@/config';
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 import { CrawlerPauseReason } from '@/types';
-import { CrawlerErrorMessages } from '@/status/warnings';
+import { CrawlerErrors } from '@/status/warnings';
 import { averageCpu, getMemoryStatus } from '@utils/serverStatus';
 import {
     checkForceResume,
@@ -61,7 +61,7 @@ export async function pauseCrawler(): Promise<void> {
                 memoryStatus.used >= crawlerMemoryLimit
                     ? `${memoryStatus.used.toFixed(0)}M/${crawlerMemoryLimit.toFixed(0)}M`
                     : `${averageCpu}/${config.CRAWLER_CPU_LIMIT}`;
-            const m = CrawlerErrorMessages.crawlerPauseLimit(
+            const m = CrawlerErrors.crawler.pauseLimit(
                 config.CRAWLER_PAUSE_DURATION_LIMIT,
                 info,
             );

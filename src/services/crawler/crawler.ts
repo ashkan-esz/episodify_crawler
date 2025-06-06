@@ -14,7 +14,7 @@ import {
     updateCrawlerStatus_sourceEnd,
     updateCrawlerStatus_sourceStart,
 } from '@/status/status';
-import { CrawlerErrorMessages } from '@/status/warnings';
+import { CrawlerErrors } from '@/status/warnings';
 import {
     CrawlerExtraConfigs,
     defaultCrawlerExtraConfigs,
@@ -36,8 +36,8 @@ export async function crawlerCycle(): Promise<string> {
         }
         const sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {
-            saveCrawlerWarning(CrawlerErrorMessages.crawlerCycleCancelled);
-            return CrawlerErrorMessages.crawlerCycleCancelled;
+            saveCrawlerWarning(CrawlerErrors.crawler.cycleCancelled);
+            return CrawlerErrors.crawler.cycleCancelled;
         }
 
         delete sourcesObj._id;
@@ -140,11 +140,11 @@ export async function crawler(
 
         const sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {
-            await updateCrawlerStatus_crawlerCrashed(CrawlerErrorMessages.crawlerCancelled);
-            saveCrawlerWarning(CrawlerErrorMessages.crawlerCancelled);
+            await updateCrawlerStatus_crawlerCrashed(CrawlerErrors.crawler.cancelled);
+            saveCrawlerWarning(CrawlerErrors.crawler.cancelled);
             return {
                 isError: true,
-                message: CrawlerErrorMessages.crawlerCancelled,
+                message: CrawlerErrors.crawler.cancelled,
             };
         }
 
@@ -168,17 +168,17 @@ export async function crawler(
                 const disabled = sourcesObj[sourcesNames[i]].disabled;
                 const isManualDisable = sourcesObj[sourcesNames[i]].isManualDisable;
                 if (sourceCookies.find((item: any) => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    saveCrawlerWarning(CrawlerErrorMessages.expireCookieSkip(sourcesNames[i]));
+                    saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourcesNames[i]));
                     continue;
                 }
                 if (disabled) {
                     if (!isManualDisable) {
-                        saveCrawlerWarning(CrawlerErrorMessages.disabledSourceSkip(sourcesNames[i]));
+                        saveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourcesNames[i]));
                     }
                     continue;
                 }
-                resolveCrawlerWarning(CrawlerErrorMessages.expireCookieSkip(sourcesNames[i]));
-                resolveCrawlerWarning(CrawlerErrorMessages.disabledSourceSkip(sourcesNames[i]));
+                resolveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourcesNames[i]));
+                resolveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourcesNames[i]));
                 await updateCrawlerStatus_sourceStart(sourcesNames[i], crawlMode);
 
                 let sourceStarter: any = sourcesArray.find(s => s.name === sourcesNames[i]);
@@ -251,11 +251,11 @@ export async function torrentCrawlerSearch(
 
         const sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {
-            await updateCrawlerStatus_crawlerCrashed(CrawlerErrorMessages.crawlerCancelled);
-            saveCrawlerWarning(CrawlerErrorMessages.crawlerCancelled);
+            await updateCrawlerStatus_crawlerCrashed(CrawlerErrors.crawler.cancelled);
+            saveCrawlerWarning(CrawlerErrors.crawler.cancelled);
             return {
                 isError: true,
-                message: CrawlerErrorMessages.crawlerCancelled,
+                message: CrawlerErrors.crawler.cancelled,
             };
         }
 
@@ -270,12 +270,12 @@ export async function torrentCrawlerSearch(
                 const disabled = sourcesObj[sourcesArray[i].name].disabled;
                 const isManualDisable = sourcesObj[sourcesArray[i].name].isManualDisable;
                 if (sourceCookies.find((item: any) => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    saveCrawlerWarning(CrawlerErrorMessages.expireCookieSkip(sourcesArray[i].name));
+                    saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourcesArray[i].name));
                     continue;
                 }
                 if (disabled) {
                     if (!isManualDisable) {
-                        saveCrawlerWarning(CrawlerErrorMessages.disabledSourceSkip(sourcesArray[i].name));
+                        saveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourcesArray[i].name));
                     }
                     continue;
                 }
@@ -292,10 +292,10 @@ export async function torrentCrawlerSearch(
                 const disabled = sourcesObj[sourceName].disabled;
                 const isManualDisable = sourcesObj[sourceName].isManualDisable;
                 if (sourceCookies.find((item: any) => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    saveCrawlerWarning(CrawlerErrorMessages.expireCookieSkip(sourceName));
+                    saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourceName));
                 } else if (disabled) {
                     if (!isManualDisable) {
-                        saveCrawlerWarning(CrawlerErrorMessages.disabledSourceSkip(sourceName));
+                        saveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourceName));
                     }
                 } else {
                     await updateCrawlerStatus_sourceStart(sourceName, 0);

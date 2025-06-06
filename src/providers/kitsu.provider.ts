@@ -3,7 +3,7 @@ import { MovieType } from '@/types';
 import { MovieStatus, TitleObj } from '@/types/movie';
 import { getFixedSummary } from '@/extractors';
 import { MediaProvider } from '@/providers/index';
-import { CrawlerErrorMessages } from '@/status/warnings';
+import { CrawlerErrors } from '@/status/warnings';
 import { saveError } from '@utils/logger';
 import axios from 'axios';
 import { Crawler as CrawlerUtils } from '@/utils';
@@ -321,7 +321,7 @@ export class KITSUProvider implements MediaProvider {
                 }
             }
         }
-        saveCrawlerWarning(CrawlerErrorMessages.apiCalls.kitsu.lotsOfApiCall);
+        saveCrawlerWarning(CrawlerErrors.api.kitsu.lotsOfApiCall);
         return null;
     }
 }

@@ -287,7 +287,7 @@
 //                 await new Promise((resolve => setTimeout(resolve, 3000)));
 //             } else if (error instanceof Error && 'code' in error && error.code === 'EAI_AGAIN') {
 //                 const warningMessages = getCrawlerWarningMessages('');
-//                 saveCrawlerWarning(warningMessages.apiCalls.amv.eaiError);
+//                 saveCrawlerWarning(warningMessages.api.amv.eaiError);
 //                 return null;
 //             } else if (error instanceof Error && 'code' in error && error.code === 'ERR_UNESCAPED_CHARACTERS') {
 //                 // error.isAxiosError = true;
@@ -306,7 +306,7 @@
 //             }
 //         }
 //     }
-//     saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.amv.lotsOfApiCall);
+//     saveCrawlerWarning(getCrawlerWarningMessages().api.amv.lotsOfApiCall);
 //     return null;
 // }
 

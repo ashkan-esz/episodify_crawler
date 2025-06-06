@@ -22,7 +22,7 @@ import {
 import { MediaProvider } from '@/providers/index';
 import * as kitsu from '@/providers/kitsu.provider';
 import { addStaffAndCharacters } from '@/providers/staffAndCharacter';
-import { CrawlerErrorMessages } from '@/status/warnings';
+import { CrawlerErrors } from '@/status/warnings';
 import { saveError } from '@utils/logger';
 import axios from 'axios';
 import { LRUCache } from 'lru-cache';
@@ -485,7 +485,7 @@ export class JikanProvider implements MediaProvider {
                     await new Promise((resolve) => setTimeout(resolve, waitTime));
                 } else {
                     if (error.code === 'EAI_AGAIN') {
-                        saveCrawlerWarning(CrawlerErrorMessages.apiCalls.jikan.eaiError);
+                        saveCrawlerWarning(CrawlerErrors.api.jikan.eaiError);
                         return null;
                     }
                     if (error.message === 'hard timeout') {
@@ -513,7 +513,7 @@ export class JikanProvider implements MediaProvider {
                 }
             }
         }
-        saveCrawlerWarning(CrawlerErrorMessages.apiCalls.jikan.lotsOfApiCall);
+        saveCrawlerWarning(CrawlerErrors.api.jikan.lotsOfApiCall);
         return null;
     }
 

@@ -1,7 +1,7 @@
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 import { Episode, EpisodeInfo, getEpisodeModel, MovieType } from '@/types';
 import { getFixedGenres, getFixedSummary } from '@/extractors';
-import { CrawlerErrorMessages } from '@/status/warnings';
+import { CrawlerErrors } from '@/status/warnings';
 import { saveError } from '@utils/logger';
 import axios from 'axios';
 import { MediaProvider } from './index';
@@ -92,7 +92,7 @@ export class TVMazeProvider implements MediaProvider {
                 }
             }
         }
-        saveCrawlerWarning(CrawlerErrorMessages.apiCalls.tvmaze.lotsOfApiCall);
+        saveCrawlerWarning(CrawlerErrors.api.tvmaze.lotsOfApiCall);
         return null;
     }
 
@@ -249,7 +249,7 @@ export class TVMazeProvider implements MediaProvider {
                 }
             }
         }
-        saveCrawlerWarning(CrawlerErrorMessages.apiCalls.tvmaze.lotsOfApiCall);
+        saveCrawlerWarning(CrawlerErrors.api.tvmaze.lotsOfApiCall);
         return null;
     }
 

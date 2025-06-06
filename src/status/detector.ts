@@ -1,5 +1,5 @@
 import { DownloadLink, SourceConfig } from '@/types';
-import { CrawlerErrorMessages } from '@/status/warnings';
+import { CrawlerErrors } from '@/status/warnings';
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 
 const changesStatus: {
@@ -44,17 +44,17 @@ export function checkCrawledDataForChanges(
 export async function checkAndHandleSourceChange(): Promise<void> {
     // let reasons = [];
     if (changesStatus.badDownloadLinks.length >= 20) {
-        const m = CrawlerErrorMessages.sourceStatus.badDownloadLinks(changesStatus.sourceName);
+        const m = CrawlerErrors.source.badDownloadLinks(changesStatus.sourceName);
         saveCrawlerWarning(m);
         // reasons.push('downloadLinks');
     }
     if (changesStatus.badPosters.length >= 20) {
-        const m = CrawlerErrorMessages.sourceStatus.badPosters(changesStatus.sourceName);
+        const m = CrawlerErrors.source.badPosters(changesStatus.sourceName);
         saveCrawlerWarning(m);
         // reasons.push('poster');
     }
     if (changesStatus.badPersianSummary.length >= 20) {
-        const m = CrawlerErrorMessages.sourceStatus.badPersianSummary(changesStatus.sourceName);
+        const m = CrawlerErrors.source.badPersianSummary(changesStatus.sourceName);
         saveCrawlerWarning(m);
         // reasons.push('persianSummary');
     }
@@ -63,7 +63,7 @@ export async function checkAndHandleSourceChange(): Promise<void> {
     // let disableResult = await disableSource(changesStatus.sourceName);
     // if (disableResult !== 'notfound' && disableResult !== "error") {
     //     const warningMessages = getCrawlerWarningMessages(changesStatus.sourceName, `bad ${reasons.join(',')}`);
-    //     await saveCrawlerWarning(warningMessages.sourceDisabled);
+    //     await saveCrawlerWarning(warningMessages.source.disabled);
     // }
     // }
 

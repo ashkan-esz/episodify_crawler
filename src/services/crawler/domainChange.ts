@@ -10,7 +10,7 @@ import {
     updateCrawlerStatus_domainChangeHandlerEnd,
     updateCrawlerStatus_domainChangeHandlerStart,
 } from '@/status/status';
-import { CrawlerErrorMessages, linkStateMessages } from '@/status/warnings';
+import { CrawlerErrors, linkStateMessages } from '@/status/warnings';
 import {
     CrawlerExtraConfigs,
     CrawlerStatusSource,
@@ -249,14 +249,14 @@ async function updateDownloadLinks(
                 const disabled = sourcesObj[sourceName].disabled;
                 const isManualDisable = sourcesObj[sourceName].isManualDisable;
                 if (sourceCookies.find((item: any) => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    saveCrawlerWarning(CrawlerErrorMessages.expireCookieSkip_domainChange(sourceName));
+                    saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip_domainChange(sourceName));
                 } else if (disabled) {
                     if (!isManualDisable) {
-                        saveCrawlerWarning(CrawlerErrorMessages.disabledSourceSkip_domainChange(sourceName));
+                        saveCrawlerWarning(CrawlerErrors.source.disabledSourceSkip_domainChange(sourceName));
                     }
                 } else {
-                    resolveCrawlerWarning(CrawlerErrorMessages.expireCookieSkip_domainChange(sourceName));
-                    resolveCrawlerWarning(CrawlerErrorMessages.disabledSourceSkip_domainChange(sourceName));
+                    resolveCrawlerWarning(CrawlerErrors.source.expireCookieSkip_domainChange(sourceName));
+                    resolveCrawlerWarning(CrawlerErrors.source.disabledSourceSkip_domainChange(sourceName));
                     let crawled = false;
                     if (!fullyCrawledSources.includes(sourceName)) {
                         await findSource.starter();

@@ -4,7 +4,7 @@ import { Episode, getEpisodeModel, MovieType } from '@/types';
 import { MovieRates } from '@/types/movie';
 import { getFixedGenres, getFixedSummary } from '@/extractors';
 import { MediaProvider } from '@/providers/index';
-import { CrawlerErrorMessages } from '@/status/warnings';
+import { CrawlerErrors } from '@/status/warnings';
 import { saveError } from '@utils/logger';
 import axios from 'axios';
 import PQueue from 'p-queue';
@@ -339,7 +339,7 @@ export class OMDBProvider implements MediaProvider {
                         if (config.DEBUG_MODE) {
                             logger.warn('ERROR: more omdb api keys are needed');
                         } else {
-                            saveCrawlerWarning(CrawlerErrorMessages.apiCalls.omdb.moreApiKeyNeeded);
+                            saveCrawlerWarning(CrawlerErrors.api.omdb.moreApiKeyNeeded);
                         }
                         return null;
                     }
@@ -354,7 +354,7 @@ export class OMDBProvider implements MediaProvider {
                             if (config.DEBUG_MODE) {
                                 console.log(`ERROR: Invalid omdb api key: ${key.apiKey}, (${error.response.data?.Error})`);
                             } else {
-                                const m = CrawlerErrorMessages.apiCalls.omdb.invalid(key.apiKey, error.response.data?.Error)
+                                const m = CrawlerErrors.api.omdb.invalid(key.apiKey, error.response.data?.Error)
                                 saveCrawlerWarning(m);
                             }
                             key.limit = 0;
@@ -369,7 +369,7 @@ export class OMDBProvider implements MediaProvider {
                         return null;
                     } else {
                         if (error.code === 'EAI_AGAIN') {
-                            saveCrawlerWarning(CrawlerErrorMessages.apiCalls.omdb.eaiError);
+                            saveCrawlerWarning(CrawlerErrors.api.omdb.eaiError);
                             continue;
                         } else if (error.response?.status !== 500 &&
                             error.response?.status !== 503 &&

@@ -1,7 +1,7 @@
 import config from '@/config';
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 import { updateImageOperationsLimit } from '@/status/status';
-import { CrawlerErrorMessages } from '@/status/warnings';
+import { CrawlerErrors } from '@/status/warnings';
 import { downloadImage } from '@utils/axios';
 import { saveError } from '@utils/logger';
 import sharp from "sharp";
@@ -12,13 +12,14 @@ export const imageOperationsConcurrency = 100;
 export const saveWarningTimeout = 90 * 1000; //90s
 let imageOperations = 0;
 
+//TODO: remove / deactivate
 async function waitForImageOperation() {
     let start = Date.now();
     while (imageOperations >= imageOperationsConcurrency) {
         updateImageOperationsLimit(imageOperations, imageOperationsConcurrency);
         if (Date.now() - start > saveWarningTimeout) {
             start = Date.now();
-            saveCrawlerWarning(CrawlerErrorMessages.imageOperationsHighWait(saveWarningTimeout/1000));
+            saveCrawlerWarning(CrawlerErrors.operations.imageHighWait(saveWarningTimeout/1000));
         }
         await new Promise(resolve => setTimeout(resolve, 50));
     }

@@ -10,7 +10,7 @@ import {
     checkForceStopCrawler,
     removePageLinkToCrawlerStatus, updatePageNumberCrawlerStatus,
 } from '@/status/status';
-import { CrawlerErrorMessages, linkStateMessages } from '@/status/warnings';
+import { CrawlerErrors, linkStateMessages } from '@/status/warnings';
 import {
     CrawlerExtraConfigs,
     CrawlerLinkType,
@@ -139,7 +139,7 @@ export async function wrapper_module(
                         );
                     }
                     if (i === 1 || (pageCount && i < pageCount)) {
-                        saveCrawlerWarning(CrawlerErrorMessages.sourceLastPage(
+                        saveCrawlerWarning(CrawlerErrors.source.lastPage(
                             sourceConfig.config.sourceName,
                             i,
                         ));
@@ -558,7 +558,7 @@ async function getLinks(
 
                 if (error.message === 'timeout of 10000ms exceeded') {
                     saveCrawlerWarning(
-                        CrawlerErrorMessages.axiosTimeoutError('10s', config.sourceName),
+                        CrawlerErrors.axios.timeoutError('10s', config.sourceName),
                     );
                     if (pageType === PageType.MainPage && retryCounter < 2) {
                         retryCounter++;
@@ -573,7 +573,7 @@ async function getLinks(
                     }
                 } else if (error.message === 'timeout of 15000ms exceeded') {
                     saveCrawlerWarning(
-                        CrawlerErrorMessages.axiosTimeoutError('15s', config.sourceName),
+                        CrawlerErrors.axios.timeoutError('15s', config.sourceName),
                     );
                     if (pageType === PageType.MainPage && retryCounter < 2) {
                         retryCounter++;
@@ -587,7 +587,7 @@ async function getLinks(
                         );
                     }
                 } else if (error.message === 'aborted') {
-                    saveCrawlerWarning(CrawlerErrorMessages.axiosAbortError(config.sourceName));
+                    saveCrawlerWarning(CrawlerErrors.axios.abortError(config.sourceName));
                     if (pageType === PageType.MainPage && retryCounter < 2) {
                         retryCounter++;
                         return await getLinks(
@@ -600,10 +600,10 @@ async function getLinks(
                         );
                     }
                 } else if (error.code === 'EAI_AGAIN') {
-                    saveCrawlerWarning(CrawlerErrorMessages.axiosEaiError(config.sourceName));
+                    saveCrawlerWarning(CrawlerErrors.axios.eaiError(config.sourceName));
                 } else if (error.message === 'Request failed with status code 403') {
                     saveCrawlerWarning(
-                        CrawlerErrorMessages.sourceErrors.axios403(config.sourceName),
+                        CrawlerErrors.source.axios403(config.sourceName),
                     );
                 } else {
                     await saveErrorIfNeeded(error);

@@ -1,15 +1,40 @@
-
-export const CrawlerErrorMessages = Object.freeze({
-    crawlerPauseLimit: (minute: number, info: string) => {
-        return `Maximum duration for crawler pause exceeded (${minute}min) [${info}]`;
+export const CrawlerErrors = Object.freeze({
+    crawler: {
+        pauseLimit: (minute: number, info: string) => {
+            return `Maximum duration for crawler pause exceeded (${minute}min) [${info}]`;
+        },
+        cancelled: 'Crawling cancelled : sourcesObj is null',
+        cycleCancelled: 'Crawler cycle cancelled : sourcesObj is null',
+        crawlerBadLink: (sourceName: string) => `Crawler generated badLink (${sourceName})`,
     },
-    sourceStatus: {
+    source: {
         badDownloadLinks: (source: string) => `Source (${source}): badDownloadLinks`,
         badPosters: (source: string) => `Source (${source}): badPosters`,
         badPersianSummary: (source: string) => `Source (${source}): badPersianSummary`,
         possibleVip: (source: string) => `Source (${source}): possible vip conversion`,
+        axios403: (sourceName: string) => `Source (${sourceName}): 403 Error (Axios)`,
+        disabled: (sourceName: string, err: string) =>
+            `Source (${sourceName}): Disabled, reasons: ${err}`,
+        disabledSkip: (sourceName: string) =>
+            `source (${sourceName}) is disabled (crawler skipped).`,
+        expireCookie: (sourceName: string) => `Source (${sourceName}) has expired cookie(s)`,
+        expireCookieSkip: (sourceName: string) =>
+            `source (${sourceName}) cookies expired (crawler skipped).`,
+        lastPage: (sourceName: string, page: number | null) =>
+            `Source (${sourceName}) lastPage: ${page}`,
+        expireCookieSkip_domainChange: (sourceName: string) =>
+            `source (${sourceName}) cookies expired (crawler skipped --domainChangeHandler).`,
+        disabledSourceSkip_domainChange: (sourceName: string) =>
+            `source (${sourceName}) is disabled (crawler skipped --domainChangeHandler).`,
+        notWorking: (sourceName: string) => `Source (${sourceName}) url not working`,
+        domainChange: (sourceName: string, url: string) =>
+            `Source (${sourceName}) domain changed to (${url})`,
     },
-    apiCalls: {
+    remoteBrowser: {
+        notWorking: (url: string) => `Remote Browser not working: ${url}`,
+        timeoutError: (url: string) => `Remote Browser timeout error (50s/70s): ${url}`,
+    },
+    api: {
         omdb: {
             invalid: (d1: string, d2: string) => `Invalid omdb api key: ${d1}, (${d2})`,
             moreApiKeyNeeded: 'More omdb api keys are needed',
@@ -30,96 +55,18 @@ export const CrawlerErrorMessages = Object.freeze({
             eaiError: 'EAI_AGAIN error on amv api call',
         },
     },
-    imageOperationsHighWait: (seconds: number) => `High wait for image operation to start (${seconds})`,
-    trailerUploadHighWait: (seconds: number) => `High wait for trailer upload to start (${seconds})`,
-    axiosTimeoutError: (time: string, sourceName: string) => `Axios timeout error (${time}): ${sourceName}`,
-    axiosAbortError: (sourceName: string) => `Axios aborted error: ${sourceName}`,
-    axiosEaiError: (sourceName: string) => `Axios EAI_AGAIN error: ${sourceName}`,
-    sourceErrors: {
-        axios403: (sourceName: string) => `Source (${sourceName}): 403 Error (Axios)`,
+    axios: {
+        timeoutError: (time: string, sourceName: string) =>
+            `Axios timeout error (${time}): ${sourceName}`,
+        abortError: (sourceName: string) => `Axios aborted error: ${sourceName}`,
+        eaiError: (sourceName: string) => `Axios EAI_AGAIN error: ${sourceName}`,
     },
-    axiosTimeoutError: (time: string, err: string) => `Axios timeout error (${time}): ${err}`,
-    crawlerBadLink: (sourceName: string) => `Crawler generated badLink (${sourceName})`,
-    sourceLastPage: (sourceName: string, page: number | null) => `Source (${sourceName}) lastPage: ${page}`,
-    sourceDisabled: (sourceName: string, err: string) => `Source (${sourceName}): Disabled, reasons: ${err}`,
+    operations: {
+        imageHighWait: (seconds: number) => `High wait for image operation to start (${seconds})`,
+        trailerUploadHighWait: (seconds: number) =>
+            `High wait for trailer upload to start (${seconds})`,
+    },
 });
-
-export function getCrawlerWarningMessages(
-    data1: string = '',
-    data2: string = '',
-): {
-    expireCookie: string;
-    expireCookieSkip: string;
-    expireCookieSkip_domainChange: string;
-    disabledSource: string;
-    disabledSourceSkip: string;
-    disabledSourceSkip_domainChange: string;
-    notWorking: string;
-    domainChange: string;
-    crawlerPauseLimit: string;
-    apiCalls: {
-        omdb: { invalid: string; moreApiKeyNeeded: string; eaiError: string };
-        tvmaze: { lotsOfApiCall: string };
-        jikan: { lotsOfApiCall: string; eaiError: string };
-        kitsu: { lotsOfApiCall: string };
-        amv: { lotsOfApiCall: string; eaiError: string };
-    };
-    trailerUploadHighWait: string;
-    imageOperationsHighWait: string;
-    remoteBrowserNotWorking: string;
-    remoteBrowserTimeoutError: string;
-    crawlerCancelled: string;
-    crawlerCycleCancelled: string;
-    axiosTimeoutError: string;
-    axiosAbortError: string;
-    axiosEaiError: string;
-    crawlerBadLink: string;
-    sourceLastPage: string;
-    sourceDisabled: string;
-    sourceErrors: { axios403: string };
-} {
-    //TODO : remove or refactor
-    return {
-        expireCookie: `Source (${data1}) has expired cookie(s)`,
-        expireCookieSkip: `source (${data1}) cookies expired (crawler skipped).`,
-        expireCookieSkip_domainChange: `source (${data1}) cookies expired (crawler skipped --domainChangeHandler).`,
-        disabledSource: `source (${data1}) is disabled.`,
-        disabledSourceSkip: `source (${data1}) is disabled (crawler skipped).`,
-        disabledSourceSkip_domainChange: `source (${data1}) is disabled (crawler skipped --domainChangeHandler).`,
-        notWorking: `Source (${data1}) url not working`,
-        domainChange: `Source (${data1}) domain changed to (${data2})`,
-
-        crawlerPauseLimit: `Maximum allowed duration for crawler pause exceeded (${data1}min) (crawler need more resource)`,
-        apiCalls: {
-            omdb: {
-                invalid: `Invalid omdb api key: ${data1}, (${data2})`,
-                moreApiKeyNeeded: 'More omdb api keys are needed',
-                eaiError: 'EAI_AGAIN error on omdb api call',
-            },
-            tvmaze: {
-                lotsOfApiCall: `lots of tvmaze api call`,
-            },
-            jikan: {
-                lotsOfApiCall: `lots of jikan api call`,
-                eaiError: 'EAI_AGAIN error on jikan api call',
-            },
-            kitsu: {
-                lotsOfApiCall: `lots of kitsu api call`,
-            },
-            amv: {
-                lotsOfApiCall: `lots of amv api call`,
-                eaiError: 'EAI_AGAIN error on amv api call',
-            },
-        },
-        imageOperationsHighWait: `High wait for image operation to start (${data1})`,
-        remoteBrowserNotWorking: `Remote Browser not working: ${data1}`,
-        remoteBrowserTimeoutError: `Remote Browser timeout error (50s/70s): ${data1}`,
-        crawlerCancelled: 'Crawling cancelled : sourcesObj is null',
-        crawlerCycleCancelled: 'Crawler cycle cancelled : sourcesObj is null',
-
-
-    };
-}
 
 export const linkStateMessages = Object.freeze({
     start: 'start',
