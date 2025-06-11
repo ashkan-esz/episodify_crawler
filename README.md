@@ -55,6 +55,58 @@ bunx prisma migrate dev
 bun run dev
 ```
 
+## Environment Variables
+
+| Prop                                   | Description                                                                                                                    | Required | Default Value |
+|----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|----------|---------------|
+| **`PORT`**                             | server port                                                                                                                    | `false`  | 3000          |
+| **`API_PREFIX`**                       |                                                                                                                                | `false`  | /api/v1       |
+| **`MONGODB_DATABASE_URL`**             | mongodb url, for example see [mongodb.com](https://www.mongodb.com/)                                                           | `true`   |               |
+| **`POSTGRE_DATABASE_URL`**             | postgresSql url                                                                                                                | `true`   |               |
+| **`POSTGRES_PASSWORD`**                |                                                                                                                                | `true`   |               |
+| **`REDIS_URL`**                        | redis url                                                                                                                      | `false`  |               |
+| **`REDIS_PASSWORD`**                   | redis password                                                                                                                 | `false`  |               |
+| **`RABBITMQ_URL`**                     | rabbitmq url                          <br/>                                                                                    | `true`   |               |
+| **`CLOUAD_STORAGE_ENDPOINT`**          | s3 sever url, for example see [arvancloud.com](https://www.arvancloud.com/en)                                                  | `true`   |               |
+| **`CLOUAD_STORAGE_WEBSITE_ENDPOINT`**  | s3 static website postfix                                                                                                      | `true`   |               |
+| **`CLOUAD_STORAGE_ACCESS_KEY`**        |                                                                                                                                | `true`   |               |
+| **`CLOUAD_STORAGE_SECRET_ACCESS_KEY`** |                                                                                                                                | `true`   |               |
+| **`BUCKET_NAME_PREFIX`**               | if bucket names not exist use this. for example 'poster' --> 'test_poster'                                                     | `false`  |               |
+| **`ADMIN_USER`**                       | admin username which created automatically on app start, can be changed after                                                  | `false`  |               |
+| **`ADMIN_PASS`**                       | admin password which created automatically on app start, can be changed after                                                  | `false`  |               |
+| **`ACCESS_TOKEN_SECRET`**              |                                                                                                                                | `true`   |               |
+| **`REFRESH_TOKEN_SECRET`**             |                                                                                                                                | `true`   |               |
+| **`DOMAIN`**                           | base domain, used for cookies domain and subdomain                                                                             | `false`  |               |
+| **`SENTRY_ORG`**                       |                                                                                                                                | `false`  |               |
+| **`SENTRY_DNS`**                       | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
+| **`SENTRY_AUTH_TOKEN`**                | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
+| **`SENTRY_PROJECT`**                   | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
+| **`PRINT_ERRORS`**                     |                                                                                                                                | `false`  | false         |
+| **`LOG_LEVEL`**                        |                                                                                                                                | `false`  | info          |
+| **`NODE_ENV`**                         |                                                                                                                                | `false`  | development   |
+| **`DEBUG_MODE`**                       |                                                                                                                                | `false`  | false         |
+| **`DISABLE_CRAWLER`**                  | crawler doesn't run                                                                                                            | `false`  | false         |
+| **`DISABLE_TORRENT_CRAWLER`**          | torrent crawler doesn't run                                                                                                    | `false`  | false         |
+| **`CRAWLER_CONCURRENCY`**              |                                                                                                                                | `false`  |               |
+| **`PAUSE_CRAWLER_ON_HIGH_LOAD`**       | with this flag crawler get paused inorder to prevent server crash                                                              | `false`  | true          |
+| **`CRAWLER_TOTAL_MEMORY`**             | this value get used to determine crawler need to get paused. (MB)                                                              | `false`  | 1024          |
+| **`CRAWLER_MEMORY_LIMIT`**             | if the memory usage is higher than this value, crawler will pause, if not set, it will use 85% of `CRAWLER_TOTAL_MEMORY`. (MB) | `false`  | 0             |
+| **`CRAWLER_CPU_LIMIT`**                | if the cpu usage is higher than this value, crawler will pause                                                                 | `false`  | 95            |
+| **`CRAWLER_PAUSE_DURATION_LIMIT`**     | Number of minutes to crawler can be paused on high load                                                                        | `false`  | 10            |
+| **`CRAWLER_MANUAL_GC_ON_HIGH_LOAD`**   |                                                                                                                                | `false`  | 10            |
+| **`DISABLE_THUMBNAIL_CREATE`**         | thumbnails doesnt create                                                                                                       | `false`  | false         |
+| **`IGNORE_HENTAI`**                    | dont add hentai to db                                                                                                          | `false`  | true          |
+| **`OMDB_API_KEY{i}`**                  | `i` start from 1. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/)                                              | `true`   |               |
+| **`GOOGLE_API_KEY`**                   | see [google console](https://console.cloud.google.com/apis)                                                                    | `true`   |               |
+| **`CORS_ALLOWED_ORIGINS`**             | address joined by `---` example: https://download-admin.com---https:download-website.com                                       | `false`  |               |
+| **`INIT_DBS_ON_START`**                | create mongodb collections and indexes, create testUser, create s3 buckets                                                     | `false`  |               |
+| **`REMOTE_BROWSER_PASSWORD{i}`**       | `i` start from 1. like REMOTE_BROWSER_PASSWORD1, password of remote headless browser (puppeteer)                               | `true`   |               |
+| **`REMOTE_BROWSER_ENDPOINT{i}`**       | end point of remote headless browser (puppeteer), [source](https://github.com/ashkan-esz/downloader_remotebrowser/)            | `true`   |               |
+| **`REMOTE_BROWSER_TABS_COUNT{i}`**     | number of tabs that set on remote headless browser (puppeteer)                                                                 | `false`  | 7             |
+
+>**NOTE: check [configs schema](src/types/config.ts) for db dynamic configs.**
+
+
 ## Project Structure
 
 ```

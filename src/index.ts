@@ -4,7 +4,7 @@ import { swagger } from '@elysiajs/swagger';
 import mongoose from 'mongoose';
 import { PrismaClient } from '@prisma/client';
 import Redis from 'ioredis';
-import * as amqp from 'amqplib';
+// import * as amqp from 'amqplib';
 
 import config from '@/config';
 import logger from '@/utils/logger';
@@ -16,7 +16,7 @@ export const redis = new Redis(config.REDIS_URL);
 async function bootstrap(): Promise<void> {
   try {
     // Connect to MongoDB
-    // await mongoose.connect(config.MONGODB_URI);
+    // await mongoose.connect(config.MONGODB_DATABASE_URL);
     // logger.info('Connected to MongoDB');
 
     // Connect to RabbitMQ
