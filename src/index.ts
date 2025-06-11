@@ -1,8 +1,7 @@
 import { Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
-import mongoose from 'mongoose';
-import { PrismaClient } from '@prisma/client';
+import { mongoDB, prisma } from '@/services/database';
 import Redis from 'ioredis';
 // import * as amqp from 'amqplib';
 
@@ -10,63 +9,73 @@ import config from '@/config';
 import logger from '@/utils/logger';
 
 // Initialize database clients
-export const prisma = new PrismaClient();
 export const redis = new Redis(config.REDIS_URL);
 
 async function bootstrap(): Promise<void> {
-  try {
-    // Connect to MongoDB
-    // await mongoose.connect(config.MONGODB_DATABASE_URL);
-    // logger.info('Connected to MongoDB');
+    try {
+        // Connect to MongoDB
+        try {
+            await mongoDB.connect();
+            console.log('Database connection established');
 
-    // Connect to RabbitMQ
-    // const mqConnection = await amqp.connect(config.RABBITMQ_URL);
-    // const mqChannel = await mqConnection.createChannel();
-    // logger.info('Connected to RabbitMQ');
+            // Optional: Perform startup checks
+            const isHealthy = await mongoDB.ping();
+            console.log(`Database health check: ${isHealthy ? 'OK' : 'FAILED'}`);
+        } catch (error) {
+            console.error('Fatal: DB connection failed', error);
+            process.exit(1);
+        }
+        //TODO : add status logger
 
-    // Create queues
-    // await mqChannel.assertQueue('crawler_jobs', { durable: true });
-    // await mqChannel.assertQueue('data_processing', { durable: true });
+        // Connect to RabbitMQ
+        // const mqConnection = await amqp.connect(config.RABBITMQ_URL);
+        // const mqChannel = await mqConnection.createChannel();
+        // logger.info('Connected to RabbitMQ');
 
-    // Initialize API server
-    const app = new Elysia()
-      .use(cors())
-      .use(
-        swagger({
-          documentation: {
-            info: {
-              title: 'Episodify Crawler API',
-              version: '1.0.0',
-            },
-          },
-        }),
-      )
-      .get('/', () => 'Episodify Crawler Service')
-      .listen(config.PORT);
+        // Create queues
+        // await mqChannel.assertQueue('crawler_jobs', { durable: true });
+        // await mqChannel.assertQueue('data_processing', { durable: true });
 
-    logger.info(`🚀 Server is running at ${app.server?.hostname}:${config.PORT}`);
+        // Initialize API server
+        const app = new Elysia()
+            .use(cors())
+            .use(
+                swagger({
+                    documentation: {
+                        info: {
+                            title: 'Episodify Crawler API',
+                            version: '1.0.0',
+                        },
+                    },
+                }),
+            )
+            .get('/', () => 'Episodify Crawler Service')
+            .listen(config.PORT);
 
-    // Graceful shutdown
-    const shutdown = async (): Promise<void> => {
-      logger.info('Shutting down gracefully...');
+        logger.info(`🚀 Server is running at ${app.server?.hostname}:${config.PORT}`);
 
-      // Close database connections
-      await Promise.all([
-        prisma.$disconnect(),
-        mongoose.disconnect(),
-        redis.quit(),
-        // mqConnection.close(),
-      ]);
+        // Graceful shutdown
+        const shutdown = async (): Promise<void> => {
+            logger.info('Shutting down gracefully...');
 
-      process.exit(0);
-    };
+            // Close database connections
+            await Promise.all([
+                mongoDB.close(),
+                prisma.$disconnect(),
+                redis.quit(),
+                // mqConnection.close(),
+            ]);
 
-    process.on('SIGTERM', shutdown);
-    process.on('SIGINT', shutdown);
-  } catch (error) {
-    logger.error('Failed to start the application:', error);
-    process.exit(1);
-  }
+            process.exit(0);
+        };
+
+        process.on('SIGTERM', shutdown);
+        process.on('SIGINT', shutdown);
+        // process.on('SIGQUIT', shutdown);
+    } catch (error) {
+        logger.error('Failed to start the application:', error);
+        process.exit(1);
+    }
 }
 
 bootstrap();

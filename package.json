@@ -57,6 +57,7 @@
   "typings": "./lib/index.d.ts",
   "devDependencies": {
     "@types/amqplib": "^0.10.7",
+    "@types/mongodb": "^4.0.7",
     "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/parser": "^8.31.0",
