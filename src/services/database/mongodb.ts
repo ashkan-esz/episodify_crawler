@@ -16,7 +16,7 @@ class MongoDBManager {
     private readonly maxAttempts = 3;
     private logger: (entry: LogEntry) => void = console.log;
     private healthMonitor: NodeJS.Timeout | null = null;
-    private baseHealthCheckInterval = 30000; // 30 seconds
+    private baseHealthCheckInterval = 60000;
     private consecutiveSuccessfulPings = 0;
     private connectionStable = false;
     collections = {
@@ -64,13 +64,18 @@ class MongoDBManager {
 
         try {
             const options: MongoClientOptions = {
-                maxPoolSize: 10,
-                minPoolSize: 2,
+                // maxPoolSize: 10,
+                // minPoolSize: 2,
+                minPoolSize: 1,  // Free tier has limited RAM (512MB)
+                maxPoolSize: 5,   // Max connections: 500 (but conserve RAM)
                 maxIdleTimeMS: 30000,
                 serverSelectionTimeoutMS: 5000,
                 heartbeatFrequencyMS: 10000,
-                connectTimeoutMS: 10000,
-                waitQueueTimeoutMS: 5000,
+                // connectTimeoutMS: 10000,
+                connectTimeoutMS: 5000,  // Shorter timeout for free tier
+                // waitQueueTimeoutMS: 5000,
+                waitQueueTimeoutMS: 2000, // Fail fast when busy
+                socketTimeoutMS: 30000,  // Prevent long-running ops
                 compressors: ['zstd', 'zlib'],
             };
 
@@ -179,7 +184,7 @@ class MongoDBManager {
                 if (!this.db) return;
 
                 // Perform actual database ping
-                await this.db.command({ ping: 1 });
+                await this.db.command({ ping: 1 }, { timeoutMS: 1000 });
 
                 // ... ping ...
                 this.consecutiveSuccessfulPings++;
