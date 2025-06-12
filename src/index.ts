@@ -15,12 +15,12 @@ async function bootstrap(): Promise<void> {
     try {
         // Connect to MongoDB
         try {
-            await mongoDB.connect();
+            await mongoDB.getDatabase();
             console.log('Database connection established');
 
             // Optional: Perform startup checks
-            const isHealthy = await mongoDB.ping();
-            console.log(`Database health check: ${isHealthy ? 'OK' : 'FAILED'}`);
+            const healthCheck = await mongoDB.healthCheck();
+            console.log(`Database health check: ${healthCheck.ok ? 'OK' : 'FAILED'}`);
         } catch (error) {
             console.error('Fatal: DB connection failed', error);
             process.exit(1);
@@ -69,9 +69,14 @@ async function bootstrap(): Promise<void> {
             process.exit(0);
         };
 
-        process.on('SIGTERM', shutdown);
-        process.on('SIGINT', shutdown);
-        // process.on('SIGQUIT', shutdown);
+        const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGQUIT'];
+        signals.forEach(signal => process.on(signal, shutdown));
+
+        process.on('unhandledRejection', (reason, promise) => {
+            console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+            shutdown();
+        });
+
     } catch (error) {
         logger.error('Failed to start the application:', error);
         process.exit(1);
