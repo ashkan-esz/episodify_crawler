@@ -1,3 +1,4 @@
+import { UltimateStatusLogger } from '@utils/statusLogger';
 import { Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
@@ -13,19 +14,25 @@ export const redis = new Redis(config.REDIS_URL);
 
 async function bootstrap(): Promise<void> {
     try {
-        // Connect to MongoDB
-        try {
-            await mongoDB.getDatabase();
-            console.log('Database connection established');
+        // Initialize status logger
+        const statusLogger = new UltimateStatusLogger('Crawler');
 
-            // Optional: Perform startup checks
-            const healthCheck = await mongoDB.healthCheck();
-            console.log(`Database health check: ${healthCheck.ok ? 'OK' : 'FAILED'}`);
-        } catch (error) {
-            console.error('Fatal: DB connection failed', error);
-            process.exit(1);
-        }
-        //TODO : add status logger
+        statusLogger.addStep('MongoBD', [], { critical: true });
+
+        // Connect to MongoDB
+        await statusLogger.executeStep(
+            'MongoBD',
+            async () => {
+                await mongoDB.getDatabase();
+                // Optional: Perform startup checks
+                const healthCheck = await mongoDB.healthCheck();
+                logger.info(`[MongoDB] Health check: ${healthCheck.ok ? 'OK' : 'FAILED'}`);
+            },
+            'Connecting to Mongodb',
+        );
+
+        // End status logger
+        statusLogger.complete();
 
         // Connect to RabbitMQ
         // const mqConnection = await amqp.connect(config.RABBITMQ_URL);
@@ -36,8 +43,15 @@ async function bootstrap(): Promise<void> {
         // await mqChannel.assertQueue('crawler_jobs', { durable: true });
         // await mqChannel.assertQueue('data_processing', { durable: true });
 
+        //TODO : add plugins
+
         // Initialize API server
-        const app = new Elysia()
+        const app = new Elysia({
+            // detail: {
+            //     hide: true,
+            //     tags: ['elysia'],
+            // },
+        })
             .use(cors())
             .use(
                 swagger({
@@ -70,13 +84,12 @@ async function bootstrap(): Promise<void> {
         };
 
         const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGQUIT'];
-        signals.forEach(signal => process.on(signal, shutdown));
+        signals.forEach((signal) => process.on(signal, shutdown));
 
         process.on('unhandledRejection', (reason, promise) => {
             console.error('Unhandled Rejection at:', promise, 'reason:', reason);
             shutdown();
         });
-
     } catch (error) {
         logger.error('Failed to start the application:', error);
         process.exit(1);
