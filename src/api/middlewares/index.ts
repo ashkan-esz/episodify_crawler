@@ -1,0 +1,1 @@
+export { dynamicCors } from './cors';
