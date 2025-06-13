@@ -6,8 +6,8 @@ import { averageCpu, getMemoryStatus } from '@utils/serverStatus';
 import {
     checkForceResume,
     checkForceStopCrawler,
-    crawlerMemoryLimit,
     disableForceResume,
+    getCrawlerMemoryLimit,
     getCrawlerStatusObj,
     removeCrawlerPause,
     saveStopCrawler,
@@ -55,11 +55,11 @@ export async function pauseCrawler(): Promise<void> {
 
     let memoryStatus = await getMemoryStatus(false);
     const startTime = Date.now();
-    while (memoryStatus.used >= crawlerMemoryLimit || averageCpu > config.CRAWLER_CPU_LIMIT) {
+    while (memoryStatus.used >= getCrawlerMemoryLimit() || averageCpu > config.CRAWLER_CPU_LIMIT) {
         if (Date.now() - startTime > config.CRAWLER_PAUSE_DURATION_LIMIT * 60 * 1000) {
             const info =
-                memoryStatus.used >= crawlerMemoryLimit
-                    ? `${memoryStatus.used.toFixed(0)}M/${crawlerMemoryLimit.toFixed(0)}M`
+                memoryStatus.used >= getCrawlerMemoryLimit()
+                    ? `${memoryStatus.used.toFixed(0)}M/${getCrawlerMemoryLimit().toFixed(0)}M`
                     : `${averageCpu}/${config.CRAWLER_CPU_LIMIT}`;
             const m = CrawlerErrors.crawler.pauseLimit(
                 config.CRAWLER_PAUSE_DURATION_LIMIT,
@@ -74,7 +74,7 @@ export async function pauseCrawler(): Promise<void> {
         }
 
         let pauseReason = CrawlerPauseReason.HIGH_MEMORY_USAGE;
-        let pauseInfo = `memory/limit: ${memoryStatus.used.toFixed(0)}/${crawlerMemoryLimit.toFixed(0)} `;
+        let pauseInfo = `memory/limit: ${memoryStatus.used.toFixed(0)}/${getCrawlerMemoryLimit().toFixed(0)} `;
 
         if (averageCpu > config.CRAWLER_CPU_LIMIT) {
             pauseReason = CrawlerPauseReason.HIGH_CPU_USAGE;
@@ -89,7 +89,7 @@ export async function pauseCrawler(): Promise<void> {
         }
 
         // TODO : check this
-        if (config.CRAWLER_MANUAL_GC_ON_HIGH_LOAD && memoryStatus.used >= crawlerMemoryLimit) {
+        if (config.CRAWLER_MANUAL_GC_ON_HIGH_LOAD && memoryStatus.used >= getCrawlerMemoryLimit()) {
             if (gcCallTime && Date.now() - gcCallTime > 5 * 1000) {
                 global.gc?.();
                 gcCallTime = Date.now();
@@ -106,7 +106,7 @@ export async function pauseCrawler(): Promise<void> {
 export async function checkServerIsIdle(): Promise<boolean> {
     const memoryStatus = await getMemoryStatus(false);
     return (
-        memoryStatus.used < crawlerMemoryLimit &&
+        memoryStatus.used < getCrawlerMemoryLimit() &&
         memoryStatus.used < config.CRAWLER_TOTAL_MEMORY * 0.6 &&
         averageCpu < 50
     );

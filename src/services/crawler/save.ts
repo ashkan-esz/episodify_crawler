@@ -1,6 +1,6 @@
+import * as dynamicConfig from '@/config/dynamicConfig';
 import { Jikan } from '@/providers';
 import { StaffAndCharacter } from '@/providers';
-import { getServerConfigsDb } from '@/repo/configs';
 import { Crawler as CrawlerDB, ServerAnalysis as ServerAnalysisDB } from '@/repo';
 import {
     changePageLinkStateFromCrawlerStatus,
@@ -11,14 +11,11 @@ import { CrawlerErrors, linkStateMessages } from '@/status/warnings';
 import { S3Storage } from '@/storage';
 import {
     CrawlerExtraConfigs,
-    DefaultTorrentDownloaderConfig,
     DownloadLink,
     MovieType,
     SourceConfig,
     SourceExtractedData,
     SourceVpnStatus,
-    TorrentDownloaderDisabledState,
-    TorrentDownloaderStatus,
     VPNStatus,
 } from '@/types';
 import {
@@ -30,6 +27,11 @@ import {
 import { GroupedSubtitle } from '@/types/subtitle';
 import { LinkUtils } from '@/utils';
 import { saveError } from '@/utils/logger';
+import {
+    DefaultTorrentDownloaderConfig,
+    TorrentDownloaderStatus,
+    TorrentDownloaderDisabledState,
+} from '@config/dynamicConfig';
 import { handleLatestDataUpdate } from '@services/crawler/latestData';
 import {
     checkNeedTrailerUpload,
@@ -138,7 +140,7 @@ export default async function save(
                 const {
                     downloadTorrentLinks,
                     removeTorrentLinks
-                } = checkTorrentAutoDownloaderMustRun(result.titleModel, sourceConfig.config.sourceName, true);
+                } = await checkTorrentAutoDownloaderMustRun(result.titleModel, sourceConfig.config.sourceName, true);
                 result.titleModel.downloadTorrentLinks = removeDuplicateElements(downloadTorrentLinks);
                 result.titleModel.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
 
@@ -572,7 +574,7 @@ async function handleDbUpdate(
         }
 
         if (Object.keys(updateFields).length > 0) {
-            const { downloadTorrentLinks, removeTorrentLinks } = checkTorrentAutoDownloaderMustRun(
+            const { downloadTorrentLinks, removeTorrentLinks } = await checkTorrentAutoDownloaderMustRun(
                 db_data,
                 sourceName,
                 false,
@@ -766,17 +768,26 @@ async function addFileSizeToDownloadLinks(
 //---------------------------------------------
 //---------------------------------------------
 
-function checkTorrentAutoDownloaderMustRun(
+async function checkTorrentAutoDownloaderMustRun(
     titleModel: Movie,
     sourceName: string,
     isNewTitle: boolean,
-): { removeTorrentLinks: string[]; downloadTorrentLinks: string[] } {
+): Promise<{ removeTorrentLinks: string[]; downloadTorrentLinks: string[] }> {
     const removeTorrentLinks = titleModel.removeTorrentLinks || [];
     const downloadTorrentLinks = titleModel.downloadTorrentLinks || [];
 
-    const defaultConfig = getServerConfigsDb()?.defaultTorrentDownloaderConfig;
+    const torrentDbConfig = dynamicConfig.getCachedTorrentDbConfigs();
+    if (!torrentDbConfig) {
+        return {
+            downloadTorrentLinks: [],
+            removeTorrentLinks: [],
+        }
+    }
+
+    const defaultConfig = torrentDbConfig.defaultTorrentDownloaderConfig;
+
     const torrentDownloadSizeLimit =
-        (getServerConfigsDb()?.torrentDownloadMaxFileSize || 0) * 1024 * 1024;
+        (torrentDbConfig.torrentDownloadMaxFileSize || 0) * 1024 * 1024;
 
     if (
         defaultConfig.disabled.includes(TorrentDownloaderDisabledState.ALL) ||

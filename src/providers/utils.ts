@@ -1,8 +1,6 @@
 import { JapanRegions } from '@/utils';
 import { getMonthNumberByMonthName } from '@utils/crawler';
 
-const japanRegionNames = JapanRegions.prefectureEnNames();
-
 export function extractStaffDataFromJikanAbout(jikanData: any): {
     height: string,
     weight: string,
@@ -589,6 +587,8 @@ function getCountryFromJikan(jikanData: any): string {
         .trim()
         .replace(/\s?prefecture$/, '')
         .replace(/\sprefecture\s/, ', ');
+
+    const japanRegionNames = JapanRegions.prefectureEnNames();
 
     if (japanRegionNames.includes(country) || japanRegionNames.includes(country.split(' ').pop())) {
         country = country + ', japan';

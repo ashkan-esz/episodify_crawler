@@ -21,6 +21,7 @@ class MongoDBManager {
     private connectionStable = false;
     collections = {
         movies: 'movies',
+        configs: 'configs',
     };
 
     // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -92,7 +93,7 @@ class MongoDBManager {
             await Promise.race([connectPromise, timeout]);
 
             this.db = this.client.db();
-            console.log('MongoDB connection established');
+            // console.log('MongoDB connection established');
 
             // Verify connection
             await this.db.command({ ping: 1 });

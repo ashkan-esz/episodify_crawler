@@ -1,6 +1,7 @@
 import config from '@/config';
+import * as dynamicConfig from '@/config/dynamicConfig';
 import { blackListSources, remoteBrowsers } from '@services/crawler/remoteHeadlessBrowser';
-import { Configs as ConfigsDB, ServerAnalysis } from '@/repo';
+import { ServerAnalysis } from '@/repo';
 import { axiosBlackListSources } from '@services/crawler/searchTools';
 import { linkStateMessages } from '@/status/warnings';
 import {
@@ -17,7 +18,9 @@ import { getDatesBetween, getDecodedLink } from '@utils/crawler';
 import { averageCpu, getMemoryStatus } from '@utils/serverStatus';
 import { v4 as uuidv4 } from 'uuid';
 
-export const crawlerMemoryLimit = config.CRAWLER_MEMORY_LIMIT || config.CRAWLER_TOTAL_MEMORY * 0.85;
+export function getCrawlerMemoryLimit(): number {
+    return config.CRAWLER_MEMORY_LIMIT || config.CRAWLER_TOTAL_MEMORY * 0.85;
+}
 
 let crawlerStatus: CrawlerStatus = getDefaultCrawlerStatus();
 
@@ -71,7 +74,7 @@ function getDefaultCrawlerStatus(): CrawlerStatus {
         limits: {
             memory: {
                 value: 0,
-                limit: crawlerMemoryLimit.toFixed(0),
+                limit: getCrawlerMemoryLimit().toFixed(0),
                 total: config.CRAWLER_TOTAL_MEMORY,
             },
             cpu: {
@@ -131,11 +134,10 @@ setInterval(async () => {
         crawlerStatus.limits.memory.value = res.used.toFixed(0);
     });
 
-    const configsDb = ConfigsDB.getServerConfigsDb();
+    const configsDb = dynamicConfig.getCachedCrawlerDbConfigs();
     if (configsDb) {
         crawlerStatus.disabledData.isDbDisabled = configsDb.disableCrawler;
         crawlerStatus.disabledData.isDbDisabled_temporary = configsDb.crawlerDisabled;
-        crawlerStatus.disabledData.dbDisableDuration = configsDb.disableCrawlerForDuration;
         crawlerStatus.disabledData.dbDisableStart = configsDb.disableCrawlerStart;
     }
 

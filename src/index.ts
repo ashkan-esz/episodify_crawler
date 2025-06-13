@@ -1,38 +1,66 @@
+import config from '@/config';
+import * as dynamicConfig from '@/config/dynamicConfig';
+import { dynamicCors } from '@api/middlewares';
 import { UltimateStatusLogger } from '@utils/statusLogger';
 import { Elysia } from 'elysia';
-import { cors } from '@elysiajs/cors';
-import { swagger } from '@elysiajs/swagger';
+// import { swagger } from '@elysiajs/swagger';
 import { mongoDB, prisma } from '@/services/database';
+import { MongoDBCollectionsRepo } from '@/repo';
 import Redis from 'ioredis';
 // import * as amqp from 'amqplib';
 
-import config from '@/config';
 import logger from '@/utils/logger';
 
 // Initialize database clients
 export const redis = new Redis(config.REDIS_URL);
 
+async function preStart(): Promise<void> {
+    // Initialize status logger
+    const statusLogger = new UltimateStatusLogger('Crawler', {
+        enablePerformanceAnalysis: false,
+    });
+
+    statusLogger.addStep('MongoBD', [], { critical: true });
+    statusLogger.addStep('MongoDB_Create_Collections', ['MongoBD'], { critical: true });
+    statusLogger.addStep('Crawler_DB_Config', ['MongoBD', 'MongoDB_Create_Collections'], { critical: true });
+
+    // Connect to MongoDB
+    await statusLogger.executeStep(
+        'MongoBD',
+        async () => {
+            await mongoDB.getDatabase();
+            // Optional: Perform startup checks
+            const healthCheck = await mongoDB.healthCheck();
+            logger.info(`[MongoDB] Health check: ${healthCheck.ok ? 'OK' : 'FAILED'}`);
+        },
+        'Connecting to Mongodb',
+    );
+
+    // Create collections and indexes
+    await statusLogger.executeStep(
+        'MongoDB_Create_Collections',
+        async () => {
+            await MongoDBCollectionsRepo.createCollectionsAndIndexes();
+        },
+        'Creating mongodb collection and indexes',
+    );
+
+    // Check Crawler DB Config
+    await statusLogger.executeStep(
+        'Crawler_DB_Config',
+        async () => {
+            await dynamicConfig.insertCrawlerDBConfigs();
+        },
+        'Fetching Crawler DB Config',
+    );
+
+    // End status logger
+    statusLogger.complete();
+}
+
 async function bootstrap(): Promise<void> {
     try {
-        // Initialize status logger
-        const statusLogger = new UltimateStatusLogger('Crawler');
-
-        statusLogger.addStep('MongoBD', [], { critical: true });
-
-        // Connect to MongoDB
-        await statusLogger.executeStep(
-            'MongoBD',
-            async () => {
-                await mongoDB.getDatabase();
-                // Optional: Perform startup checks
-                const healthCheck = await mongoDB.healthCheck();
-                logger.info(`[MongoDB] Health check: ${healthCheck.ok ? 'OK' : 'FAILED'}`);
-            },
-            'Connecting to Mongodb',
-        );
-
-        // End status logger
-        statusLogger.complete();
+        await preStart();
 
         // Connect to RabbitMQ
         // const mqConnection = await amqp.connect(config.RABBITMQ_URL);
@@ -52,17 +80,17 @@ async function bootstrap(): Promise<void> {
             //     tags: ['elysia'],
             // },
         })
-            .use(cors())
-            .use(
-                swagger({
-                    documentation: {
-                        info: {
-                            title: 'Episodify Crawler API',
-                            version: '1.0.0',
-                        },
-                    },
-                }),
-            )
+            .use(dynamicCors())
+            // .use(
+            //     swagger({
+            //         documentation: {
+            //             info: {
+            //                 title: 'Episodify Crawler API',
+            //                 version: '1.0.0',
+            //             },
+            //         },
+            //     }),
+            // )
             .get('/', () => 'Episodify Crawler Service')
             .listen(config.PORT);
 
