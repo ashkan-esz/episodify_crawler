@@ -15,7 +15,6 @@ export type SourceConfig = {
     addDate: Date;
     lastDomainChangeDate: Date,
     lastConfigUpdateDate: Date,
-    userData: any;
     description: string;
     status: {
         notRespondingFrom: number;

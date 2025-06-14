@@ -10,6 +10,7 @@ import {
     checkForceStopCrawler,
 } from '@/status/status';
 import { saveError } from '@utils/logger';
+import { ObjectId } from 'mongodb';
 import PQueue from 'p-queue';
 import { StaffDB } from '@/repo';
 import { Crawler as CrawlerUtils } from '@/utils';
@@ -26,7 +27,7 @@ let _castConcurrency = 0;
 
 export async function addStaffAndCharacters(
     pageLink: string,
-    movieId:  string,
+    movieId:  ObjectId,
     allApiData: any,
     castUpdateDate: Date | null,
     extraConfigs: CrawlerExtraConfigs | null = null,
@@ -87,7 +88,7 @@ export async function addStaffAndCharacters(
 
 async function addTvMazeActorsAndCharacters(
     pageLink: string,
-    movieId: string,
+    movieId: ObjectId,
     tvmazeCast: any,
     credits: Credit[],
     ): Promise<void> {
@@ -128,7 +129,7 @@ async function addTvMazeActorsAndCharacters(
         if (createStaffResult) {
             const characterName = CrawlerUtils.fixJapaneseCharacter(tvmazeCast[i].character.name);
             credits.push({
-                movieId: movieId,
+                movieId: movieId.toString(),
                 staffId: createStaffResult.id,
                 characterId: null,
                 actorPositions: positions,
@@ -163,7 +164,7 @@ async function addTvMazeActorsAndCharacters(
         const createCharacterResult = await StaffDB.upsertCharacterDb(name, rawName, characterData);
         if (createCharacterResult) {
             credits.push({
-                movieId: movieId,
+                movieId: movieId.toString(),
                 staffId: null,
                 characterId: createCharacterResult.id,
                 actorPositions: [],
@@ -189,7 +190,7 @@ async function addTvMazeActorsAndCharacters(
 
 async function handleJikanStaff_voiceActors(
     pageLink: string,
-    movieId: string,
+    movieId: ObjectId,
     jikanCharactersArray: any[],
     credits: Credit[],
     ): Promise<void> {
@@ -210,7 +211,7 @@ async function handleJikanStaff_voiceActors(
 
 async function handleJikanStaff(
     pageLink: string,
-    movieId: string,
+    movieId: ObjectId,
     jikanStaffArray: any[],
     credits: Credit[],
     isVoiceActors: boolean = false,
@@ -252,7 +253,7 @@ async function handleJikanStaff(
 
 async function handleJikanCharaters(
     pageLink: string,
-    movieId: string,
+    movieId: ObjectId,
     jikanCharatersArray: any[],
     credits: Credit[],
     ): Promise<void> {
@@ -290,7 +291,7 @@ async function handleJikanCharaters(
 //-----------------------------------------------------
 
 async function addStaffOrCharacterFromJikanData(
-    movieId: string,
+    movieId: ObjectId,
     SemiData: any,
     fullApiData: any,
     type: string,
@@ -339,7 +340,7 @@ async function addStaffOrCharacterFromJikanData(
         if (createStaffResult) {
             const characterName = CrawlerUtils.fixJapaneseCharacter(SemiData.characterName || '');
 
-            const findCredit = credits.find(c => c.movieId === movieId && c.staffId === createStaffResult.id && c.actorPositions[0] === SemiData.positions[0] && (!c.characterName || c.characterName === characterName));
+            const findCredit = credits.find(c => c.movieId.toString() === movieId.toString() && c.staffId === createStaffResult.id && c.actorPositions[0] === SemiData.positions[0] && (!c.characterName || c.characterName === characterName));
             if (findCredit) {
                 findCredit.actorPositions = SemiData.positions;
                 if (!findCredit.characterName) {
@@ -350,7 +351,7 @@ async function addStaffOrCharacterFromJikanData(
                 }
             } else {
                 credits.push({
-                    movieId: movieId,
+                    movieId: movieId.toString(),
                     staffId: createStaffResult.id,
                     characterId: null,
                     actorPositions: SemiData.positions,
@@ -374,14 +375,14 @@ async function addStaffOrCharacterFromJikanData(
         const createCharacterResult = await StaffDB.upsertCharacterDb(name, rawName, data);
         if (createCharacterResult) {
 
-            const findCredit = credits.find(c => c.movieId === movieId && c.characterId === createCharacterResult.id && c.characterName === rawName);
+            const findCredit = credits.find(c => c.movieId.toString() === movieId.toString() && c.characterId === createCharacterResult.id && c.characterName === rawName);
             if (findCredit) {
                 if (!findCredit.characterRole) {
                     findCredit.characterRole = SemiData.role || '';
                 }
             } else {
                 credits.push({
-                    movieId: movieId,
+                    movieId: movieId.toString(),
                     staffId: null,
                     characterId: createCharacterResult.id,
                     actorPositions: [],

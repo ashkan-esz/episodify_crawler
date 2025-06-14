@@ -1,7 +1,7 @@
 import * as dynamicConfig from '@/config/dynamicConfig';
 import { Jikan } from '@/providers';
 import { StaffAndCharacter } from '@/providers';
-import { Crawler as CrawlerDB, ServerAnalysis as ServerAnalysisDB } from '@/repo';
+import { CrawlerRepo, ServerAnalysis as ServerAnalysisDB } from '@/repo';
 import {
     changePageLinkStateFromCrawlerStatus,
     checkForceStopCrawler,
@@ -144,7 +144,7 @@ export default async function save(
                 result.titleModel.downloadTorrentLinks = removeDuplicateElements(downloadTorrentLinks);
                 result.titleModel.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
 
-                const insertedId = await CrawlerDB.insertMovieToDB(result.titleModel);
+                const insertedId = await CrawlerRepo.insertMovieToDB(result.titleModel);
                 if (insertedId) {
                     // TODO : handle
                     // if (result.titleModel.posters.length > 0) {
@@ -174,7 +174,7 @@ export default async function save(
                         return removePageLinkToCrawlerStatus(pageLink);
                     }
                     if (extraConfigs?.castUpdateState !== 'ignore') {
-                        await CrawlerDB.updateMovieByIdDB(insertedId, {
+                        await CrawlerRepo.updateMovieByIdDB(insertedId, {
                             castUpdateDate: new Date(),
                         });
                     }
@@ -329,10 +329,10 @@ async function searchOnCollection(
     }
 
     let reSearch = false;
-    let searchResults = await CrawlerDB.searchTitleDB(titleObj, searchTypes, year, dataConfig);
+    let searchResults = await CrawlerRepo.searchTitleDB(titleObj, searchTypes, year, dataConfig);
     if (searchResults.length === 0 && (searchTypes[0].includes('serial') || searchTypes[0].includes('anime')) && year) {
         reSearch = true;
-        searchResults = await CrawlerDB.searchTitleDB(titleObj, searchTypes, '', dataConfig);
+        searchResults = await CrawlerRepo.searchTitleDB(titleObj, searchTypes, '', dataConfig);
     }
 
     A: for (let i = 0; i < searchTypes.length; i++) {
@@ -583,7 +583,7 @@ async function handleDbUpdate(
             updateFields.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
 
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.updating);
-            await CrawlerDB.updateMovieByIdDB(db_data._id, updateFields);
+            await CrawlerRepo.updateMovieByIdDB(db_data._id, updateFields);
 
             if (updateFields.posters && updateFields.posters.length > 0) {
                 changePageLinkStateFromCrawlerStatus(

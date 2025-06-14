@@ -1,9 +1,8 @@
-import { getSourcesObjDB } from '@/repo/crawler';
+import { SourcesRepo } from '@/repo';
 import {
     resolveCrawlerWarning,
     saveCrawlerWarning,
     saveServerLog,
-    updateSourcesObjDB,
 } from '@/repo/serverAnalysis';
 import * as generic from '@/sources/generic';
 import { checkAndHandleSourceChange } from '@/status/detector';
@@ -34,7 +33,7 @@ export async function crawlerCycle(): Promise<string> {
             //avoid parallel crawling
             await new Promise(resolve => setTimeout(resolve, 60 * 1000));
         }
-        const sourcesObj = await getSourcesObjDB();
+        const sourcesObj = await SourcesRepo.getSourcesObjDB();
         if (!sourcesObj) {
             saveCrawlerWarning(CrawlerErrors.crawler.cycleCancelled);
             return CrawlerErrors.crawler.cycleCancelled;
@@ -138,7 +137,7 @@ export async function crawler(
         const startTime = new Date();
         await updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, isManualStart, crawlMode);
 
-        const sourcesObj = await getSourcesObjDB();
+        const sourcesObj = await SourcesRepo.getSourcesObjDB();
         if (!sourcesObj) {
             await updateCrawlerStatus_crawlerCrashed(CrawlerErrors.crawler.cancelled);
             saveCrawlerWarning(CrawlerErrors.crawler.cancelled);
@@ -199,7 +198,7 @@ export async function crawler(
                     fullyCrawledSources.push(sourcesNames[i]);
                     const now = new Date();
                     sourcesObj[sourcesNames[i]].lastCrawlDate = now;
-                    await updateSourcesObjDB({
+                    await SourcesRepo.updateSourcesObjDB({
                         [sourcesNames[i] + '.lastCrawlDate']: now,
                     });
                 }
@@ -249,7 +248,7 @@ export async function torrentCrawlerSearch(
         const startTime = new Date();
         await updateCrawlerStatus_crawlerStart(startTime, false, isManualStart, 0);
 
-        const sourcesObj = await getSourcesObjDB();
+        const sourcesObj = await SourcesRepo.getSourcesObjDB();
         if (!sourcesObj) {
             await updateCrawlerStatus_crawlerCrashed(CrawlerErrors.crawler.cancelled);
             saveCrawlerWarning(CrawlerErrors.crawler.cancelled);

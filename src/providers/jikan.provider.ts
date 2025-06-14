@@ -1,7 +1,13 @@
 import config from '@/config';
+import { getFixedGenres, getFixedSummary } from '@/extractors';
 import { updateCronJobsStatus } from '@/jobs/job.status';
-import { Crawler as crawlerDB, Movies as moviesDb } from '@/repo';
+import { MediaProvider } from '@/providers/index';
+import * as kitsu from '@/providers/kitsu.provider';
+import { addStaffAndCharacters } from '@/providers/staffAndCharacter';
+import { CrawlerRepo, Movies as moviesDb } from '@/repo';
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
+import { CrawlerErrors } from '@/status/warnings';
+import { S3Storage } from '@/storage';
 import { MovieType, VPNStatus } from '@/types';
 import {
     dataLevelConfig,
@@ -12,24 +18,18 @@ import {
     TitleObj,
 } from '@/types/movie';
 import { Crawler as CrawlerUtils } from '@/utils';
-import { getFixedGenres, getFixedSummary } from '@/extractors';
 import { isValidNumberString } from '@services/crawler/movieTitle';
 import {
     checkNeedTrailerUpload,
     uploadTitlePosterAndAddToTitleModel,
     uploadTitleYoutubeTrailerAndAddToTitleModel,
 } from '@services/crawler/posterAndTrailer';
-import { MediaProvider } from '@/providers/index';
-import * as kitsu from '@/providers/kitsu.provider';
-import { addStaffAndCharacters } from '@/providers/staffAndCharacter';
-import { CrawlerErrors } from '@/status/warnings';
 import { saveError } from '@utils/logger';
 import axios from 'axios';
-import { LRUCache } from 'lru-cache';
-import {S3Storage} from '@/storage';
-import {Crawler as CrawlerDB} from '@/repo';
 // @ts-expect-error ...
 import isEqual from 'lodash.isequal';
+import { LRUCache } from 'lru-cache';
+import { ObjectId } from 'mongodb';
 import PQueue from 'p-queue';
 
 type RateLimitConfig = {
@@ -103,11 +103,14 @@ export class JikanProvider implements MediaProvider {
                 jikanSearchResult.length > 1 &&
                 (
                     jikanSearchResult[0].title ||
-                    (jikanSearchResult[0].titles?.find((t: any) => t.type === 'Default')?.title ?? '')
+                    (jikanSearchResult[0].titles?.find((t: any) => t.type === 'Default')?.title ??
+                        '')
                 ).replace(/the|\(tv\)|\s+/gi, '') ===
                     (
                         jikanSearchResult[1].title ||
-                        (jikanSearchResult[1].titles?.find((t: any) => t.type === 'Default')?.title ?? '')
+                        (jikanSearchResult[1].titles?.find((t: any) => t.type === 'Default')
+                            ?.title ??
+                            '')
                     ).replace(/the|\(tv\)|\s+/gi, '') &&
                 jikanSearchResult[0].type.match(/ova|ona/gi) &&
                 Number(jikanSearchResult[0].episodes) < Number(jikanSearchResult[1].episodes)
@@ -569,7 +572,9 @@ export class JikanProvider implements MediaProvider {
             res.replace('volume', 'vol'),
         );
         apiTitle = apiTitle.replace('(TV)', '').replace(/\s\s+/g, ' ').trim();
-        apiTitle = apiTitle.replace(/(?<=(^|\s))volume \d/i, (res: string) => res.replace('Volume', 'Vol'));
+        apiTitle = apiTitle.replace(/(?<=(^|\s))volume \d/i, (res: string) =>
+            res.replace('Volume', 'Vol'),
+        );
         apiTitleEnglish_simple = apiTitleEnglish_simple
             .replace(/tv/gi, '')
             .replace(/\s\s+/g, ' ')
@@ -606,56 +611,70 @@ export class JikanProvider implements MediaProvider {
     }
 
     async updateJikanData(isJobFunction: boolean = false) {
-
         if (isJobFunction) {
             updateCronJobsStatus('updateJikanData', 'comingSoon');
         }
         // reset temp rank
-        await CrawlerDB.resetTempRank(true);
-        await CrawlerDB.changeMoviesReleaseStateDB('comingSoon', 'comingSoon_temp_anime', ['anime_movie', 'anime_serial']);
-        await this.add_comingSoon_topAiring_Titles('comingSoon', 8, isJobFunction);
-        await CrawlerDB.changeMoviesReleaseStateDB('comingSoon_temp_anime', 'waiting', ['anime_movie', 'anime_serial']);
-        await CrawlerDB.replaceRankWithTempRank('animeTopComingSoon', true);
+        await CrawlerRepo.resetTempRank(true);
+        await CrawlerRepo.changeMoviesReleaseStateDB(
+            MovieReleaseState.COMING_SOON,
+            'comingSoon_temp_anime',
+            [MovieType.ANIME_MOVIE, MovieType.ANIME_SERIAL],
+        );
+        await this.add_comingSoon_topAiring_Titles(MovieReleaseState.COMING_SOON, 8, isJobFunction);
+        await CrawlerRepo.changeMoviesReleaseStateDB(
+            'comingSoon_temp_anime',
+            MovieReleaseState.WAITING,
+            [MovieType.ANIME_MOVIE, MovieType.ANIME_SERIAL],
+        );
+        await CrawlerRepo.replaceRankWithTempRank('animeTopComingSoon', true);
 
         if (isJobFunction) {
             updateCronJobsStatus('updateJikanData', 'topAiring');
         }
         // reset temp rank
-        await CrawlerDB.resetTempRank(true);
+        await CrawlerRepo.resetTempRank(true);
         await this.add_comingSoon_topAiring_Titles('topAiring', 8, isJobFunction);
-        await CrawlerDB.replaceRankWithTempRank('animeTopAiring', true);
+        await CrawlerRepo.replaceRankWithTempRank('animeTopAiring', true);
 
         if (isJobFunction) {
             updateCronJobsStatus('updateJikanData', 'animeSeasonNow');
         }
         // reset temp rank
-        await CrawlerDB.resetTempRank(true);
+        await CrawlerRepo.resetTempRank(true);
         await this.add_comingSoon_topAiring_Titles('animeSeasonNow', 4, isJobFunction);
-        await CrawlerDB.replaceRankWithTempRank('animeSeasonNow', true);
+        await CrawlerRepo.replaceRankWithTempRank('animeSeasonNow', true);
 
         if (isJobFunction) {
             updateCronJobsStatus('updateJikanData', 'animeSeasonUpcoming');
         }
         // reset temp rank
-        await CrawlerDB.resetTempRank(true);
+        await CrawlerRepo.resetTempRank(true);
         await this.add_comingSoon_topAiring_Titles('animeSeasonUpcoming', 4, isJobFunction);
-        await CrawlerDB.replaceRankWithTempRank('animeSeasonUpcoming', true);
+        await CrawlerRepo.replaceRankWithTempRank('animeSeasonUpcoming', true);
     }
 
     private async add_comingSoon_topAiring_Titles(
         mode: string,
         numberOfPage: number,
-        isJobFunction: boolean): Promise<void> {
-        const updatePromiseQueue = new PQueue({concurrency: 25});
-        const insertPromiseQueue = new PQueue({concurrency: 5});
+        isJobFunction: boolean,
+    ): Promise<void> {
+        const updatePromiseQueue = new PQueue({ concurrency: 25 });
+        const insertPromiseQueue = new PQueue({ concurrency: 5 });
 
         let intervalId = null;
         let page = 1;
         if (isJobFunction) {
             intervalId = setInterval(() => {
-                updateCronJobsStatus('updateJikanData', `Mode: ${mode}, page: ${page}/${numberOfPage},
+                updateCronJobsStatus(
+                    'updateJikanData',
+                    `Mode: ${mode}, page: ${page}/${numberOfPage},
             insert remained: ${insertPromiseQueue.size + insertPromiseQueue.pending}(-${insertPromiseQueue.pending}),
-            update remained: ${updatePromiseQueue.size + updatePromiseQueue.pending}(-${updatePromiseQueue.pending})`.replace(/([\n\t]+)|\s+/g, " "));
+            update remained: ${updatePromiseQueue.size + updatePromiseQueue.pending}(-${updatePromiseQueue.pending})`.replace(
+                        /([\n\t]+)|\s+/g,
+                        ' ',
+                    ),
+                );
             }, 1000);
         }
 
@@ -681,7 +700,11 @@ export class JikanProvider implements MediaProvider {
             let comingSoon_topAiring_titles = apiData.data;
             const uniqueTitles: any = [];
             for (let i = 0; i < comingSoon_topAiring_titles.length; i++) {
-                if (!uniqueTitles.find((t: any) => t.mal_id === comingSoon_topAiring_titles[i].mal_id)) {
+                if (
+                    !uniqueTitles.find(
+                        (t: any) => t.mal_id === comingSoon_topAiring_titles[i].mal_id,
+                    )
+                ) {
                     uniqueTitles.push(comingSoon_topAiring_titles[i]);
                 }
             }
@@ -689,21 +712,37 @@ export class JikanProvider implements MediaProvider {
 
             for (let i = 0; i < comingSoon_topAiring_titles.length; i++) {
                 rank++;
-                const titleDataFromDB = await CrawlerDB.searchOnMovieCollectionDB({"apiIds.jikanID": comingSoon_topAiring_titles[i].mal_id}, {
-                    ...dataLevelConfig['medium'],
-                    apiIds: 1,
-                    castUpdateDate: 1,
-                    endYear: 1,
-                    poster_s3: 1,
-                    poster_wide_s3: 1,
-                    trailer_s3: 1,
-                });
+                const titleDataFromDB = await CrawlerRepo.searchOnMovieCollectionDB(
+                    { 'apiIds.jikanID': comingSoon_topAiring_titles[i].mal_id },
+                    {
+                        ...dataLevelConfig['medium'],
+                        apiIds: 1,
+                        castUpdateDate: 1,
+                        endYear: 1,
+                        poster_s3: 1,
+                        poster_wide_s3: 1,
+                        trailer_s3: 1,
+                    },
+                );
                 if (titleDataFromDB) {
                     const saveRank = rank;
-                    updatePromiseQueue.add(() => this.update_comingSoon_topAiring_Title(titleDataFromDB, comingSoon_topAiring_titles[i], mode, saveRank));
+                    updatePromiseQueue.add(() =>
+                        this.update_comingSoon_topAiring_Title(
+                            titleDataFromDB,
+                            comingSoon_topAiring_titles[i],
+                            mode,
+                            saveRank,
+                        ),
+                    );
                 } else {
                     const saveRank = rank;
-                    insertPromiseQueue.add(() => this.insert_comingSoon_topAiring_Title(comingSoon_topAiring_titles[i], mode, saveRank));
+                    insertPromiseQueue.add(() =>
+                        this.insert_comingSoon_topAiring_Title(
+                            comingSoon_topAiring_titles[i],
+                            mode,
+                            saveRank,
+                        ),
+                    );
                 }
             }
 
@@ -724,12 +763,16 @@ export class JikanProvider implements MediaProvider {
         semiJikanData: any,
         mode: string,
         rank: number,
-        ): Promise<void> {
+    ): Promise<void> {
         try {
             const updateFields: any = {};
 
             if (mode === 'comingSoon' || mode === 'animeSeasonUpcoming') {
-                if (titleDataFromDB.releaseState !== "done" && titleDataFromDB.releaseState !== 'comingSoon' && titleDataFromDB.releaseState !== 'waiting') {
+                if (
+                    titleDataFromDB.releaseState !== 'done' &&
+                    titleDataFromDB.releaseState !== 'comingSoon' &&
+                    titleDataFromDB.releaseState !== 'waiting'
+                ) {
                     updateFields.releaseState = 'comingSoon';
                 }
             } else {
@@ -743,11 +786,17 @@ export class JikanProvider implements MediaProvider {
             let jikanApiFields = null;
             if (titleDataFromDB.castUpdateDate !== null) {
                 const titles = this.getTitlesFromData(semiJikanData);
-                jikanApiFields = this.getApiFields(this.getModifiedJikanApiData(titles, semiJikanData));
+                jikanApiFields = this.getApiFields(
+                    this.getModifiedJikanApiData(titles, semiJikanData),
+                );
             } else {
                 //need related titles, doesnt exist in semiJikanData
-                const type = semiJikanData.type === 'Movie' ? MovieType.ANIME_MOVIE : MovieType.ANIME_SERIAL;
-                const temp = (semiJikanData.title || (semiJikanData?.titles?.find((t: any) => t.type === 'Default')?.title ?? '')).toLowerCase()
+                const type =
+                    semiJikanData.type === 'Movie' ? MovieType.ANIME_MOVIE : MovieType.ANIME_SERIAL;
+                const temp = (
+                    semiJikanData.title ||
+                    (semiJikanData?.titles?.find((t: any) => t.type === 'Default')?.title ?? '')
+                ).toLowerCase();
                 const title = CrawlerUtils.replaceSpecialCharacters(temp);
                 const jikanData = await this.getApiData(
                     title,
@@ -757,7 +806,7 @@ export class JikanProvider implements MediaProvider {
                     '',
                     type,
                     // true,
-                    );
+                );
                 if (jikanData) {
                     jikanApiFields = this.getApiFields(jikanData);
                 }
@@ -766,8 +815,10 @@ export class JikanProvider implements MediaProvider {
             if (jikanApiFields) {
                 const keys1 = Object.keys(jikanApiFields.updateFields);
                 for (let i = 0; i < keys1.length; i++) {
-                    // @ts-expect-error ...
-                    if (!isEqual(titleDataFromDB[keys1[i]], jikanApiFields.updateFields[keys1[i]])) {
+                    if (
+                        // @ts-expect-error ...
+                        !isEqual(titleDataFromDB[keys1[i]], jikanApiFields.updateFields[keys1[i]])
+                    ) {
                         // @ts-expect-error ...
                         updateFields[keys1[i]] = jikanApiFields.updateFields[keys1[i]];
                     }
@@ -793,20 +844,37 @@ export class JikanProvider implements MediaProvider {
                 }
 
                 jikanApiFields.summary_en = jikanApiFields.summary_en.replace(/([.…])+$/, '');
-                if (titleDataFromDB.summary.english !== jikanApiFields.summary_en && jikanApiFields.summary_en) {
+                if (
+                    titleDataFromDB.summary.english !== jikanApiFields.summary_en &&
+                    jikanApiFields.summary_en
+                ) {
                     titleDataFromDB.summary.english = jikanApiFields.summary_en;
                     titleDataFromDB.summary.english_source = 'jikan';
                     updateFields.summary = titleDataFromDB.summary;
                 }
 
-                await this.handleAnimeRelatedTitles(titleDataFromDB._id, jikanApiFields.jikanRelatedTitles);
+                if (titleDataFromDB._id) {
+                    await this.handleAnimeRelatedTitles(
+                        titleDataFromDB._id,
+                        jikanApiFields.jikanRelatedTitles,
+                    );
+                }
             }
 
             const imageUrl = this.getImageUrl(semiJikanData);
             if (imageUrl && titleDataFromDB.posters.length === 0) {
                 await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, imageUrl, updateFields);
-            } else if (imageUrl && titleDataFromDB.posters.length === 1 && (!titleDataFromDB.poster_s3 || titleDataFromDB.poster_s3.originalUrl !== imageUrl)) {
-                await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, imageUrl, updateFields, true);
+            } else if (
+                imageUrl &&
+                titleDataFromDB.posters.length === 1 &&
+                (!titleDataFromDB.poster_s3 || titleDataFromDB.poster_s3.originalUrl !== imageUrl)
+            ) {
+                await uploadTitlePosterAndAddToTitleModel(
+                    titleDataFromDB,
+                    imageUrl,
+                    updateFields,
+                    true,
+                );
             }
 
             if (titleDataFromDB.poster_wide_s3 === null) {
@@ -817,11 +885,19 @@ export class JikanProvider implements MediaProvider {
                     [],
                     titleDataFromDB.apiIds.kitsuID,
                     titleDataFromDB.year,
-                    titleDataFromDB.type);
+                    titleDataFromDB.type,
+                );
                 if (kitsuApiData) {
                     const kitsuApiFields = KITSU.getApiFields(kitsuApiData);
                     if (kitsuApiFields && kitsuApiFields.kitsuPosterCover) {
-                        const s3WidePoster = await S3Storage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, kitsuApiFields.kitsuPosterCover, false, true);
+                        const s3WidePoster = await S3Storage.uploadTitlePosterToS3(
+                            titleDataFromDB.title,
+                            titleDataFromDB.type,
+                            titleDataFromDB.year,
+                            kitsuApiFields.kitsuPosterCover,
+                            false,
+                            true,
+                        );
                         if (s3WidePoster) {
                             titleDataFromDB.poster_wide_s3 = s3WidePoster;
                             updateFields.poster_wide_s3 = s3WidePoster;
@@ -831,7 +907,12 @@ export class JikanProvider implements MediaProvider {
             }
 
             if (checkNeedTrailerUpload(titleDataFromDB.trailer_s3, titleDataFromDB.trailers)) {
-                await uploadTitleYoutubeTrailerAndAddToTitleModel("", titleDataFromDB, semiJikanData.trailer.url, updateFields);
+                await uploadTitleYoutubeTrailerAndAddToTitleModel(
+                    '',
+                    titleDataFromDB,
+                    semiJikanData.trailer.url,
+                    updateFields,
+                );
             }
 
             if (titleDataFromDB.castUpdateDate === null) {
@@ -840,11 +921,20 @@ export class JikanProvider implements MediaProvider {
                         jikanID: titleDataFromDB.apiIds.jikanID,
                     },
                 };
-                await addStaffAndCharacters("", titleDataFromDB._id, allApiData, titleDataFromDB.castUpdateDate);
-                updateFields.castUpdateDate = new Date();
+                if (titleDataFromDB._id) {
+                    await addStaffAndCharacters(
+                        '',
+                        titleDataFromDB._id,
+                        allApiData,
+                        titleDataFromDB.castUpdateDate,
+                    );
+                    updateFields.castUpdateDate = new Date();
+                }
             }
 
-            await CrawlerDB.updateMovieByIdDB(titleDataFromDB._id, updateFields);
+            if (titleDataFromDB._id) {
+                await CrawlerRepo.updateMovieByIdDB(titleDataFromDB._id, updateFields);
+            }
         } catch (error) {
             saveError(error);
         }
@@ -957,7 +1047,7 @@ export class JikanProvider implements MediaProvider {
                 }
             }
 
-            const insertedId = await CrawlerDB.insertMovieToDB(titleModel);
+            const insertedId = await CrawlerRepo.insertMovieToDB(titleModel);
 
             if (insertedId && jikanApiFields) {
                 const allApiData = {
@@ -965,7 +1055,7 @@ export class JikanProvider implements MediaProvider {
                 };
                 await this.handleAnimeRelatedTitles(insertedId, jikanApiFields.jikanRelatedTitles);
                 await addStaffAndCharacters('', insertedId, allApiData, titleModel.castUpdateDate);
-                await CrawlerDB.updateMovieByIdDB(insertedId, {
+                await CrawlerRepo.updateMovieByIdDB(insertedId, {
                     castUpdateDate: new Date(),
                 });
             }
@@ -974,15 +1064,19 @@ export class JikanProvider implements MediaProvider {
         return 'ok';
     }
 
-    async handleAnimeRelatedTitles(titleId: string, jikanRelatedTitles: any[]): Promise<void> {
+    async handleAnimeRelatedTitles(titleId: ObjectId | undefined, jikanRelatedTitles: any[]): Promise<void> {
         try {
+            if (!titleId) {
+                return;
+            }
+
             for (let i = 0; i < jikanRelatedTitles.length; i++) {
-                const searchResult = await crawlerDB.searchOnMovieCollectionDB(
+                const searchResult = await CrawlerRepo.searchOnMovieCollectionDB(
                     { 'apiIds.jikanID': jikanRelatedTitles[i].jikanID },
                     { _id: 1 },
                 );
 
-                if (searchResult) {
+                if (searchResult && searchResult._id) {
                     await moviesDb.addRelatedMovies(
                         searchResult._id,
                         titleId,

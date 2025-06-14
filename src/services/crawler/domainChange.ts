@@ -1,8 +1,9 @@
 import {
     resolveCrawlerWarning,
     saveCrawlerWarning,
-    saveServerLog, updateSourcesObjDB,
+    saveServerLog,
 } from '@/repo/serverAnalysis';
+import { SourcesRepo } from '@/repo';
 import * as generic from '@/sources/generic';
 import {
     changeDomainChangeHandlerState,
@@ -269,7 +270,7 @@ async function updateDownloadLinks(
                     }
                     sourcesObj[sourceName].lastDomainChangeDate = new Date();
                     updateSourceField[sourceName] = sourcesObj[sourceName];
-                    await updateSourcesObjDB(updateSourceField);
+                    await SourcesRepo.updateSourcesObjDB(updateSourceField);
                 }
             }
             changedSources[i].crawled = true;

@@ -10,6 +10,7 @@ import { MovieType, SourceVpnStatus, VPNStatus } from '@/types/source';
 import { groupSubtitles } from '@services/crawler/subtitle';
 import { GroupedSubtitle, Subtitle } from '@/types/subtitle';
 import { getLatestData } from '@services/crawler/latestData';
+import type {ObjectId} from "mongodb";
 
 
 export enum MovieReleaseState {
@@ -108,7 +109,7 @@ export type MovieRates = {
 };
 
 export type Movie = {
-    _id: string;
+    _id: ObjectId | undefined;
     releaseState: MovieReleaseState;
     rank: MovieRank;
     title: string;
@@ -214,7 +215,7 @@ export function getMovieModel(
     );
 
     return {
-        _id: '',
+        _id: undefined,
         releaseState: MovieReleaseState.DONE,
         rank: {
             animeTopComingSoon: -1,

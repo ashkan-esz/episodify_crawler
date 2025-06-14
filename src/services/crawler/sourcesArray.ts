@@ -112,7 +112,6 @@ export function sourcesOb(): any {
         lastCrawlDate: new Date(0),
         lastDomainChangeDate: new Date(0),
         lastConfigUpdateDate: new Date(0),
-        userData: null,
         description: '',
         status: {
             notRespondingFrom: 0,
