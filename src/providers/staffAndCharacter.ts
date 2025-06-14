@@ -12,7 +12,7 @@ import {
 import { saveError } from '@utils/logger';
 import { ObjectId } from 'mongodb';
 import PQueue from 'p-queue';
-import { StaffDB } from '@/repo';
+import { StaffRepo } from '@/repo';
 import { Crawler as CrawlerUtils } from '@/utils';
 import {S3Storage} from '@/storage'
 
@@ -113,8 +113,12 @@ async function addTvMazeActorsAndCharacters(
         const name = CrawlerUtils.replaceSpecialCharacters(rawName.toLowerCase());
         const gender = tvmazeCast[i].person.gender?.toLowerCase() || '';
         const staffData = {
-            gender: gender, tvmazePersonID: tvmazeCast[i].person.id,
-            country: countryName, birthday: birthday, deathday: deathday, age: age,
+            gender: gender,
+            tvmazePersonID: tvmazeCast[i].person.id,
+            country: countryName,
+            birthday: birthday,
+            deathday: deathday,
+            age: age,
             originalImages: originalImages,
         };
         const keys = Object.keys(staffData);
@@ -125,7 +129,7 @@ async function addTvMazeActorsAndCharacters(
                 delete staffData[keys[j]];
             }
         }
-        const createStaffResult = await StaffDB.upsertStaffDb(name, rawName, staffData);
+        const createStaffResult = await StaffRepo.upsertStaff(name, rawName, staffData);
         if (createStaffResult) {
             const characterName = CrawlerUtils.fixJapaneseCharacter(tvmazeCast[i].character.name);
             credits.push({
@@ -139,7 +143,7 @@ async function addTvMazeActorsAndCharacters(
             if (!createStaffResult.imageData) {
                 const castImage = await S3Storage.uploadCastImageToS3ByURl(name, 'staff', createStaffResult.id, originalImages[0]);
                 if (castImage) {
-                    const res = await StaffDB.addCastImageDb(createStaffResult.id, 'staff', castImage);
+                    const res = await StaffRepo.addCastImage(createStaffResult.id, 'staff', castImage);
                     if (res && res.blurHash === "") {
                         // TODO : implement
                         // await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.staff, createStaffResult.id, castImage.url)
@@ -161,7 +165,7 @@ async function addTvMazeActorsAndCharacters(
             tvmazePersonID: tvmazeCast[i].character.id,
             originalImages: originalImages,
         };
-        const createCharacterResult = await StaffDB.upsertCharacterDb(name, rawName, characterData);
+        const createCharacterResult = await StaffRepo.upsertCharacter(name, rawName, characterData);
         if (createCharacterResult) {
             credits.push({
                 movieId: movieId.toString(),
@@ -174,7 +178,7 @@ async function addTvMazeActorsAndCharacters(
             if (!createCharacterResult.imageData) {
                 const castImage = await S3Storage.uploadCastImageToS3ByURl(name, 'character', createCharacterResult.id, originalImages[0]);
                 if (castImage) {
-                    const res = await StaffDB.addCastImageDb(createCharacterResult.id, 'character', castImage);
+                    const res = await StaffRepo.addCastImage(createCharacterResult.id, 'character', castImage);
                     if (res && res.blurHash === "") {
                         // TODO : implement
                         // await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.character, createCharacterResult.id, castImage.url)
@@ -336,7 +340,7 @@ async function addStaffOrCharacterFromJikanData(
     }
 
     if (type === 'staff') {
-        const createStaffResult = await StaffDB.upsertStaffDb(name, rawName, data);
+        const createStaffResult = await StaffRepo.upsertStaff(name, rawName, data);
         if (createStaffResult) {
             const characterName = CrawlerUtils.fixJapaneseCharacter(SemiData.characterName || '');
 
@@ -363,7 +367,7 @@ async function addStaffOrCharacterFromJikanData(
             if (!createStaffResult.imageData) {
                 const castImage = await S3Storage.uploadCastImageToS3ByURl(name, 'staff', createStaffResult.id, originalImages[0]);
                 if (castImage) {
-                    const res = await StaffDB.addCastImageDb(createStaffResult.id, 'staff', castImage);
+                    const res = await StaffRepo.addCastImage(createStaffResult.id, 'staff', castImage);
                     if (res && res.blurHash === "") {
                         // TODO : implement
                         // await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.staff, createStaffResult.id, castImage.url)
@@ -372,7 +376,7 @@ async function addStaffOrCharacterFromJikanData(
             }
         }
     } else {
-        const createCharacterResult = await StaffDB.upsertCharacterDb(name, rawName, data);
+        const createCharacterResult = await StaffRepo.upsertCharacter(name, rawName, data);
         if (createCharacterResult) {
 
             const findCredit = credits.find(c => c.movieId.toString() === movieId.toString() && c.characterId === createCharacterResult.id && c.characterName === rawName);
@@ -394,7 +398,7 @@ async function addStaffOrCharacterFromJikanData(
             if (!createCharacterResult.imageData) {
                 const castImage = await S3Storage.uploadCastImageToS3ByURl(name, 'staff', createCharacterResult.id, originalImages[0]);
                 if (castImage) {
-                    const res = await StaffDB.addCastImageDb(createCharacterResult.id, 'character', castImage);
+                    const res = await StaffRepo.addCastImage(createCharacterResult.id, 'character', castImage);
                     if (res && res.blurHash === "") {
                         // TODO : implement
                         // await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.character, createCharacterResult.id, castImage.url)
@@ -426,7 +430,7 @@ async function handleCredits(credits: Credit[]): Promise<void> {
 
         const promiseQueue = new PQueue({concurrency: 30});
         for (let j = 0; j < result.length; j++) {
-            promiseQueue.add(() => StaffDB.insertOrUpdateCredit(result[j].movieId, result[j].staffId, result[j].characterId, result[j].actorPositions, result[j].characterRole));
+            promiseQueue.add(() => StaffRepo.insertOrUpdateCredit(result[j].movieId, result[j].staffId, result[j].characterId, result[j].actorPositions, result[j].characterRole));
         }
         await promiseQueue.onIdle();
     } catch (error) {

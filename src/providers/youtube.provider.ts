@@ -5,7 +5,8 @@ import { youtube, youtube_v3 } from '@googleapis/youtube';
 
 export async function getTrailer(title: string, year: string): Promise<string | null> {
     try {
-        const searchResult = (await youtube('v3').search.list({
+        const searchResult = ( youtube('v3').search.list({
+            // @ts-expect-error ...
             auth: config.API_KEYS.googleApiKey,
             maxResults: 10,
             part: 'snippet',

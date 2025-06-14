@@ -249,7 +249,7 @@ export class TVMazeProvider implements MediaProvider {
                 }
             }
         }
-        saveCrawlerWarning(CrawlerErrors.api.tvmaze.lotsOfApiCall);
+        ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.api.tvmaze.lotsOfApiCall);
         return null;
     }
 

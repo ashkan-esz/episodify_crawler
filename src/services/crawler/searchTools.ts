@@ -559,7 +559,7 @@ async function getLinks(
                 }
 
                 if (error.message === 'timeout of 10000ms exceeded') {
-                    saveCrawlerWarning(
+                    ServerAnalysisRepo.saveCrawlerWarning(
                         CrawlerErrors.axios.timeoutError('10s', config.sourceName),
                     );
                     if (pageType === PageType.MainPage && retryCounter < 2) {
@@ -574,7 +574,7 @@ async function getLinks(
                         );
                     }
                 } else if (error.message === 'timeout of 15000ms exceeded') {
-                    saveCrawlerWarning(
+                    ServerAnalysisRepo.saveCrawlerWarning(
                         CrawlerErrors.axios.timeoutError('15s', config.sourceName),
                     );
                     if (pageType === PageType.MainPage && retryCounter < 2) {
@@ -589,7 +589,7 @@ async function getLinks(
                         );
                     }
                 } else if (error.message === 'aborted') {
-                    saveCrawlerWarning(CrawlerErrors.axios.abortError(config.sourceName));
+                    ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.axios.abortError(config.sourceName));
                     if (pageType === PageType.MainPage && retryCounter < 2) {
                         retryCounter++;
                         return await getLinks(
@@ -602,9 +602,9 @@ async function getLinks(
                         );
                     }
                 } else if (error.code === 'EAI_AGAIN') {
-                    saveCrawlerWarning(CrawlerErrors.axios.eaiError(config.sourceName));
+                    ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.axios.eaiError(config.sourceName));
                 } else if (error.message === 'Request failed with status code 403') {
-                    saveCrawlerWarning(
+                    ServerAnalysisRepo.saveCrawlerWarning(
                         CrawlerErrors.source.axios403(config.sourceName),
                     );
                 } else {

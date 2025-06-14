@@ -4,7 +4,7 @@ import { updateCronJobsStatus } from '@/jobs/job.status';
 import { MediaProvider } from '@/providers/index';
 import * as kitsu from '@/providers/kitsu.provider';
 import { addStaffAndCharacters } from '@/providers/staffAndCharacter';
-import { CrawlerRepo, Movies as moviesDb } from '@/repo';
+import { CrawlerRepo, MovieRepo } from '@/repo';
 import { ServerAnalysisRepo } from '@/repo';
 import { CrawlerErrors } from '@/status/warnings';
 import { S3Storage } from '@/storage';
@@ -1076,11 +1076,13 @@ export class JikanProvider implements MediaProvider {
                     { _id: 1 },
                 );
 
+                const relation = jikanRelatedTitles[i].relation.toLowerCase().replace(/[-\s]/g, '_');
+
                 if (searchResult && searchResult._id) {
-                    await moviesDb.addRelatedMovies(
+                    await MovieRepo.addRelatedMovies(
                         searchResult._id,
                         titleId,
-                        jikanRelatedTitles[i].relation,
+                        relation,
                     );
                 }
             }

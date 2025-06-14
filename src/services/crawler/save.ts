@@ -18,12 +18,7 @@ import {
     SourceVpnStatus,
     VPNStatus,
 } from '@/types';
-import {
-    getMovieModel,
-    Movie,
-    MovieReleaseState,
-    TitleObj,
-} from '@/types/movie';
+import { getMovieModel, Movie, MovieReleaseState, TitleObj } from '@/types/movie';
 import { GroupedSubtitle } from '@/types/subtitle';
 import { LinkUtils } from '@/utils';
 import { saveError } from '@/utils/logger';
@@ -33,10 +28,7 @@ import {
     TorrentDownloaderDisabledState,
 } from '@config/dynamicConfig';
 import { handleLatestDataUpdate } from '@services/crawler/latestData';
-import {
-    checkNeedTrailerUpload,
-    handleSubUpdates,
-} from '@services/crawler/posterAndTrailer';
+import { checkNeedTrailerUpload, handleSubUpdates } from '@services/crawler/posterAndTrailer';
 import { addApiData, apiDataUpdate } from '@services/crawler/providersManager';
 import {
     getSeasonEpisode,
@@ -57,7 +49,6 @@ import { handleSubtitlesUpdate } from './subtitle';
 import { getLinksDoesntMatchLinkRegex } from '@/extractors/downloadLinks';
 import { checkCrawledDataForChanges } from '@/status/detector';
 import { pauseCrawler } from '@/status/controller';
-
 
 export default async function save(
     extractedData: SourceExtractedData,
@@ -87,13 +78,26 @@ export default async function save(
         if (pageNumber === 1) {
             badLinks = getLinksDoesntMatchLinkRegex(downloadLinks, type);
             if (badLinks.length > 0) {
-                await ServerAnalysisRepo.saveCrawlerBadLink(sourceConfig.config.sourceName, pageLink, badLinks.slice(0, 10));
-                await ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.crawler.crawlerBadLink(sourceConfig.config.sourceName));
+                await ServerAnalysisRepo.saveCrawlerBadLink(
+                    sourceConfig.config.sourceName,
+                    pageLink,
+                    badLinks.slice(0, 10),
+                );
+                await ServerAnalysisRepo.saveCrawlerWarning(
+                    CrawlerErrors.crawler.crawlerBadLink(sourceConfig.config.sourceName),
+                );
             }
         }
 
         if (!sourceConfig.config.isTorrent) {
-            checkCrawledDataForChanges(sourceConfig, pageLink, downloadLinks, badLinks, poster, persianSummary);
+            checkCrawledDataForChanges(
+                sourceConfig,
+                pageLink,
+                downloadLinks,
+                badLinks,
+                poster,
+                persianSummary,
+            );
         }
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
@@ -103,24 +107,49 @@ export default async function save(
             return removePageLinkToCrawlerStatus(pageLink);
         }
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.addFileSize);
-        await addFileSizeToDownloadLinks(type, downloadLinks, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus);
+        await addFileSizeToDownloadLinks(
+            type,
+            downloadLinks,
+            sourceConfig.config.sourceName,
+            sourceConfig.config.vpnStatus,
+        );
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.checkingDB);
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }
 
-        const findTitle = titlesAndYears.find(t => t.title === title);
+        const findTitle = titlesAndYears.find((t) => t.title === title);
         if (findTitle) {
             year = findTitle.year;
         }
 
-        const {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks, torrentLinks);
+        const { titleObj, db_data } = await getTitleObjAndDbData(
+            title,
+            year,
+            type,
+            downloadLinks,
+            torrentLinks,
+        );
 
-        const titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, torrentLinks,
-            sourceConfig.config.sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceConfig.config.vpnStatus);
+        const titleModel = getMovieModel(
+            titleObj,
+            pageLink,
+            type,
+            downloadLinks,
+            torrentLinks,
+            sourceConfig.config.sourceName,
+            year,
+            poster,
+            persianSummary,
+            trailers,
+            watchOnlineLinks,
+            subtitles,
+            sourceConfig.config.vpnStatus,
+        );
 
-        if (db_data === null) {//new title
+        if (db_data === null) {
+            //new title
             if (downloadLinks.length > 0 || torrentLinks.length > 0) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
                 await pauseCrawler();
@@ -128,20 +157,39 @@ export default async function save(
                 if (checkForceStopCrawler()) {
                     return removePageLinkToCrawlerStatus(pageLink);
                 }
-                const result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, torrentLinks, sourceConfig.config.sourceName, pageLink, rating, extraConfigs);
+                const result = await addApiData(
+                    titleModel,
+                    downloadLinks,
+                    watchOnlineLinks,
+                    torrentLinks,
+                    sourceConfig.config.sourceName,
+                    pageLink,
+                    rating,
+                    extraConfigs,
+                );
                 if (checkForceStopCrawler()) {
                     return removePageLinkToCrawlerStatus(pageLink);
                 }
                 if (result.titleModel.type.includes('movie')) {
-                    result.titleModel.qualities = LinkUtils.groupMovieLinks(downloadLinks, watchOnlineLinks, torrentLinks);
+                    result.titleModel.qualities = LinkUtils.groupMovieLinks(
+                        downloadLinks,
+                        watchOnlineLinks,
+                        torrentLinks,
+                    );
                 }
-                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.inserting);
+                changePageLinkStateFromCrawlerStatus(
+                    pageLink,
+                    linkStateMessages.newTitle.inserting,
+                );
 
-                const {
-                    downloadTorrentLinks,
-                    removeTorrentLinks
-                } = await checkTorrentAutoDownloaderMustRun(result.titleModel, sourceConfig.config.sourceName, true);
-                result.titleModel.downloadTorrentLinks = removeDuplicateElements(downloadTorrentLinks);
+                const { downloadTorrentLinks, removeTorrentLinks } =
+                    await checkTorrentAutoDownloaderMustRun(
+                        result.titleModel,
+                        sourceConfig.config.sourceName,
+                        true,
+                    );
+                result.titleModel.downloadTorrentLinks =
+                    removeDuplicateElements(downloadTorrentLinks);
                 result.titleModel.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
 
                 const insertedId = await CrawlerRepo.insertMovieToDB(result.titleModel);
@@ -158,8 +206,14 @@ export default async function save(
                     // }
 
                     if (type.includes('anime') && result.allApiData.jikanApiFields) {
-                        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingRelatedTitles);
-                        await Jikan.handleAnimeRelatedTitles(insertedId, result.allApiData.jikanApiFields.jikanRelatedTitles);
+                        changePageLinkStateFromCrawlerStatus(
+                            pageLink,
+                            linkStateMessages.newTitle.addingRelatedTitles,
+                        );
+                        await Jikan.handleAnimeRelatedTitles(
+                            insertedId,
+                            result.allApiData.jikanApiFields.jikanRelatedTitles,
+                        );
                     }
 
                     // TODO : handle
@@ -168,8 +222,17 @@ export default async function save(
                     if (checkForceStopCrawler()) {
                         return removePageLinkToCrawlerStatus(pageLink);
                     }
-                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingCast);
-                    await StaffAndCharacter.addStaffAndCharacters(pageLink, insertedId, result.allApiData, titleModel.castUpdateDate, extraConfigs);
+                    changePageLinkStateFromCrawlerStatus(
+                        pageLink,
+                        linkStateMessages.newTitle.addingCast,
+                    );
+                    await StaffAndCharacter.addStaffAndCharacters(
+                        pageLink,
+                        insertedId,
+                        result.allApiData,
+                        titleModel.castUpdateDate,
+                        extraConfigs,
+                    );
                     if (checkForceStopCrawler()) {
                         return removePageLinkToCrawlerStatus(pageLink);
                     }
@@ -190,12 +253,42 @@ export default async function save(
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }
-        const apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, torrentLinks, type, poster, sourceConfig.config.sourceName, pageLink, rating, extraConfigs);
+        const apiData = await apiDataUpdate(
+            db_data,
+            downloadLinks,
+            watchOnlineLinks,
+            torrentLinks,
+            type,
+            poster,
+            sourceConfig.config.sourceName,
+            pageLink,
+            rating,
+            extraConfigs,
+        );
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }
-        const subUpdates = await handleSubUpdates(db_data, poster, trailers, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus);
-        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.config.sourceName, downloadLinks, watchOnlineLinks, torrentLinks, titleModel.subtitles, type, apiData, pageLink, extraConfigs);
+        const subUpdates = await handleSubUpdates(
+            db_data,
+            poster,
+            trailers,
+            sourceConfig.config.sourceName,
+            sourceConfig.config.vpnStatus,
+        );
+        await handleDbUpdate(
+            db_data,
+            persianSummary,
+            subUpdates,
+            sourceConfig.config.sourceName,
+            downloadLinks,
+            watchOnlineLinks,
+            torrentLinks,
+            titleModel.subtitles,
+            type,
+            apiData,
+            pageLink,
+            extraConfigs,
+        );
         removePageLinkToCrawlerStatus(pageLink);
     } catch (error) {
         await saveError(error);
@@ -209,8 +302,7 @@ async function getTitleObjAndDbData(
     type: MovieType,
     siteDownloadLinks: DownloadLink[],
     torrentLinks: DownloadLink[],
-    ): Promise<{titleObj: TitleObj, db_data: Movie | null}> {
-
+): Promise<{ titleObj: TitleObj; db_data: Movie | null }> {
     title = fixTitle(title);
     let titleObj = await getTitleObj(title, year, type, false);
     let db_data = await searchOnCollection(titleObj, year, type);
@@ -221,19 +313,22 @@ async function getTitleObjAndDbData(
             alternateTitles: db_data.alternateTitles,
             titleSynonyms: db_data.titleSynonyms,
             jikanID: db_data.apiIds.jikanID,
-        }
-    } else if (type.includes('anime') && (siteDownloadLinks.length > 0 || torrentLinks.length > 0)) {
+        };
+    } else if (
+        type.includes('anime') &&
+        (siteDownloadLinks.length > 0 || torrentLinks.length > 0)
+    ) {
         titleObj = await getTitleObj(title, year, type, true);
         db_data = await searchOnCollection(titleObj, year, type);
     }
-    return {titleObj, db_data};
+    return { titleObj, db_data };
 }
 
 function fixTitle(title: string): string {
     if (title === 'go toubun no hanayome' || title === 'gotoubun no hanayome') {
         title = '5 toubun no hanayome';
-    } else if (title === "mushoku tensei") {
-        title = "mushoku tensei: jobless reincarnation"
+    } else if (title === 'mushoku tensei') {
+        title = 'mushoku tensei: jobless reincarnation';
     }
     return title;
 }
@@ -243,25 +338,21 @@ async function getTitleObj(
     year: string,
     type: MovieType,
     useJikanApi: boolean,
-    ): Promise<TitleObj> {
-    const rawTitle = title.split(' ').map(value => value.charAt(0).toUpperCase() + value.slice(1)).join(' ');
+): Promise<TitleObj> {
+    const rawTitle = title
+        .split(' ')
+        .map((value) => value.charAt(0).toUpperCase() + value.slice(1))
+        .join(' ');
     let titleObj = {
         title: title,
         rawTitle: rawTitle,
         alternateTitles: [],
         titleSynonyms: [],
         jikanID: 0,
-    }
+    };
 
     if (useJikanApi) {
-        const jikanApiData = await Jikan.getApiData(
-            titleObj.title,
-            [],
-            [],
-            0,
-            year,
-            type,
-            );
+        const jikanApiData = await Jikan.getApiData(titleObj.title, [], [], 0, year, type);
         if (jikanApiData) {
             titleObj = jikanApiData.titleObj;
             titleObj.jikanID = jikanApiData.mal_id;
@@ -275,8 +366,7 @@ async function searchOnCollection(
     titleObj: TitleObj,
     year: string,
     type: MovieType,
-    ): Promise<Movie | null> {
-
+): Promise<Movie | null> {
     let db_data = null;
     const dataConfig = {
         releaseState: 1,
@@ -330,7 +420,11 @@ async function searchOnCollection(
 
     let reSearch = false;
     let searchResults = await CrawlerRepo.searchTitleDB(titleObj, searchTypes, year, dataConfig);
-    if (searchResults.length === 0 && (searchTypes[0].includes('serial') || searchTypes[0].includes('anime')) && year) {
+    if (
+        searchResults.length === 0 &&
+        (searchTypes[0].includes('serial') || searchTypes[0].includes('anime')) &&
+        year
+    ) {
         reSearch = true;
         searchResults = await CrawlerRepo.searchTitleDB(titleObj, searchTypes, '', dataConfig);
     }
@@ -362,7 +456,11 @@ async function searchOnCollection(
 async function handleDbUpdate(
     db_data: Movie,
     persianSummary: string,
-    subUpdates: { posterChange: boolean; trailerChange: boolean; newTrailer: boolean },
+    subUpdates: {
+        posterChange: boolean;
+        trailerChange: boolean;
+        newTrailer: boolean;
+    },
     sourceName: string,
     downloadLinks: DownloadLink[],
     watchOnlineLinks: DownloadLink[],
@@ -374,6 +472,10 @@ async function handleDbUpdate(
     extraConfigs: CrawlerExtraConfigs,
 ): Promise<void> {
     try {
+        if (!db_data._id) {
+            return;
+        }
+
         const updateFields: any = apiData ? apiData.updateFields : {};
 
         if (
@@ -419,7 +521,13 @@ async function handleDbUpdate(
                 watchOnlineLinks,
                 torrentLinks,
             );
-            if (LinkUtils.updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, sourceName)) {
+            if (
+                LinkUtils.updateMoviesGroupedLinks(
+                    prevGroupedLinks,
+                    currentGroupedLinks,
+                    sourceName,
+                )
+            ) {
                 updateFields.qualities = db_data.qualities;
             }
         }
@@ -433,7 +541,10 @@ async function handleDbUpdate(
             !db_data.sources.find((s) => s.sourceName === sourceName) &&
             (downloadLinks.length > 0 || watchOnlineLinks.length > 0 || torrentLinks.length > 0)
         ) {
-            db_data.sources.push({ sourceName: sourceName, pageLink: pageLink });
+            db_data.sources.push({
+                sourceName: sourceName,
+                pageLink: pageLink,
+            });
             updateFields.sources = db_data.sources;
         } else {
             const source = db_data.sources.find((s) => s.sourceName === sourceName);
@@ -574,11 +685,8 @@ async function handleDbUpdate(
         }
 
         if (Object.keys(updateFields).length > 0) {
-            const { downloadTorrentLinks, removeTorrentLinks } = await checkTorrentAutoDownloaderMustRun(
-                db_data,
-                sourceName,
-                false,
-            );
+            const { downloadTorrentLinks, removeTorrentLinks } =
+                await checkTorrentAutoDownloaderMustRun(db_data, sourceName, false);
             updateFields.downloadTorrentLinks = removeDuplicateElements(downloadTorrentLinks);
             updateFields.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
 
@@ -781,7 +889,7 @@ async function checkTorrentAutoDownloaderMustRun(
         return {
             downloadTorrentLinks: [],
             removeTorrentLinks: [],
-        }
+        };
     }
 
     const defaultConfig = torrentDbConfig.defaultTorrentDownloaderConfig;
@@ -883,7 +991,10 @@ async function checkTorrentAutoDownloaderMustRun(
                                         downloadTorrentLinks.length >=
                                         titleConfig.newEpisodeLinkLimit
                                     ) {
-                                        return { removeTorrentLinks, downloadTorrentLinks };
+                                        return {
+                                            removeTorrentLinks,
+                                            downloadTorrentLinks,
+                                        };
                                     }
                                 }
                             }
@@ -1000,7 +1111,10 @@ function checkTorrentAutoDownloaderMustRun_newTitle(
                                         downloadTorrentLinks.length >=
                                         defaultConfig.newEpisodeLinkLimit
                                     ) {
-                                        return { removeTorrentLinks, downloadTorrentLinks };
+                                        return {
+                                            removeTorrentLinks,
+                                            downloadTorrentLinks,
+                                        };
                                     }
                                 }
                             }

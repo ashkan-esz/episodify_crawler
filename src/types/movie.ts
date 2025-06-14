@@ -10,8 +10,20 @@ import { MovieType, SourceVpnStatus, VPNStatus } from '@/types/source';
 import { groupSubtitles } from '@services/crawler/subtitle';
 import { GroupedSubtitle, Subtitle } from '@/types/subtitle';
 import { getLatestData } from '@services/crawler/latestData';
-import type {ObjectId} from "mongodb";
+import type { ObjectId } from 'mongodb';
 
+export enum TitleRelation {
+    PREQUEL = 'prequel',
+    SEQUEL = 'sequel',
+    SPIN_OFF = 'spin_off',
+    SIDE_STORY = 'side_story',
+    FULL_STORY = 'full_story',
+    SUMMARY = 'summary',
+    PARENT_STORY = 'parent_story',
+    OTHER = 'other',
+    ALTERNATIVE_SETTING = 'alternative_setting',
+    ALTERNATIVE_VERSION = 'alternative_version',
+}
 
 export enum MovieReleaseState {
     DONE = 'done',
