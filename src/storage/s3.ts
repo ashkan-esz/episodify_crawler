@@ -1,17 +1,12 @@
 import config from '@/config';
 import { updateCronJobsStatus } from '@/jobs/job.status';
-import {
-    getAllS3CastImageDB,
-    getAllS3PostersDB,
-    getAllS3TrailersDB,
-    getAllS3WidePostersDB,
-} from '@/repo/s3file';
+import { S3FilesRepo } from '@/repo';
 import { saveCrawlerWarning } from '@/repo/serverAnalysis';
 import {
     changePageLinkStateFromCrawlerStatus,
     updateTrailerUploadLimit,
 } from '@/status/status';
-import { CrawlerErrorMessages } from '@/status/warnings';
+import { CrawlerErrors } from '@/status/warnings';
 import { AbortController } from '@aws-sdk/abort-controller';
 import {
     CreateBucketCommand,
@@ -102,9 +97,9 @@ async function waitForTrailerUpload(): Promise<void> {
         updateTrailerUploadLimit(uploadingTrailer, trailerUploadConcurrency);
         if (Date.now() - start > saveWarningTimeout) {
             start = Date.now();
-            saveCrawlerWarning(CrawlerErrorMessages.trailerUploadHighWait(180));
+            saveCrawlerWarning(CrawlerErrors.operations.trailerUploadHighWait(180));
         }
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 500));
     }
     uploadingTrailer++;
     updateTrailerUploadLimit(uploadingTrailer, trailerUploadConcurrency);
@@ -680,8 +675,8 @@ export async function deleteUnusedFiles(retryCounter = 0): Promise<string> {
             let dataBaseFiles: any = [];
             // files that are in use
             if (checkBuckets[k] === bucketNamesObject.poster) {
-                dataBaseFiles = await getAllS3PostersDB();
-                const widePosters = await getAllS3WidePostersDB();
+                dataBaseFiles = await S3FilesRepo.getAllS3PostersDB();
+                const widePosters = await S3FilesRepo.getAllS3WidePostersDB();
                 if (!dataBaseFiles && !widePosters) {
                     continue;
                 }
@@ -694,14 +689,14 @@ export async function deleteUnusedFiles(retryCounter = 0): Promise<string> {
                     ),
                 ];
             } else if (checkBuckets[k] === bucketNamesObject.downloadTrailer) {
-                dataBaseFiles = await getAllS3TrailersDB();
+                dataBaseFiles = await S3FilesRepo.getAllS3TrailersDB();
                 if (!dataBaseFiles) {
                     continue;
                 }
                 dataBaseFiles = dataBaseFiles.map((item: any) => item.trailer_s3.url.split('/').pop());
             }
             if (checkBuckets[k] === bucketNamesObject.cast) {
-                dataBaseFiles = await getAllS3CastImageDB();
+                dataBaseFiles = await S3FilesRepo.getAllS3CastImageDB();
                 if (!dataBaseFiles) {
                     continue;
                 }
