@@ -1,5 +1,5 @@
 import config from '@/config';
-import { saveCrawlerWarning } from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 import { Episode, getEpisodeModel, MovieType } from '@/types';
 import { MovieRates } from '@/types/movie';
 import { getFixedGenres, getFixedSummary } from '@/extractors';
@@ -339,7 +339,7 @@ export class OMDBProvider implements MediaProvider {
                         if (config.DEBUG_MODE) {
                             logger.warn('ERROR: more omdb api keys are needed');
                         } else {
-                            saveCrawlerWarning(CrawlerErrors.api.omdb.moreApiKeyNeeded);
+                            ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.api.omdb.moreApiKeyNeeded);
                         }
                         return null;
                     }
@@ -355,7 +355,7 @@ export class OMDBProvider implements MediaProvider {
                                 console.log(`ERROR: Invalid omdb api key: ${key.apiKey}, (${error.response.data?.Error})`);
                             } else {
                                 const m = CrawlerErrors.api.omdb.invalid(key.apiKey, error.response.data?.Error)
-                                saveCrawlerWarning(m);
+                                ServerAnalysisRepo.saveCrawlerWarning(m);
                             }
                             key.limit = 0;
                         }
@@ -369,7 +369,7 @@ export class OMDBProvider implements MediaProvider {
                         return null;
                     } else {
                         if (error.code === 'EAI_AGAIN') {
-                            saveCrawlerWarning(CrawlerErrors.api.omdb.eaiError);
+                            ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.api.omdb.eaiError);
                             continue;
                         } else if (error.response?.status !== 500 &&
                             error.response?.status !== 503 &&

@@ -1,4 +1,4 @@
-import { saveCrawlerWarning } from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 import { MovieType } from '@/types';
 import { MovieStatus, TitleObj } from '@/types/movie';
 import { getFixedSummary } from '@/extractors';
@@ -321,7 +321,7 @@ export class KITSUProvider implements MediaProvider {
                 }
             }
         }
-        saveCrawlerWarning(CrawlerErrors.api.kitsu.lotsOfApiCall);
+        ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.api.kitsu.lotsOfApiCall);
         return null;
     }
 }

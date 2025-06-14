@@ -1,6 +1,6 @@
 import { DownloadLink, SourceConfig } from '@/types';
 import { CrawlerErrors } from '@/status/warnings';
-import { saveCrawlerWarning } from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 
 const changesStatus: {
     sourceName: string;
@@ -45,17 +45,17 @@ export async function checkAndHandleSourceChange(): Promise<void> {
     // let reasons = [];
     if (changesStatus.badDownloadLinks.length >= 20) {
         const m = CrawlerErrors.source.badDownloadLinks(changesStatus.sourceName);
-        saveCrawlerWarning(m);
+        ServerAnalysisRepo.saveCrawlerWarning(m);
         // reasons.push('downloadLinks');
     }
     if (changesStatus.badPosters.length >= 20) {
         const m = CrawlerErrors.source.badPosters(changesStatus.sourceName);
-        saveCrawlerWarning(m);
+        ServerAnalysisRepo.saveCrawlerWarning(m);
         // reasons.push('poster');
     }
     if (changesStatus.badPersianSummary.length >= 20) {
         const m = CrawlerErrors.source.badPersianSummary(changesStatus.sourceName);
-        saveCrawlerWarning(m);
+        ServerAnalysisRepo.saveCrawlerWarning(m);
         // reasons.push('persianSummary');
     }
 

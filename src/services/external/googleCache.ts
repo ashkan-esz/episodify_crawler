@@ -1,5 +1,5 @@
 import config from '@/config';
-import { saveGoogleCacheCall } from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 import { removeScriptAndStyle } from '@services/crawler/searchTools';
 import { getDecodedLink } from '@utils/crawler';
 import { saveError } from '@utils/logger';
@@ -26,7 +26,7 @@ export async function getFromGoogleCache(
             console.log('google cache: ', decodedLink);
         }
 
-        saveGoogleCacheCall(decodedLink);
+        ServerAnalysisRepo.saveGoogleCacheCall(decodedLink);
         const cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
         const webCacheUrl = cacheUrl + decodedLink;
         const response = await axios.get(webCacheUrl);

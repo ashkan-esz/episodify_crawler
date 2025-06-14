@@ -1,6 +1,6 @@
 import config from '@/config';
 import { getFromGoogleCache } from '@services/external/googleCache';
-import { saveCrawlerWarning, saveServerLog } from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 import { hasSidebarClass } from '@/sources/generic';
 import { checkServerIsIdle, pauseCrawler } from '@/status/controller';
 import {
@@ -136,12 +136,12 @@ export async function wrapper_module(
                     )
                 ) {
                     if (i !== 2 || pageCount !== 1) {
-                        saveServerLog(
+                        ServerAnalysisRepo.saveServerLog(
                             `end of crawling (${sourceConfig.config.sourceName}), last page: ${pageLink}::${pageCount}`,
                         );
                     }
                     if (i === 1 || (pageCount && i < pageCount)) {
-                        saveCrawlerWarning(CrawlerErrors.source.lastPage(
+                        ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.source.lastPage(
                             sourceConfig.config.sourceName,
                             i,
                         ));

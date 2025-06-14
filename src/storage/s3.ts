@@ -1,7 +1,6 @@
 import config from '@/config';
 import { updateCronJobsStatus } from '@/jobs/job.status';
-import { S3FilesRepo } from '@/repo';
-import { saveCrawlerWarning } from '@/repo/serverAnalysis';
+import { S3FilesRepo, ServerAnalysisRepo } from '@/repo';
 import {
     changePageLinkStateFromCrawlerStatus,
     updateTrailerUploadLimit,
@@ -97,7 +96,7 @@ async function waitForTrailerUpload(): Promise<void> {
         updateTrailerUploadLimit(uploadingTrailer, trailerUploadConcurrency);
         if (Date.now() - start > saveWarningTimeout) {
             start = Date.now();
-            saveCrawlerWarning(CrawlerErrors.operations.trailerUploadHighWait(180));
+            ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.operations.trailerUploadHighWait(180));
         }
         await new Promise((resolve) => setTimeout(resolve, 500));
     }

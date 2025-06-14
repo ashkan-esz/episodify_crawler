@@ -1,5 +1,5 @@
 import config from '@/config';
-import { saveCrawlerWarning } from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 import { updateImageOperationsLimit } from '@/status/status';
 import { CrawlerErrors } from '@/status/warnings';
 import { downloadImage } from '@utils/axios';
@@ -19,7 +19,7 @@ async function waitForImageOperation() {
         updateImageOperationsLimit(imageOperations, imageOperationsConcurrency);
         if (Date.now() - start > saveWarningTimeout) {
             start = Date.now();
-            saveCrawlerWarning(CrawlerErrors.operations.imageHighWait(saveWarningTimeout/1000));
+            ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.operations.imageHighWait(saveWarningTimeout/1000));
         }
         await new Promise(resolve => setTimeout(resolve, 50));
     }

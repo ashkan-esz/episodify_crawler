@@ -1,7 +1,7 @@
 import config from '@/config';
 import * as dynamicConfig from '@/config/dynamicConfig';
 import { blackListSources, remoteBrowsers } from '@services/crawler/remoteHeadlessBrowser';
-import { ServerAnalysis } from '@/repo';
+import { ServerAnalysisRepo } from '@/repo';
 import { axiosBlackListSources } from '@services/crawler/searchTools';
 import { linkStateMessages } from '@/status/warnings';
 import {
@@ -393,7 +393,7 @@ export async function updateCrawlerStatus_crawlerStart(
     crawlerStatus.isCrawling = true;
     crawlerStatus.isCrawlCycle = isCrawlCycle;
     crawlerStatus.isManualStart = isManualStart;
-    await ServerAnalysis.saveCrawlerLog(crawlerLog());
+    await ServerAnalysisRepo.saveCrawlerLog(crawlerLog());
 }
 
 export async function updateCrawlerStatus_crawlerEnd(
@@ -409,7 +409,7 @@ export async function updateCrawlerStatus_crawlerEnd(
     crawlerStatus.isCrawling = false;
     crawlerStatus.crawlingSource = null;
     crawlerStatus.crawlerState = CrawlerState.OK;
-    await ServerAnalysis.saveCrawlerLog(crawlerLog());
+    await ServerAnalysisRepo.saveCrawlerLog(crawlerLog());
     crawlerStatus = getDefaultCrawlerStatus();
 }
 
@@ -425,7 +425,7 @@ export async function updateCrawlerStatus_crawlerCrashed(errorMessage: string): 
     crawlerStatus.error = true;
     crawlerStatus.errorMessage = errorMessage;
     crawlerStatus.crawlerState = CrawlerState.ERROR;
-    await ServerAnalysis.saveCrawlerLog(crawlerLog());
+    await ServerAnalysisRepo.saveCrawlerLog(crawlerLog());
     crawlerStatus = getDefaultCrawlerStatus();
 }
 
@@ -450,7 +450,7 @@ export async function updateCrawlerStatus_sourceStart(
         crawlMode: crawlMode,
         pausedDuration: 0,
     };
-    await ServerAnalysis.saveCrawlerLog(crawlerLog());
+    await ServerAnalysisRepo.saveCrawlerLog(crawlerLog());
 }
 
 export async function updateCrawlerStatus_sourceEnd(
@@ -483,7 +483,7 @@ export async function updateCrawlerStatus_sourceEnd(
     }
 
     if (!dontSave) {
-        await ServerAnalysis.saveCrawlerLog(crawlerLog());
+        await ServerAnalysisRepo.saveCrawlerLog(crawlerLog());
     }
 
     crawlerStatus.crawlingSource = null;
@@ -502,7 +502,7 @@ export async function updateCrawlerStatus_domainChangeHandlerStart(): Promise<vo
     crawlerStatus.domainChangeHandler.state = linkStateMessages.domainChangeHandler.start;
     crawlerStatus.domainChangeHandler.stateTime = new Date();
 
-    await ServerAnalysis.saveCrawlerLog(crawlerLog());
+    await ServerAnalysisRepo.saveCrawlerLog(crawlerLog());
 }
 
 export async function updateCrawlerStatus_domainChangeHandlerEnd(): Promise<number> {
@@ -520,7 +520,7 @@ export async function updateCrawlerStatus_domainChangeHandlerEnd(): Promise<numb
     crawlerStatus.domainChangeHandler.state = linkStateMessages.domainChangeHandler.end;
     crawlerStatus.domainChangeHandler.stateTime = new Date();
 
-    await ServerAnalysis.saveCrawlerLog(crawlerLog());
+    await ServerAnalysisRepo.saveCrawlerLog(crawlerLog());
     resetDomainChangeHandlerStatusData();
     return duration;
 }
@@ -543,7 +543,7 @@ export async function updateCrawlerStatus_domainChangeHandlerCrashed(
     crawlerStatus.domainChangeHandler.error = true;
     crawlerStatus.domainChangeHandler.errorMessage = errorMessage;
 
-    await ServerAnalysis.saveCrawlerLog(crawlerLog());
+    await ServerAnalysisRepo.saveCrawlerLog(crawlerLog());
     resetDomainChangeHandlerStatusData();
     return duration;
 }

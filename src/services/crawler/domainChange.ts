@@ -1,8 +1,4 @@
-import {
-    resolveCrawlerWarning,
-    saveCrawlerWarning,
-    saveServerLog,
-} from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 import { SourcesRepo } from '@/repo';
 import * as generic from '@/sources/generic';
 import {
@@ -58,10 +54,10 @@ export async function domainChangeHandler(
         const changedSources = await checkSourcesUrl(sourcesUrls);
 
         if (changedSources.length > 0) {
-            saveServerLog('start domain change handler');
+            ServerAnalysisRepo.saveServerLog('start domain change handler');
             updateSourceFields(sourcesObj, sourcesUrls);
             await updateDownloadLinks(sourcesObj, changedSources, fullyCrawledSources);
-            saveServerLog('source domain changed');
+            ServerAnalysisRepo.saveServerLog('source domain changed');
         }
         return await updateCrawlerStatus_domainChangeHandlerEnd();
     } catch (error: any) {
@@ -233,7 +229,7 @@ async function updateDownloadLinks(
         try {
             const startTime = new Date();
             const sourceName = changedSources[i].sourceName;
-            saveServerLog(`domain change handler: (${sourceName} reCrawl start)`);
+            ServerAnalysisRepo.saveServerLog(`domain change handler: (${sourceName} reCrawl start)`);
             changeDomainChangeHandlerState(changedSources, linkStateMessages.domainChangeHandler.crawlingSources + ` || ${sourceName}`);
             let findSource: any = sourcesArray.find(item => item.name === sourceName);
 
@@ -250,14 +246,14 @@ async function updateDownloadLinks(
                 const disabled = sourcesObj[sourceName].disabled;
                 const isManualDisable = sourcesObj[sourceName].isManualDisable;
                 if (sourceCookies.find((item: any) => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip_domainChange(sourceName));
+                    ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip_domainChange(sourceName));
                 } else if (disabled) {
                     if (!isManualDisable) {
-                        saveCrawlerWarning(CrawlerErrors.source.disabledSourceSkip_domainChange(sourceName));
+                        ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.source.disabledSourceSkip_domainChange(sourceName));
                     }
                 } else {
-                    resolveCrawlerWarning(CrawlerErrors.source.expireCookieSkip_domainChange(sourceName));
-                    resolveCrawlerWarning(CrawlerErrors.source.disabledSourceSkip_domainChange(sourceName));
+                    ServerAnalysisRepo.resolveCrawlerWarning(CrawlerErrors.source.expireCookieSkip_domainChange(sourceName));
+                    ServerAnalysisRepo.resolveCrawlerWarning(CrawlerErrors.source.disabledSourceSkip_domainChange(sourceName));
                     let crawled = false;
                     if (!fullyCrawledSources.includes(sourceName)) {
                         await findSource.starter();
@@ -275,7 +271,7 @@ async function updateDownloadLinks(
             }
             changedSources[i].crawled = true;
 
-            saveServerLog(`domain change handler: (${sourceName} reCrawl ended in ${getDatesBetween(new Date(), startTime).minutes} min)`);
+            ServerAnalysisRepo.saveServerLog(`domain change handler: (${sourceName} reCrawl ended in ${getDatesBetween(new Date(), startTime).minutes} min)`);
         } catch (error) {
             saveError(error);
         }

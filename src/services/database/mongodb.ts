@@ -23,6 +23,7 @@ class MongoDBManager {
         movies: 'movies',
         configs: 'configs',
         sources: 'sources',
+        serverAnalysis: 'serverAnalysis',
     };
 
     // eslint-disable-next-line @typescript-eslint/explicit-function-return-type

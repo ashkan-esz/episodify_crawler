@@ -5,7 +5,7 @@ import { MediaProvider } from '@/providers/index';
 import * as kitsu from '@/providers/kitsu.provider';
 import { addStaffAndCharacters } from '@/providers/staffAndCharacter';
 import { CrawlerRepo, Movies as moviesDb } from '@/repo';
-import { saveCrawlerWarning } from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 import { CrawlerErrors } from '@/status/warnings';
 import { S3Storage } from '@/storage';
 import { MovieType, VPNStatus } from '@/types';
@@ -488,7 +488,7 @@ export class JikanProvider implements MediaProvider {
                     await new Promise((resolve) => setTimeout(resolve, waitTime));
                 } else {
                     if (error.code === 'EAI_AGAIN') {
-                        saveCrawlerWarning(CrawlerErrors.api.jikan.eaiError);
+                        ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.api.jikan.eaiError);
                         return null;
                     }
                     if (error.message === 'hard timeout') {
@@ -516,7 +516,7 @@ export class JikanProvider implements MediaProvider {
                 }
             }
         }
-        saveCrawlerWarning(CrawlerErrors.api.jikan.lotsOfApiCall);
+        ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.api.jikan.lotsOfApiCall);
         return null;
     }
 

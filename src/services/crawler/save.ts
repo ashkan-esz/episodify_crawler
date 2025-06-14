@@ -1,7 +1,7 @@
 import * as dynamicConfig from '@/config/dynamicConfig';
 import { Jikan } from '@/providers';
 import { StaffAndCharacter } from '@/providers';
-import { CrawlerRepo, ServerAnalysis as ServerAnalysisDB } from '@/repo';
+import { CrawlerRepo, ServerAnalysisRepo } from '@/repo';
 import {
     changePageLinkStateFromCrawlerStatus,
     checkForceStopCrawler,
@@ -87,8 +87,8 @@ export default async function save(
         if (pageNumber === 1) {
             badLinks = getLinksDoesntMatchLinkRegex(downloadLinks, type);
             if (badLinks.length > 0) {
-                await ServerAnalysisDB.saveCrawlerBadLink(sourceConfig.config.sourceName, pageLink, badLinks.slice(0, 10));
-                await ServerAnalysisDB.saveCrawlerWarning(CrawlerErrors.crawler.crawlerBadLink(sourceConfig.config.sourceName));
+                await ServerAnalysisRepo.saveCrawlerBadLink(sourceConfig.config.sourceName, pageLink, badLinks.slice(0, 10));
+                await ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.crawler.crawlerBadLink(sourceConfig.config.sourceName));
             }
         }
 

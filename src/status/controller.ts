@@ -1,5 +1,5 @@
 import config from '@/config';
-import { saveCrawlerWarning } from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 import { CrawlerPauseReason } from '@/types';
 import { CrawlerErrors } from '@/status/warnings';
 import { averageCpu, getMemoryStatus } from '@utils/serverStatus';
@@ -65,7 +65,7 @@ export async function pauseCrawler(): Promise<void> {
                 config.CRAWLER_PAUSE_DURATION_LIMIT,
                 info,
             );
-            saveCrawlerWarning(m);
+            ServerAnalysisRepo.saveCrawlerWarning(m);
             break;
         }
 

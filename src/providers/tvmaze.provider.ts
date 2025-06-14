@@ -1,4 +1,4 @@
-import { saveCrawlerWarning } from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 import { Episode, EpisodeInfo, getEpisodeModel, MovieType } from '@/types';
 import { getFixedGenres, getFixedSummary } from '@/extractors';
 import { CrawlerErrors } from '@/status/warnings';
@@ -92,7 +92,7 @@ export class TVMazeProvider implements MediaProvider {
                 }
             }
         }
-        saveCrawlerWarning(CrawlerErrors.api.tvmaze.lotsOfApiCall);
+        ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.api.tvmaze.lotsOfApiCall);
         return null;
     }
 

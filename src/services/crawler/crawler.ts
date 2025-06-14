@@ -1,9 +1,5 @@
 import { SourcesRepo } from '@/repo';
-import {
-    resolveCrawlerWarning,
-    saveCrawlerWarning,
-    saveServerLog,
-} from '@/repo/serverAnalysis';
+import { ServerAnalysisRepo } from '@/repo';
 import * as generic from '@/sources/generic';
 import { checkAndHandleSourceChange } from '@/status/detector';
 import {
@@ -35,7 +31,7 @@ export async function crawlerCycle(): Promise<string> {
         }
         const sourcesObj = await SourcesRepo.getSourcesObjDB();
         if (!sourcesObj) {
-            saveCrawlerWarning(CrawlerErrors.crawler.cycleCancelled);
+            ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.crawler.cycleCancelled);
             return CrawlerErrors.crawler.cycleCancelled;
         }
 
@@ -140,7 +136,7 @@ export async function crawler(
         const sourcesObj = await SourcesRepo.getSourcesObjDB();
         if (!sourcesObj) {
             await updateCrawlerStatus_crawlerCrashed(CrawlerErrors.crawler.cancelled);
-            saveCrawlerWarning(CrawlerErrors.crawler.cancelled);
+            ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.crawler.cancelled);
             return {
                 isError: true,
                 message: CrawlerErrors.crawler.cancelled,
@@ -167,17 +163,17 @@ export async function crawler(
                 const disabled = sourcesObj[sourcesNames[i]].disabled;
                 const isManualDisable = sourcesObj[sourcesNames[i]].isManualDisable;
                 if (sourceCookies.find((item: any) => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourcesNames[i]));
+                    ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourcesNames[i]));
                     continue;
                 }
                 if (disabled) {
                     if (!isManualDisable) {
-                        saveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourcesNames[i]));
+                        ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourcesNames[i]));
                     }
                     continue;
                 }
-                resolveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourcesNames[i]));
-                resolveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourcesNames[i]));
+                ServerAnalysisRepo.resolveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourcesNames[i]));
+                ServerAnalysisRepo.resolveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourcesNames[i]));
                 await updateCrawlerStatus_sourceStart(sourcesNames[i], crawlMode);
 
                 let sourceStarter: any = sourcesArray.find(s => s.name === sourcesNames[i]);
@@ -214,7 +210,7 @@ export async function crawler(
         const crawlDuration = getDatesBetween(endTime, startTime).minutes;
         await updateCrawlerStatus_crawlerEnd(endTime, crawlDuration);
         const message = `crawling done in : ${crawlDuration}min, (domainChangeHandler: ${domainChangeDuration}min)`;
-        await saveServerLog(message);
+        await ServerAnalysisRepo.saveServerLog(message);
         return {
             isError: false,
             message: message,
@@ -251,7 +247,7 @@ export async function torrentCrawlerSearch(
         const sourcesObj = await SourcesRepo.getSourcesObjDB();
         if (!sourcesObj) {
             await updateCrawlerStatus_crawlerCrashed(CrawlerErrors.crawler.cancelled);
-            saveCrawlerWarning(CrawlerErrors.crawler.cancelled);
+            ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.crawler.cancelled);
             return {
                 isError: true,
                 message: CrawlerErrors.crawler.cancelled,
@@ -269,12 +265,12 @@ export async function torrentCrawlerSearch(
                 const disabled = sourcesObj[sourcesArray[i].name].disabled;
                 const isManualDisable = sourcesObj[sourcesArray[i].name].isManualDisable;
                 if (sourceCookies.find((item: any) => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourcesArray[i].name));
+                    ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourcesArray[i].name));
                     continue;
                 }
                 if (disabled) {
                     if (!isManualDisable) {
-                        saveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourcesArray[i].name));
+                        ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourcesArray[i].name));
                     }
                     continue;
                 }
@@ -291,10 +287,10 @@ export async function torrentCrawlerSearch(
                 const disabled = sourcesObj[sourceName].disabled;
                 const isManualDisable = sourcesObj[sourceName].isManualDisable;
                 if (sourceCookies.find((item: any) => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourceName));
+                    ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.source.expireCookieSkip(sourceName));
                 } else if (disabled) {
                     if (!isManualDisable) {
-                        saveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourceName));
+                        ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.source.disabledSkip(sourceName));
                     }
                 } else {
                     await updateCrawlerStatus_sourceStart(sourceName, 0);
@@ -310,7 +306,7 @@ export async function torrentCrawlerSearch(
         const crawlDuration = getDatesBetween(endTime, startTime).minutes;
         await updateCrawlerStatus_crawlerEnd(endTime, crawlDuration);
         const message = `crawling done in : ${crawlDuration}min`;
-        saveServerLog(message);
+        ServerAnalysisRepo.saveServerLog(message);
         return {
             isError: false,
             message: message,
