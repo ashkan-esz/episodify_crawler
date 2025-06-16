@@ -36,7 +36,7 @@ const configSchema = z.object({
     SENTRY_ORG: z.string().default(''),
 
     // Sentry
-    SENTRY_DNS: z.string(),
+    CRAWLER_SENTRY_DNS: z.string(),
     SENTRY_AUTH_TOKEN: z.string(),
     SENTRY_PROJECT: z.string(),
 

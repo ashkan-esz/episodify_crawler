@@ -5,3 +5,7 @@ Dockerfile
 docker-compose.yml
 .dockerignore
 *.md
+.husky
+.idea
+dist
+logs

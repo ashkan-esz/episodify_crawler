@@ -78,7 +78,7 @@ bun run dev
 | **`REFRESH_TOKEN_SECRET`**             |                                                                                                                                | `true`   |               |
 | **`DOMAIN`**                           | base domain, used for cookies domain and subdomain                                                                             | `false`  |               |
 | **`SENTRY_ORG`**                       |                                                                                                                                | `false`  |               |
-| **`SENTRY_DNS`**                       | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
+| **`CRAWLER_SENTRY_DNS`**               | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
 | **`SENTRY_AUTH_TOKEN`**                | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
 | **`SENTRY_PROJECT`**                   | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
 | **`PRINT_ERRORS`**                     |                                                                                                                                | `false`  | false         |

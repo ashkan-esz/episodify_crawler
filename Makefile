@@ -2,7 +2,7 @@
 
 # Variables
 IMAGE_NAME = episodify-crawler
-CONTAINER_NAME = episodify-crawler-app
+CONTAINER_NAME = episodify-crawler
 DOCKERFILE = docker/Dockerfile
 ENV_FILE = .env
 
@@ -12,14 +12,14 @@ ENV_FILE = .env
 # Build the Docker image
 build:
 	@echo "Building Docker image: $(IMAGE_NAME)..."
-	@docker build --network host -t $(IMAGE_NAME) -f $(DOCKERFILE) .
+	@docker buildx build --platform=linux/amd64 --network=host -t $(IMAGE_NAME) -f $(DOCKERFILE) .
 	@echo "Docker image $(IMAGE_NAME) built successfully."
 
 # Run the application container directly (without Compose)
 # Note: This is less common for development as it doesn't start dependencies
-run: build
+run:
 	@echo "Running Docker container: $(CONTAINER_NAME)..."
-	@docker run -d --name $(CONTAINER_NAME) --rm \
+	@docker run --name $(CONTAINER_NAME) --rm \
 		-p 3000:3000 \
 		--env-file $(ENV_FILE) \
 		$(IMAGE_NAME)
