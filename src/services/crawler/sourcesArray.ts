@@ -1,14 +1,16 @@
 import {
     CrawlerExtraConfigs,
     SourceAuthStatus,
-    SourceConfig, SourceConfigC,
+    SourceConfig,
+    SourceConfigC,
     VPNStatus,
 } from '@/types';
-import * as film2movie  from '@/sources/film2movie';
-import * as tokyotosho  from '@/torrent/sources/tokyotosho';
-import * as shanaproject  from '@/torrent/sources/shanaproject';
-import * as nyaa  from '@/torrent/sources/nyaa';
-import * as eztv  from '@/torrent/sources/eztv';
+import * as film2movie from '@/sources/film2movie';
+import * as tokyotosho from '@/torrent/sources/tokyotosho';
+import * as shanaproject from '@/torrent/sources/shanaproject';
+import * as nyaa from '@/torrent/sources/nyaa';
+import * as eztv from '@/torrent/sources/eztv';
+import { SourcesRepo } from '@/repo';
 
 export const sourcesNames = Object.freeze([
     'film2movie',
@@ -39,15 +41,15 @@ export function getSourcesMethods(): {
 
 export function getSourcesArray(
     sourcesObj: {
-        film2movie: SourceConfig,
-        tokyotosho: SourceConfig,
-        shanaproject: SourceConfig,
-        nyaa: SourceConfig,
-        eztv: SourceConfig,
+        film2movie: SourceConfig;
+        tokyotosho: SourceConfig;
+        shanaproject: SourceConfig;
+        nyaa: SourceConfig;
+        eztv: SourceConfig;
     },
     crawlMode: number,
     extraConfigs: CrawlerExtraConfigs,
-    ): {
+): {
     name: string;
     configs: SourceConfigC;
     starter: () => Promise<number[]>;
@@ -168,4 +170,18 @@ export function sourcesOb(): any {
     }
 
     return obj;
+}
+
+export async function insertSources(): Promise<string> {
+    const sources = await SourcesRepo.getSourcesObjDB();
+    if (sources) {
+        return 'ok';
+    }
+
+    const insertResult = await SourcesRepo.insertSourcesObjDB(sourcesOb());
+    if (insertResult) {
+        return 'ok';
+    }
+
+    return 'error';
 }

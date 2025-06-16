@@ -33,9 +33,12 @@ export async function updateSourcesObjDB(updateFields: any): Promise<any | null>
     try {
         const db = await mongoDB.getDatabase();
         const collection = db.collection(mongoDB.collections.sources);
-        const result = await collection.findOneAndUpdate({title: 'sources'}, {
-            $set: updateFields
-        });
+        const result = await collection.findOneAndUpdate(
+            { title: 'sources' },
+            {
+                $set: updateFields,
+            },
+        );
         return result?.value || null;
     } catch (error) {
         saveError(error);
@@ -43,3 +46,13 @@ export async function updateSourcesObjDB(updateFields: any): Promise<any | null>
     }
 }
 
+export async function insertSourcesObjDB(sourcesObj: any): Promise<any> {
+    try {
+        const db = await mongoDB.getDatabase();
+        const collection = db.collection(mongoDB.collections.sources);
+        return await collection.insertOne(sourcesObj);
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}

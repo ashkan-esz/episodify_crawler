@@ -6,6 +6,7 @@ import { Elysia } from 'elysia';
 // import { swagger } from '@elysiajs/swagger';
 import { mongoDB, prisma } from '@/services/database';
 import { MongoDBCollectionsRepo } from '@/repo';
+import { SourcesArray } from '@/services/crawler';
 import Redis from 'ioredis';
 // import * as amqp from 'amqplib';
 
@@ -22,7 +23,12 @@ async function preStart(): Promise<void> {
 
     statusLogger.addStep('MongoBD', [], { critical: true });
     statusLogger.addStep('MongoDB_Create_Collections', ['MongoBD'], { critical: true });
-    statusLogger.addStep('Crawler_DB_Config', ['MongoBD', 'MongoDB_Create_Collections'], { critical: true });
+    statusLogger.addStep('Crawler_DB_Config', ['MongoBD', 'MongoDB_Create_Collections'], {
+        critical: true,
+    });
+    statusLogger.addStep('Crawler_DB_Sources', ['MongoBD', 'MongoDB_Create_Collections'], {
+        critical: true,
+    });
 
     // Connect to MongoDB
     await statusLogger.executeStep(
@@ -52,6 +58,15 @@ async function preStart(): Promise<void> {
             await dynamicConfig.insertCrawlerDBConfigs();
         },
         'Fetching Crawler DB Config',
+    );
+
+    // Insert Crawler Sources
+    await statusLogger.executeStep(
+        'Crawler_DB_Sources',
+        async () => {
+            await SourcesArray.insertSources();
+        },
+        'Adding Crawler Sources to DB',
     );
 
     // End status logger
@@ -95,6 +110,7 @@ async function bootstrap(): Promise<void> {
             .listen(config.PORT);
 
         logger.info(`🚀 Server is running at ${app.server?.hostname}:${config.PORT}`);
+        logger.info(`🚀 Go to https://admin.${config.DOMAIN} for more configs`);
 
         // Graceful shutdown
         const shutdown = async (): Promise<void> => {
