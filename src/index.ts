@@ -3,12 +3,11 @@ import * as dynamicConfig from '@/config/dynamicConfig';
 import { dynamicCors } from '@api/middlewares';
 import { UltimateStatusLogger } from '@utils/statusLogger';
 import { Elysia } from 'elysia';
-// import { swagger } from '@elysiajs/swagger';
+import { swagger } from '@elysiajs/swagger';
 import { mongoDB, prisma } from '@/services/database';
 import { MongoDBCollectionsRepo } from '@/repo';
 import { SourcesArray } from '@/services/crawler';
 import Redis from 'ioredis';
-// import * as amqp from 'amqplib';
 
 import logger from '@/utils/logger';
 
@@ -77,17 +76,6 @@ async function bootstrap(): Promise<void> {
     try {
         await preStart();
 
-        // Connect to RabbitMQ
-        // const mqConnection = await amqp.connect(config.RABBITMQ_URL);
-        // const mqChannel = await mqConnection.createChannel();
-        // logger.info('Connected to RabbitMQ');
-
-        // Create queues
-        // await mqChannel.assertQueue('crawler_jobs', { durable: true });
-        // await mqChannel.assertQueue('data_processing', { durable: true });
-
-        //TODO : add plugins
-
         // Initialize API server
         const app = new Elysia({
             // detail: {
@@ -96,16 +84,16 @@ async function bootstrap(): Promise<void> {
             // },
         })
             .use(dynamicCors())
-            // .use(
-            //     swagger({
-            //         documentation: {
-            //             info: {
-            //                 title: 'Episodify Crawler API',
-            //                 version: '1.0.0',
-            //             },
-            //         },
-            //     }),
-            // )
+            .use(
+                swagger({
+                    documentation: {
+                        info: {
+                            title: 'Episodify Crawler API',
+                            version: '1.0.0',
+                        },
+                    },
+                }),
+            )
             .get('/', () => 'Episodify Crawler Service')
             .listen(config.PORT);
 
