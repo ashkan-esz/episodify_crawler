@@ -4,6 +4,7 @@ import { dynamicCors } from '@api/middlewares';
 import { UltimateStatusLogger } from '@utils/statusLogger';
 import { Elysia } from 'elysia';
 import { swagger } from '@elysiajs/swagger';
+import { helmet } from 'elysia-helmet';
 import { mongoDB, prisma } from '@/services/database';
 import { MongoDBCollectionsRepo } from '@/repo';
 import { SourcesArray } from '@/services/crawler';
@@ -83,6 +84,7 @@ async function bootstrap(): Promise<void> {
             //     tags: ['elysia'],
             // },
         })
+            .use(helmet())
             .use(dynamicCors())
             .use(
                 swagger({

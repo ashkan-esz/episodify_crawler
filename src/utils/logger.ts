@@ -1,8 +1,8 @@
 import config from '@/config';
 import * as Sentry from '@sentry/bun';
 import pino from 'pino';
-import path from 'path';
-import fs from 'fs';
+import path from 'node:path';
+import fs from 'node:fs';
 
 const logsDir = path.join(process.cwd(), 'logs');
 if (!fs.existsSync(logsDir)) {
