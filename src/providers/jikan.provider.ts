@@ -610,7 +610,7 @@ export class JikanProvider implements MediaProvider {
         return '';
     }
 
-    async updateJikanData(isJobFunction: boolean = false) {
+    async updateJikanData(isJobFunction = false) {
         if (isJobFunction) {
             updateCronJobsStatus('updateJikanData', 'comingSoon');
         }
@@ -1047,15 +1047,15 @@ export class JikanProvider implements MediaProvider {
                 }
             }
 
-            const insertedId = await CrawlerRepo.insertMovieToDB(titleModel);
+            const insertRes = await CrawlerRepo.insertMovieToDB(titleModel);
 
-            if (insertedId && jikanApiFields) {
+            if (insertRes?.mongoID && jikanApiFields) {
                 const allApiData = {
                     jikanApiFields,
                 };
-                await this.handleAnimeRelatedTitles(insertedId, jikanApiFields.jikanRelatedTitles);
-                await addStaffAndCharacters('', insertedId, allApiData, titleModel.castUpdateDate);
-                await CrawlerRepo.updateMovieByIdDB(insertedId, {
+                await this.handleAnimeRelatedTitles(insertRes.mongoID, jikanApiFields.jikanRelatedTitles);
+                await addStaffAndCharacters('', insertRes.mongoID, allApiData, titleModel.castUpdateDate);
+                await CrawlerRepo.updateMovieByIdDB(insertRes.mongoID, {
                     castUpdateDate: new Date(),
                 });
             }

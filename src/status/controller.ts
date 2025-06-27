@@ -91,7 +91,7 @@ export async function pauseCrawler(): Promise<void> {
         // TODO : check this
         if (config.CRAWLER_MANUAL_GC_ON_HIGH_LOAD && memoryStatus.used >= getCrawlerMemoryLimit()) {
             if (gcCallTime && Date.now() - gcCallTime > 5 * 1000) {
-                global.gc?.();
+                Bun.gc(true);
                 gcCallTime = Date.now();
             }
         }

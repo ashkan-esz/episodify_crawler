@@ -192,8 +192,8 @@ export default async function save(
                     removeDuplicateElements(downloadTorrentLinks);
                 result.titleModel.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
 
-                const insertedId = await CrawlerRepo.insertMovieToDB(result.titleModel);
-                if (insertedId) {
+                const insertRes = await CrawlerRepo.insertMovieToDB(result.titleModel);
+                if (insertRes?.mongoID) {
                     // TODO : handle
                     // if (result.titleModel.posters.length > 0) {
                     //     await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movie, insertedId, "")
@@ -211,7 +211,7 @@ export default async function save(
                             linkStateMessages.newTitle.addingRelatedTitles,
                         );
                         await Jikan.handleAnimeRelatedTitles(
-                            insertedId,
+                            insertRes.mongoID,
                             result.allApiData.jikanApiFields.jikanRelatedTitles,
                         );
                     }
@@ -228,7 +228,7 @@ export default async function save(
                     );
                     await StaffAndCharacter.addStaffAndCharacters(
                         pageLink,
-                        insertedId,
+                        insertRes.mongoID,
                         result.allApiData,
                         titleModel.castUpdateDate,
                         extraConfigs,
@@ -237,7 +237,7 @@ export default async function save(
                         return removePageLinkToCrawlerStatus(pageLink);
                     }
                     if (extraConfigs?.castUpdateState !== 'ignore') {
-                        await CrawlerRepo.updateMovieByIdDB(insertedId, {
+                        await CrawlerRepo.updateMovieByIdDB(insertRes.mongoID, {
                             castUpdateDate: new Date(),
                         });
                     }
@@ -913,7 +913,7 @@ async function checkTorrentAutoDownloaderMustRun(
         );
     }
 
-    let titleConfig;
+    let titleConfig: any;
     if (
         defaultConfig.status === TorrentDownloaderStatus.FORCE ||
         (defaultConfig.status === TorrentDownloaderStatus.DEFAULT &&

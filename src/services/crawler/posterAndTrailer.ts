@@ -1,6 +1,9 @@
-import { sortPostersOrder, sortTrailersOrder } from '@services/crawler/sourcesArray';
-import { SourceVpnStatus } from '@/types';
 import {
+    sortPostersOrder,
+    sortTrailersOrder,
+} from '@services/crawler/sourcesArray';
+import type { SourceVpnStatus } from '@/types';
+import type {
     Movie, MoviePoster,
     MoviePosterS3,
     MovieTrailer,
@@ -22,10 +25,17 @@ export async function handleSubUpdates(
     trailers: MovieTrailer[],
     sourceName: string,
     sourceVpnStatus: SourceVpnStatus,
-    ): Promise<{posterChange: boolean, trailerChange: boolean, newTrailer: boolean }> {
+): Promise<{
+    posterChange: boolean,
+    trailerChange: boolean,
+    newTrailer: boolean
+}> {
     try {
         const posterChange = await handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus);
-        const {trailerChange, newTrailer} = handleTrailerUpdate(db_data, trailers, sourceName);
+        const {
+            trailerChange,
+            newTrailer,
+        } = handleTrailerUpdate(db_data, trailers, sourceName);
 
         return {
             posterChange,
@@ -47,7 +57,7 @@ async function handlePosterUpdate(
     poster: string,
     sourceName: string,
     sourceVpnStatus: SourceVpnStatus,
-    ): Promise<boolean> {
+): Promise<boolean> {
     if (poster === '') {
         return false;
     }
@@ -98,7 +108,7 @@ async function handlePosterUpdate(
             size: fileSize,
             vpnStatus: sourceVpnStatus.poster,
             thumbnail: thumbnail,
-            blurHash: "",
+            blurHash: '',
         });
     }
 
@@ -177,7 +187,7 @@ function handleTrailerUpdate(
     db_data: Movie,
     site_trailers: MovieTrailer[],
     sourceName: string,
-    ): {trailerChange: boolean, newTrailer: boolean } {
+): { trailerChange: boolean, newTrailer: boolean } {
 
     let trailerChange = false;
     let newTrailer = false;
@@ -216,15 +226,15 @@ function handleTrailerUpdate(
         trailerChange = true;
     }
 
-    return {trailerChange, newTrailer};
+    return { trailerChange, newTrailer };
 }
 
 export async function uploadTitlePosterAndAddToTitleModel(
     titleModel: Movie,
     posterUrl: string,
-    updateFields: any = null,
-    forceUpload: boolean = false,
-    ): Promise<any> {
+    updateFields = null,
+    forceUpload = false,
+): Promise<any> {
 
     if (posterUrl && !posterUrl.includes('/icon/') && !posterUrl.includes('nopicture.')) {
         const s3Poster = await S3Storage.uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, posterUrl, forceUpload);
@@ -232,10 +242,9 @@ export async function uploadTitlePosterAndAddToTitleModel(
             if (updateFields) {
                 addS3PosterToTitleModel(updateFields, s3Poster);
                 return updateFields;
-            } else {
-                addS3PosterToTitleModel(titleModel, s3Poster);
-                return titleModel;
             }
+            addS3PosterToTitleModel(titleModel, s3Poster);
+            return titleModel;
         }
     }
     return updateFields || titleModel;
@@ -246,7 +255,7 @@ export async function uploadTitleYoutubeTrailerAndAddToTitleModel(
     titleModel: Movie,
     trailerUrl: string,
     updateFields: any = null,
-    ): Promise<any> {
+): Promise<any> {
 
     if (trailerUrl) {
         const s3Trailer = await S3Storage.uploadTitleTrailerFromYoutubeToS3(pageLink, titleModel.title, titleModel.type, titleModel.year, trailerUrl);
@@ -254,10 +263,9 @@ export async function uploadTitleYoutubeTrailerAndAddToTitleModel(
             if (updateFields) {
                 addS3TrailerToTitleModel(updateFields, s3Trailer, titleModel.trailers);
                 return updateFields;
-            } else {
-                addS3TrailerToTitleModel(titleModel, s3Trailer, []);
-                return titleModel;
             }
+            addS3TrailerToTitleModel(titleModel, s3Trailer, []);
+            return titleModel;
         }
     }
 
@@ -267,7 +275,7 @@ export async function uploadTitleYoutubeTrailerAndAddToTitleModel(
 export function addS3PosterToTitleModel(
     titleModel: Movie,
     s3Poster: MoviePosterS3,
-    ): Movie {
+): Movie {
 
     if (s3Poster) {
         titleModel.poster_s3 = s3Poster;
@@ -288,7 +296,7 @@ export function addS3TrailerToTitleModel(
     titleModel: Movie,
     s3Trailer: MovieTrailerS3,
     prevTrailers: MovieTrailer[] = [],
-    ): Movie {
+): Movie {
 
     if (s3Trailer) {
         titleModel.trailer_s3 = s3Trailer;
@@ -307,7 +315,7 @@ export function addS3TrailerToTitleModel(
 export function checkNeedTrailerUpload(
     s3Trailer: MovieTrailerS3 | null,
     trailers: MovieTrailer[],
-    ): boolean {
+): boolean {
     if (s3Trailer) {
         return false;
     }

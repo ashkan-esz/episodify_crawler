@@ -5,7 +5,7 @@ import { UltimateStatusLogger } from '@utils/statusLogger';
 import { Elysia } from 'elysia';
 import { swagger } from '@elysiajs/swagger';
 import { helmet } from 'elysia-helmet';
-import { mongoDB, prisma, Redis } from '@/services/database';
+import { mongoDB, kyselyDB, Redis } from '@/services/database';
 import { MongoDBCollectionsRepo } from '@/repo';
 import { SourcesArray } from '@/services/crawler';
 import logger, { saveError } from '@/utils/logger';
@@ -77,7 +77,7 @@ async function preStart(): Promise<void> {
     statusLogger.complete();
 }
 
-async function bootstrap(): Promise<void> {
+export async function bootstrap(): Promise<void> {
     try {
         await preStart();
 
@@ -117,9 +117,8 @@ async function bootstrap(): Promise<void> {
             // Close database connections
             await Promise.all([
                 mongoDB.close(),
-                prisma.$disconnect(),
+                kyselyDB.destroy(),
                 Redis.close(),
-                // mqConnection.close(),
             ]);
 
             process.exit(0);

@@ -7,3 +7,4 @@ export * from "./crawler";
 export * as Subtitle from "./subtitle";
 export * as Movie from "./movie";
 export * as Staff from "./staff";
+export * as Database from "./database";

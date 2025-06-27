@@ -1,8 +1,8 @@
 import {
-    CrawlerExtraConfigs,
+    type CrawlerExtraConfigs,
     SourceAuthStatus,
-    SourceConfig,
-    SourceConfigC,
+    type SourceConfig,
+    type SourceConfigC,
     VPNStatus,
 } from '@/types';
 import * as film2movie from '@/sources/film2movie';

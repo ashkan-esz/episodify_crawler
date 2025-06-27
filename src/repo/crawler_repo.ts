@@ -1,8 +1,8 @@
-import { MovieType } from '@/types';
-import { Movie, TitleObj } from '@/types/movie';
-import { mongoDB, prisma } from '@services/database';
+import type { MovieType } from '@/types';
+import type { Movie, TitleObj } from '@/types/movie';
+import { kyselyDB, mongoDB } from '@services/database';
 import { saveError } from '@utils/logger';
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 
 export async function searchTitleDB(
     titleObj: TitleObj,
@@ -99,7 +99,7 @@ export async function searchTitleDB(
         if (titleObj.title.match(/\s\d$/)) {
             const romanNumerals = ['', 'i', 'ii', 'iii', 'iv', 'v', 'vi'];
             const temp = titleObj.title.replace(/(\d+)$/, (match, number) => {
-                const num = parseInt(number, 10);
+                const num = Number.parseInt(number, 10);
                 return romanNumerals[num] || num.toString();
             });
 
@@ -130,7 +130,7 @@ function createSearchRegexOnAlternativeTitles(title: string): RegExp {
             if (item === ' ') {
                 item = ',?:?-?\\.?\\s?';
             } else {
-                item = item + "\\'?";
+                item = `${item}\\\'?`;
             }
             return item;
         })
@@ -183,33 +183,51 @@ export async function findOneAndUpdateMovieCollection(
 //-----------------------------------
 //-----------------------------------
 
-export async function insertMovieToDB(dataToInsert: Movie): Promise<ObjectId | null> {
+export async function insertMovieToDB(dataToInsert: Movie): Promise<{
+    mongoID: ObjectId | null,
+    sqlOK: boolean
+}> {
+    let mongoID: ObjectId | null = null;
+    let sqlOK = false;
+
     try {
         const db = await mongoDB.getDatabase();
         const collection = db.collection(mongoDB.collections.movies);
         const result = await collection.insertOne(dataToInsert);
+        mongoID = result.insertedId;
 
         try {
-            await prisma.movie.create({
-                data: {
-                    movieId: result.insertedId.toString(),
-                },
+            await kyselyDB.insertInto('movies').values({
+                movieId: result.insertedId.toString(),
+                likes_count: 0,
+                dislikes_count: 0,
+                favorite_count: 0,
+                dropped_count: 0,
+                finished_count: 0,
+                follow_count: 0,
+                watchlist_count: 0,
+                continue_count: 0,
+                view_count: 0,
+                view_month_count: 0,
+            }).execute();
+            sqlOK = true;
+        } catch (sqlError) {
+            saveError(sqlError, {
+                context: 'Kysely insert in insertMovieToDB',
+                movieId: result.insertedId.toString(),
             });
-        } catch (error2) {
-            saveError(error2);
         }
-
-        return result.insertedId;
-    } catch (error) {
-        saveError(error);
-        return null;
+    } catch (mongoError) {
+        saveError(mongoError, { context: 'Mongo insert in insertMovieToDB' });
     }
+
+    return { mongoID, sqlOK };
 }
 
 export async function updateMovieByIdDB(
     id: ObjectId,
     updateFields: any,
-    maxRetries: number = 3,
+    maxRetries = 3,
 ): Promise<string> {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
@@ -242,7 +260,7 @@ export async function updateMovieByIdDB(
 //-----------------------------------
 //-----------------------------------
 
-export async function resetTempRank(isAnime: boolean = false): Promise<string> {
+export async function resetTempRank(isAnime = false): Promise<string> {
     try {
         const tempRankFieldName = isAnime ? 'tempRank_anime' : 'tempRank';
         const db = await mongoDB.getDatabase();
@@ -264,7 +282,7 @@ export async function resetTempRank(isAnime: boolean = false): Promise<string> {
 
 export async function replaceRankWithTempRank(
     rankField: string,
-    isAnime: boolean = false,
+    isAnime = false,
 ): Promise<string> {
     try {
         const tempRankFieldName = isAnime ? 'tempRank_anime' : 'tempRank';
@@ -331,40 +349,40 @@ export async function getDuplicateTitleInsertion(
         return await collection.aggregate([
             {
                 $match: {
-                    sources: [{sourceName: sourceName, pageLink: pageLink}],
-                }
+                    sources: [{ sourceName: sourceName, pageLink: pageLink }],
+                },
             },
             {
                 $group: {
                     _id: {
-                        title: "$title",
-                        year: "$year",
-                        premiered: "$premiered",
-                        endYear: "$endYear",
+                        title: '$title',
+                        year: '$year',
+                        premiered: '$premiered',
+                        endYear: '$endYear',
                     },
-                    count: {"$sum": 1},
-                    insert_dates: {$push: "$insert_date"},
-                    ids: {$push: "$_id"},
-                }
+                    count: { '$sum': 1 },
+                    insert_dates: { $push: '$insert_date' },
+                    ids: { $push: '$_id' },
+                },
             },
             {
                 $match: {
-                    _id: {"$ne": null},
-                    count: {"$gt": 1}
-                }
+                    _id: { '$ne': null },
+                    count: { '$gt': 1 },
+                },
             },
             {
-                $sort: {count: -1}
+                $sort: { count: -1 },
             },
             {
                 $project: {
-                    title: "$_id",
+                    title: '$_id',
                     _id: 0,
                     count: 1,
                     insert_dates: 1,
                     ids: 1,
-                }
-            }
+                },
+            },
         ]).toArray();
     } catch (error) {
         saveError(error);

@@ -1,4 +1,4 @@
-import {
+import type {
     DownloadLink,
     EpisodeInfo,
     MoviesGroupedLink,
@@ -6,10 +6,11 @@ import {
     Season,
     SeasonEpisode,
 } from '@/types/downloadLink';
-import { MovieType, SourceVpnStatus, VPNStatus } from '@/types/source';
+import type { MovieType, SourceVpnStatus, VPNStatus } from '@/types/source';
 import { groupSubtitles } from '@services/crawler/subtitle';
-import { GroupedSubtitle, Subtitle } from '@/types/subtitle';
+import type { GroupedSubtitle, Subtitle } from '@/types/subtitle';
 import { getLatestData } from '@services/crawler/latestData';
+import type { ColumnType, Insertable, Selectable, Updateable } from 'kysely';
 import type { ObjectId } from 'mongodb';
 
 export enum TitleRelation {
@@ -332,6 +333,25 @@ export function getMovieModel(
         downloadTorrentLinks: [],
     };
 }
+
+export interface MovieSqlTable {
+    movieId: string;
+    created_at: ColumnType<Date, string | undefined, never>;
+    likes_count: number;
+    dislikes_count: number;
+    favorite_count: number;
+    dropped_count: number;
+    finished_count: number;
+    follow_count: number;
+    watchlist_count: number;
+    continue_count: number;
+    view_count: number;
+    view_month_count: number;
+}
+
+export type MovieSql = Selectable<MovieSqlTable>
+export type NewMovieSql = Insertable<MovieSqlTable>
+export type MovieSqlUpdate = Updateable<MovieSqlTable>
 
 export type MovieTorrentDownloaderConfig = {
     disabled: boolean;

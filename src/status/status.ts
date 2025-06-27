@@ -181,9 +181,9 @@ const mainPageStatusMutex = new Mutex();
 
 export function setCrawlerPause(
     reason: CrawlerPauseReason,
-    isManualPause: boolean = false,
-    manualPauseMinute: number = 0,
-    info: string = '',
+    isManualPause = false,
+    manualPauseMinute = 0,
+    info = '',
 ): string {
     if (crawlerStatus.pauseData.isPaused) {
         crawlerStatus.pauseData.reason = reason;
@@ -214,7 +214,7 @@ export function setCrawlerPause(
     return 'ok';
 }
 
-export function removeCrawlerPause(handleManual: boolean = false, force: boolean = false): string {
+export function removeCrawlerPause(handleManual = false, force = false): string {
     if (!crawlerStatus.pauseData.isPaused) {
         return 'CRAWLER_IS_NOT_PAUSED';
     }
@@ -305,7 +305,7 @@ export async function addPageLinkToCrawlerStatus(
 export function changePageLinkStateFromCrawlerStatus(
     pageLink: string,
     state: string,
-    appendMode: boolean = false,
+    appendMode = false,
 ): void {
     pageLink = getDecodedLink(pageLink);
     const data = crawlerStatus.pageLinks.find((item) => item.url === pageLink);
@@ -455,7 +455,7 @@ export async function updateCrawlerStatus_sourceStart(
 
 export async function updateCrawlerStatus_sourceEnd(
     lastPages: number[],
-    dontSave: boolean = false,
+    dontSave = false,
 ): Promise<void> {
     if (config.DEBUG_MODE) {
         const name = crawlerStatus.crawlingSource?.name;
@@ -494,7 +494,7 @@ export async function updateCrawlerStatus_sourceEnd(
 
 export async function updateCrawlerStatus_domainChangeHandlerStart(): Promise<void> {
     if (config.DEBUG_MODE) {
-        logger.info(`Domain_change_handler: started`);
+        logger.info("Domain_change_handler: started");
     }
 
     crawlerStatus.domainChangeHandler.isActive = true;
@@ -507,7 +507,7 @@ export async function updateCrawlerStatus_domainChangeHandlerStart(): Promise<vo
 
 export async function updateCrawlerStatus_domainChangeHandlerEnd(): Promise<number> {
     if (config.DEBUG_MODE) {
-        logger.info(`Domain_change_handler: ended`);
+        logger.info("Domain_change_handler: ended");
     }
 
     const duration = getDatesBetween(
@@ -530,7 +530,7 @@ export async function updateCrawlerStatus_domainChangeHandlerCrashed(
 ): Promise<number> {
     if (config.DEBUG_MODE) {
         // const sourceName = crawlerStatus.domainChangeHandler.
-        logger.warn(`Domain_change_handler: crashed! []`);
+        logger.warn("Domain_change_handler: crashed! []");
     }
 
     const duration = getDatesBetween(
