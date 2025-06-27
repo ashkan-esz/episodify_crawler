@@ -178,3 +178,22 @@ The project includes Docker support for both development and production environm
 ## License
 
 This project is licensed under the ISC License.
+
+## Sentry Error Monitoring
+
+This project uses [Sentry](https://sentry.io/) for error monitoring and reporting.
+
+Set the following environment variable in your `.env` file:
+
+```
+CRAWLER_SENTRY_DNS=your_sentry_dsn_here
+```
+
+If this variable is set, all errors logged via `saveError` will be reported to Sentry.
+
+### Usage
+
+- Errors are automatically captured in the logger and sent to Sentry.
+- Unhandled exceptions and rejections are also reported.
+
+See `src/utils/logger.ts` for implementation details.

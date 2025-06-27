@@ -8,7 +8,7 @@ import { helmet } from 'elysia-helmet';
 import { mongoDB, prisma, Redis } from '@/services/database';
 import { MongoDBCollectionsRepo } from '@/repo';
 import { SourcesArray } from '@/services/crawler';
-import logger from '@/utils/logger';
+import logger, { saveError } from '@/utils/logger';
 
 async function preStart(): Promise<void> {
     // Initialize status logger
@@ -125,8 +125,13 @@ async function bootstrap(): Promise<void> {
         signals.forEach((signal) => process.on(signal, shutdown));
 
         process.on('unhandledRejection', (reason, promise) => {
+            saveError(reason);
             console.error('Unhandled Rejection at:', promise, 'reason:', reason);
             shutdown();
+        });
+
+        process.on('uncaughtException', (err) => {
+            saveError(err);
         });
     } catch (error) {
         logger.error('Failed to start the application:', error);

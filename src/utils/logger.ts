@@ -37,14 +37,27 @@ const logger = pino(transport);
 // Configure Sentry
 if (config.CRAWLER_SENTRY_DNS) {
     Sentry.init({
+        environment: config.NODE_ENV || 'development',
         dsn: config.CRAWLER_SENTRY_DNS,
-        tracesSampleRate: 1.0, // Capture 100% of transactions for performance monitoring
+        tracesSampleRate: 0.5, // Capture 50% of transactions for performance monitoring
         // profilesSampleRate: 1.0, // Capture 100% of transactions for profiling
-        sampleRate: 1.0,
+        sampleRate: 0.5,
         integrations: [
-            // Add any necessary Sentry integrations here
+            Sentry.httpIntegration(),
+            Sentry.mongoIntegration(),
+            Sentry.consoleIntegration(),
+            Sentry.contextLinesIntegration(),
+            Sentry.dedupeIntegration(),
+            Sentry.linkedErrorsIntegration(),
         ],
-        // Adjust sample rates and add other configurations as needed for production
+        beforeSend(event) {
+            // Example: Remove Authorization headers
+            if (event.request?.headers) {
+                delete event.request.headers['authorization'];
+            }
+            // Add more redaction as needed
+            return event;
+        },
     });
     logger.info('Sentry initialized.');
 } else {

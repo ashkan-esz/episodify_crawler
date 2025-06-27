@@ -141,5 +141,3 @@
     //TODO : add prisma
     //TODO : add postgres
 
-    //TODO : add sentry
-

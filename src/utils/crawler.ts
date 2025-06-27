@@ -1,4 +1,4 @@
-import { DateRange, DownloadLink, MovieType } from '@/types';
+import { type DateRange, type DownloadLink, MovieType } from '@/types';
 import { saveError } from './logger';
 
 export function replaceSpecialCharacters(input: string, whiteList: string[] = []): string {
