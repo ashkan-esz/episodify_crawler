@@ -149,7 +149,7 @@ These conventions help keep the cache organized and make it easy to invalidate o
 
 ## API Documentation
 
-The API documentation is available at `/docs` when running the server. It's generated using Swagger/OpenAPI.
+The API documentation is available at `/swagger` (or `/docs`) when running the server. It's generated using Swagger/OpenAPI via the ElysiaJS Swagger plugin.
 
 ## Development
 

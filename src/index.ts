@@ -82,12 +82,7 @@ async function bootstrap(): Promise<void> {
         await preStart();
 
         // Initialize API server
-        const app = new Elysia({
-            // detail: {
-            //     hide: true,
-            //     tags: ['elysia'],
-            // },
-        })
+        const app = new Elysia()
             .use(helmet())
             .use(dynamicCors())
             .use(
@@ -98,6 +93,15 @@ async function bootstrap(): Promise<void> {
                             version: '1.0.0',
                         },
                     },
+                    // components: {
+                    //     securitySchemes: {
+                    //         bearerAuth: {
+                    //             type: 'http',
+                    //             scheme: 'bearer',
+                    //             bearerFormat: 'JWT'
+                    //         }
+                    //     }
+                    // }
                 }),
             )
             .get('/', () => 'Episodify Crawler Service')

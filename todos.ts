@@ -132,7 +132,6 @@
     //TODO : update dependencies
 
     //TODO : new README.md
-    //TODO : add swagger
 
     //TODO : crawler logger
     //TODO : logger
