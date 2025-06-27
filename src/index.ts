@@ -5,15 +5,10 @@ import { UltimateStatusLogger } from '@utils/statusLogger';
 import { Elysia } from 'elysia';
 import { swagger } from '@elysiajs/swagger';
 import { helmet } from 'elysia-helmet';
-import { mongoDB, prisma } from '@/services/database';
+import { mongoDB, prisma, Redis } from '@/services/database';
 import { MongoDBCollectionsRepo } from '@/repo';
 import { SourcesArray } from '@/services/crawler';
-import Redis from 'ioredis';
-
 import logger from '@/utils/logger';
-
-// Initialize database clients
-export const redis = new Redis(config.REDIS_URL);
 
 async function preStart(): Promise<void> {
     // Initialize status logger
@@ -21,6 +16,7 @@ async function preStart(): Promise<void> {
         enablePerformanceAnalysis: false,
     });
 
+    statusLogger.addStep('Redis', [], { critical: false });
     statusLogger.addStep('MongoBD', [], { critical: true });
     statusLogger.addStep('MongoDB_Create_Collections', ['MongoBD'], { critical: true });
     statusLogger.addStep('Crawler_DB_Config', ['MongoBD', 'MongoDB_Create_Collections'], {
@@ -69,6 +65,14 @@ async function preStart(): Promise<void> {
         'Adding Crawler Sources to DB',
     );
 
+    await statusLogger.executeStep(
+        'Redis',
+        async () => {
+            await Redis.connect();
+        },
+        'Connecting to Redis',
+    );
+
     // End status logger
     statusLogger.complete();
 }
@@ -110,7 +114,7 @@ async function bootstrap(): Promise<void> {
             await Promise.all([
                 mongoDB.close(),
                 prisma.$disconnect(),
-                redis.quit(),
+                Redis.close(),
                 // mqConnection.close(),
             ]);
 
