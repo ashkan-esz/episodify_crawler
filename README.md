@@ -130,6 +130,23 @@ docker/              # Docker configuration
 prisma/              # Database migrations
 ```
 
+## Cache Key Conventions
+
+The project uses Redis for caching various types of data. To avoid key collisions and to organize cache entries, the following key prefixes are used (see `CACHE_KEY_PREFIX` in the code):
+
+| Prefix                        | Purpose                        | Example Key         |
+|-------------------------------|--------------------------------|---------------------|
+| `jwt:`                        | JWT/session data               | `jwt:<token>`       |
+| `user:`                       | User data                      | `user:<userId>`     |
+| `roleIds:`                    | Role permissions data          | `roleIds:<roleId>`  |
+
+**Usage Example:**
+- To cache a JWT: `jwt:<token>`
+- To cache user data: `user:<userId>`
+- To cache role permissions: `roleIds:<roleId>`
+
+These conventions help keep the cache organized and make it easy to invalidate or query related keys.
+
 ## API Documentation
 
 The API documentation is available at `/docs` when running the server. It's generated using Swagger/OpenAPI.

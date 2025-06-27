@@ -143,5 +143,3 @@
 
     //TODO : add sentry
 
-    //TODO : add redis cache
-
