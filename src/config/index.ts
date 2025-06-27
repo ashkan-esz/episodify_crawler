@@ -33,12 +33,12 @@ const configSchema = z.object({
     ACCESS_TOKEN_SECRET: z.string(),
     REFRESH_TOKEN_SECRET: z.string(),
     DOMAIN: z.string(),
-    SENTRY_ORG: z.string().default(''),
 
     // Sentry
     CRAWLER_SENTRY_DNS: z.string(),
     SENTRY_AUTH_TOKEN: z.string(),
     SENTRY_PROJECT: z.string(),
+    SENTRY_ORG: z.string().default(''),
 
     // App
     PORT: z.coerce.number().default(3000),
@@ -64,9 +64,6 @@ const configSchema = z.object({
     CRAWLER_MANUAL_GC_ON_HIGH_LOAD: z.coerce.boolean().default(false),
     DISABLE_THUMBNAIL_CREATE: z.coerce.boolean().default(false),
     IGNORE_HENTAI: z.coerce.boolean().default(false),
-
-    // Startup
-    INIT_DBS_ON_START: z.coerce.boolean().default(false),
 });
 
 // Parse and validate configuration
@@ -76,6 +73,7 @@ const config = configSchema.parse(process.env);
 const isDevelopment = config.NODE_ENV === 'development';
 const isProduction = config.NODE_ENV === 'production';
 const isTest = config.NODE_ENV === 'test';
+const SERVER_START_TIME = Date.now();
 
 const CORS_ALLOWED_ORIGINS: string[] = (process.env.CORS_ALLOWED_ORIGINS || "").split('---').map(item => item.trim())
 
@@ -105,4 +103,5 @@ export default {
     isProduction,
     isTest,
     API_KEYS,
+    SERVER_START_TIME,
 };

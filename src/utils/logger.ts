@@ -1,3 +1,4 @@
+import config from '@/config';
 import * as Sentry from "@sentry/bun";
 import pino from 'pino';
 import path from 'path';
@@ -31,13 +32,9 @@ const transport = pino.transport({
 const logger = pino(transport);
 
 // Configure Sentry
-// !! IMPORTANT: Replace 'YOUR_SENTRY_DSN' with your actual Sentry DSN !!
-// It's recommended to use an environment variable for this (e.g., process.env.SENTRY_DSN)
-const sentryDsn = process.env.SENTRY_DSN || 'YOUR_SENTRY_DSN';
-
-if (sentryDsn !== 'YOUR_SENTRY_DSN') {
+if (config.CRAWLER_SENTRY_DNS) {
     Sentry.init({
-        dsn: sentryDsn,
+        dsn: config.CRAWLER_SENTRY_DNS,
         tracesSampleRate: 1.0, // Capture 100% of transactions for performance monitoring
         // profilesSampleRate: 1.0, // Capture 100% of transactions for profiling
         sampleRate: 1.0,
@@ -64,7 +61,7 @@ export function saveError(error: any, context?: Record<string, any>): void {
         logger.error({ error, context }, 'An unknown error occurred');
     }
 
-    if (sentryDsn !== 'YOUR_SENTRY_DSN') {
+    if (config.CRAWLER_SENTRY_DNS) {
         Sentry.captureException(error, {
             extra: context,
         });
