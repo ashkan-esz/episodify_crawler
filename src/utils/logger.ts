@@ -1,5 +1,5 @@
 import config from '@/config';
-import * as Sentry from "@sentry/bun";
+import * as Sentry from '@sentry/bun';
 import pino from 'pino';
 import path from 'path';
 import fs from 'fs';
@@ -23,7 +23,10 @@ const transport = pino.transport({
         },
         {
             target: 'pino/file',
-            options: { destination: path.join(logsDir, 'app.log'), mkdir: true },
+            options: {
+                destination: path.join(logsDir, 'app.log'),
+                mkdir: true,
+            },
             level: 'error', // Only log errors to file
         },
     ],
@@ -48,7 +51,6 @@ if (config.CRAWLER_SENTRY_DNS) {
     logger.warn('SENTRY_DSN not found. Sentry reporting is disabled.');
 }
 
-
 /**
  * Logs an error to the console/file and reports it to Sentry.
  * @param error - The error object to log and report.
@@ -56,7 +58,10 @@ if (config.CRAWLER_SENTRY_DNS) {
  */
 export function saveError(error: any, context?: Record<string, any>): void {
     if (error instanceof Error) {
-        logger.error({ err: error, context }, `Error occurred: ${error.message}`);
+        logger.error({
+            err: error,
+            context,
+        }, `Error occurred: ${error.message}`);
     } else {
         logger.error({ error, context }, 'An unknown error occurred');
     }
@@ -77,7 +82,7 @@ export async function saveErrorIfNeeded(error: any): Promise<void> {
         error.code !== 'Z_BUF_ERROR' &&
         error.code !== 'DEPTH_ZERO_SELF_SIGNED_CERT' &&
         error.message !== 'certificate has expired' &&
-        error.code !== "ERR_TLS_CERT_ALTNAME_INVALID"
+        error.code !== 'ERR_TLS_CERT_ALTNAME_INVALID'
     ) {
         await saveError(error);
     }
