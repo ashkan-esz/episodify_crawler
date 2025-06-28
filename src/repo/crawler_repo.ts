@@ -198,7 +198,7 @@ export async function insertMovieToDB(dataToInsert: Movie): Promise<{
 
         try {
             await kyselyDB.insertInto('movies').values({
-                movieId: result.insertedId.toString(),
+                movie_id: result.insertedId.toString(),
                 likes_count: 0,
                 dislikes_count: 0,
                 favorite_count: 0,

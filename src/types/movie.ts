@@ -335,7 +335,7 @@ export function getMovieModel(
 }
 
 export interface MovieSqlTable {
-    movieId: string;
+    movie_id: string;
     created_at: ColumnType<Date, string | undefined, never>;
     likes_count: number;
     dislikes_count: number;
@@ -352,6 +352,17 @@ export interface MovieSqlTable {
 export type MovieSql = Selectable<MovieSqlTable>
 export type NewMovieSql = Insertable<MovieSqlTable>
 export type MovieSqlUpdate = Updateable<MovieSqlTable>
+
+export interface RelatedMoviesSqlTable {
+    movie_id: string;
+    related_movie_id: string;
+    relation: string;
+    created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type RelatedMovies = Selectable<RelatedMoviesSqlTable>
+export type NewRelatedMovies = Insertable<RelatedMoviesSqlTable>
+export type RelatedMoviesUpdate = Updateable<RelatedMoviesSqlTable>
 
 export type MovieTorrentDownloaderConfig = {
     disabled: boolean;

@@ -1,7 +1,7 @@
 import { TitleRelation } from '@/types/movie';
-import { prisma } from '@services/database';
+import { kyselyDB } from '@services/database';
 import { saveError } from '@utils/logger';
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 
 export async function addRelatedMovies(
     id1Str: ObjectId,
@@ -11,50 +11,33 @@ export async function addRelatedMovies(
     try {
         const id1 = id1Str.toString();
         const id2 = id2Str.toString();
-        await prisma.relatedMovie.create({
-            data: {
-                movieId: id1,
-                relatedId: id2,
-                relation: relation,
-            },
-            select: {
-                movieId: true,
-            },
-        });
+
+        await kyselyDB.insertInto('related_movies').values({
+            movie_id: id1,
+            related_movie_id: id2,
+            relation: relation,
+        }).execute();
 
         if (relation === TitleRelation.PREQUEL) {
-            await prisma.relatedMovie.create({
-                data: {
-                    movieId: id2,
-                    relatedId: id1,
-                    relation: TitleRelation.SEQUEL,
-                },
-                select: {
-                    movieId: true,
-                },
-            });
+            await kyselyDB.insertInto('related_movies').values({
+                movie_id: id2,
+                related_movie_id: id1,
+                relation: TitleRelation.SEQUEL,
+            }).execute();
+
         } else if (relation === TitleRelation.SEQUEL) {
-            await prisma.relatedMovie.create({
-                data: {
-                    movieId: id2,
-                    relatedId: id1,
-                    relation: TitleRelation.PREQUEL,
-                },
-                select: {
-                    movieId: true,
-                },
-            });
+            await kyselyDB.insertInto('related_movies').values({
+                movie_id: id2,
+                related_movie_id: id1,
+                relation: TitleRelation.PREQUEL,
+            }).execute();
+
         } else if (relation === TitleRelation.SPIN_OFF || relation === TitleRelation.SIDE_STORY) {
-            await prisma.relatedMovie.create({
-                data: {
-                    movieId: id2,
-                    relatedId: id1,
-                    relation: relation,
-                },
-                select: {
-                    movieId: true,
-                },
-            });
+            await kyselyDB.insertInto('related_movies').values({
+                movie_id: id2,
+                related_movie_id: id1,
+                relation: relation,
+            }).execute();
         }
 
         return 'ok';
