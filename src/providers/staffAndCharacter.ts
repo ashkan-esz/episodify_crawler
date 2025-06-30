@@ -1,8 +1,8 @@
 import {
-    CrawlerExtraConfigs,
+    type CrawlerExtraConfigs,
     ExtraConfigsSwitchState,
 } from '@/types';
-import { Credit } from '@/types/staff';
+import type { Credit } from '@/types/staff';
 import { Jikan } from '@/providers/index';
 import { extractStaffDataFromJikanAbout } from '@/providers/utils';
 import {
@@ -10,11 +10,11 @@ import {
     checkForceStopCrawler,
 } from '@/status/status';
 import { saveError } from '@utils/logger';
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 import PQueue from 'p-queue';
 import { StaffRepo } from '@/repo';
 import { Crawler as CrawlerUtils } from '@/utils';
-import {S3Storage} from '@/storage'
+import { S3Storage } from '@/storage';
 
 //TODO : use dynamic config
 const _maxStaffOrCharacterSize = 150;
@@ -27,11 +27,11 @@ let _castConcurrency = 0;
 
 export async function addStaffAndCharacters(
     pageLink: string,
-    movieId:  ObjectId,
+    movieId: ObjectId,
     allApiData: any,
     castUpdateDate: Date | null,
     extraConfigs: CrawlerExtraConfigs | null = null,
-    ): Promise<void> {
+): Promise<void> {
     try {
         //castUpdateState is none|ignore|force
         if (extraConfigs?.castUpdateState === ExtraConfigsSwitchState.IGNORE) {
@@ -43,7 +43,7 @@ export async function addStaffAndCharacters(
         }
 
         // let {omdbApiFields, tvmazeApiFields, jikanApiFields} = allApiData;
-        const {tvmazeApiFields, jikanApiFields} = allApiData;
+        const { tvmazeApiFields, jikanApiFields } = allApiData;
 
         const credits: Credit[] = [];
 
@@ -59,7 +59,7 @@ export async function addStaffAndCharacters(
         }
 
         if (jikanApiFields) {
-            changePageLinkStateFromCrawlerStatus(pageLink, ` ([3/6] jikan: fetching staff/character list)`, true);
+            changePageLinkStateFromCrawlerStatus(pageLink, ' ([3/6] jikan: fetching staff/character list)', true);
 
             while (_castConcurrency >= _maxCastConcurrency) {
                 changePageLinkStateFromCrawlerStatus(pageLink, ` (exceed concurrency limit: ${_castConcurrency}/${_maxCastConcurrency})`, true);
@@ -75,13 +75,12 @@ export async function addStaffAndCharacters(
             }
             _castConcurrency--;
         }
-        changePageLinkStateFromCrawlerStatus(pageLink, ` ([6/6] updating credits)`, true);
+        changePageLinkStateFromCrawlerStatus(pageLink, ' ([6/6] updating credits)', true);
         await handleCredits(credits);
     } catch (error) {
         saveError(error);
     }
 }
-
 
 //-----------------------------------------------------
 //-----------------------------------------------------
@@ -91,7 +90,7 @@ async function addTvMazeActorsAndCharacters(
     movieId: ObjectId,
     tvmazeCast: any,
     credits: Credit[],
-    ): Promise<void> {
+): Promise<void> {
     for (let i = 0; i < tvmazeCast.length; i++) {
         changePageLinkStateFromCrawlerStatus(pageLink, ` ([1/6] tvmaze-staff: ${i + 1}/${tvmazeCast.length})`, true);
         if (checkForceStopCrawler()) {
@@ -99,7 +98,7 @@ async function addTvMazeActorsAndCharacters(
         }
         const countryName = tvmazeCast[i].person.country?.name?.toLowerCase() || '';
         const originalImages = [tvmazeCast[i].person.image?.medium, tvmazeCast[i].person.image?.original].filter(item => item);
-        const positions = tvmazeCast[i].voice ? ['Voice Actor'] : ['Actor'];
+        const positions: string[] = tvmazeCast[i].voice ? ['Voice Actor'] : ['Actor'];
         const birthday = tvmazeCast[i].person.birthday;
         const deathday = tvmazeCast[i].person.deathday;
         let age = 0;
@@ -114,12 +113,12 @@ async function addTvMazeActorsAndCharacters(
         const gender = tvmazeCast[i].person.gender?.toLowerCase() || '';
         const staffData = {
             gender: gender,
-            tvmazePersonID: tvmazeCast[i].person.id,
+            tvmaze_person_id: tvmazeCast[i].person.id,
             country: countryName,
             birthday: birthday,
             deathday: deathday,
             age: age,
-            originalImages: originalImages,
+            original_images: originalImages,
         };
         const keys = Object.keys(staffData);
         for (let j = 0; j < keys.length; j++) {
@@ -133,18 +132,21 @@ async function addTvMazeActorsAndCharacters(
         if (createStaffResult) {
             const characterName = CrawlerUtils.fixJapaneseCharacter(tvmazeCast[i].character.name);
             credits.push({
-                movieId: movieId.toString(),
-                staffId: createStaffResult.id,
-                characterId: null,
-                actorPositions: positions,
-                characterName: characterName,
-                characterRole: '',
+                id: 0,
+                movie_id: movieId.toString(),
+                staff_id: createStaffResult.id,
+                character_id: null,
+                actor_positions: positions,
+                character_name: characterName,
+                character_role: '',
+                created_at: new Date(),
+                updated_at: new Date(),
             });
-            if (!createStaffResult.imageData) {
+            if (!createStaffResult.image_data) {
                 const castImage = await S3Storage.uploadCastImageToS3ByURl(name, 'staff', createStaffResult.id, originalImages[0]);
                 if (castImage) {
                     const res = await StaffRepo.addCastImage(createStaffResult.id, 'staff', castImage);
-                    if (res && res.blurHash === "") {
+                    if (res && res.blurHash === '') {
                         // TODO : implement
                         // await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.staff, createStaffResult.id, castImage.url)
                     }
@@ -162,24 +164,27 @@ async function addTvMazeActorsAndCharacters(
         const rawName = CrawlerUtils.fixJapaneseCharacter(tvmazeCast[i].character.name);
         const name = CrawlerUtils.replaceSpecialCharacters(rawName.toLowerCase());
         const characterData = {
-            tvmazePersonID: tvmazeCast[i].character.id,
-            originalImages: originalImages,
+            tvmaze_person_id: tvmazeCast[i].character.id,
+            original_images: originalImages,
         };
         const createCharacterResult = await StaffRepo.upsertCharacter(name, rawName, characterData);
         if (createCharacterResult) {
             credits.push({
-                movieId: movieId.toString(),
-                staffId: null,
-                characterId: createCharacterResult.id,
-                actorPositions: [],
-                characterName: rawName,
-                characterRole: '',
+                id: 0,
+                movie_id: movieId.toString(),
+                staff_id: null,
+                character_id: createCharacterResult.id,
+                actor_positions: [],
+                character_name: rawName,
+                character_role: '',
+                created_at: new Date(),
+                updated_at: new Date(),
             });
-            if (!createCharacterResult.imageData) {
+            if (!createCharacterResult.image_data) {
                 const castImage = await S3Storage.uploadCastImageToS3ByURl(name, 'character', createCharacterResult.id, originalImages[0]);
                 if (castImage) {
                     const res = await StaffRepo.addCastImage(createCharacterResult.id, 'character', castImage);
-                    if (res && res.blurHash === "") {
+                    if (res && res.blurHash === '') {
                         // TODO : implement
                         // await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.character, createCharacterResult.id, castImage.url)
                     }
@@ -197,7 +202,7 @@ async function handleJikanStaff_voiceActors(
     movieId: ObjectId,
     jikanCharactersArray: any[],
     credits: Credit[],
-    ): Promise<void> {
+): Promise<void> {
     const voiceActors: any[] = [];
     for (let i = 0; i < jikanCharactersArray.length; i++) {
         const thisCharacterVoiceActors = jikanCharactersArray[i].voice_actors;
@@ -218,14 +223,14 @@ async function handleJikanStaff(
     movieId: ObjectId,
     jikanStaffArray: any[],
     credits: Credit[],
-    isVoiceActors: boolean = false,
-    ): Promise<void> {
+    isVoiceActors = false,
+): Promise<void> {
     if (isVoiceActors) {
-        changePageLinkStateFromCrawlerStatus(pageLink, ` ([4/6] jikan-voiceActor: 0/?)`, true);
+        changePageLinkStateFromCrawlerStatus(pageLink, ' ([4/6] jikan-voiceActor: 0/?)', true);
     } else {
-        changePageLinkStateFromCrawlerStatus(pageLink, ` ([3/6] jikan-staff: 0/?)`, true);
+        changePageLinkStateFromCrawlerStatus(pageLink, ' ([3/6] jikan-staff: 0/?)', true);
     }
-    const promiseQueue = new PQueue({concurrency: _pqConcurrency});
+    const promiseQueue = new PQueue({ concurrency: _pqConcurrency });
     for (let i = 0; i < jikanStaffArray.length && i < _maxStaffOrCharacterSize; i++) {
         if (checkForceStopCrawler()) {
             promiseQueue.clear();
@@ -254,15 +259,14 @@ async function handleJikanStaff(
     await promiseQueue.onIdle();
 }
 
-
 async function handleJikanCharaters(
     pageLink: string,
     movieId: ObjectId,
     jikanCharatersArray: any[],
     credits: Credit[],
-    ): Promise<void> {
-    changePageLinkStateFromCrawlerStatus(pageLink, ` ([5/6] jikan-characters: 0/?)`, true);
-    const promiseQueue = new PQueue({concurrency: _pqConcurrency});
+): Promise<void> {
+    changePageLinkStateFromCrawlerStatus(pageLink, ' ([5/6] jikan-characters: 0/?)', true);
+    const promiseQueue = new PQueue({ concurrency: _pqConcurrency });
     for (let i = 0; i < jikanCharatersArray.length && i < _maxStaffOrCharacterSize; i++) {
         if (checkForceStopCrawler()) {
             promiseQueue.clear();
@@ -300,7 +304,7 @@ async function addStaffOrCharacterFromJikanData(
     fullApiData: any,
     type: string,
     credits: Credit[],
-    ): Promise<void> {
+): Promise<void> {
     const extractedData = extractStaffDataFromJikanAbout(fullApiData);
 
     const originalImages: string[] = [];
@@ -326,8 +330,8 @@ async function addStaffOrCharacterFromJikanData(
     const name = CrawlerUtils.replaceSpecialCharacters(rawName.toLowerCase());
     const data = {
         about: (fullApiData.about || '').trim().replace(/\n\s*\n/g, '\n').replace(/\s\s+/g, ' '),
-        jikanPersonID: fullApiData.mal_id,
-        originalImages: originalImages.filter(item => item),
+        jikan_person_id: fullApiData.mal_id,
+        original_images: originalImages.filter(item => item),
         ...extractedData,
     };
     const keys = Object.keys(data);
@@ -344,31 +348,37 @@ async function addStaffOrCharacterFromJikanData(
         if (createStaffResult) {
             const characterName = CrawlerUtils.fixJapaneseCharacter(SemiData.characterName || '');
 
-            const findCredit = credits.find(c => c.movieId.toString() === movieId.toString() && c.staffId === createStaffResult.id && c.actorPositions[0] === SemiData.positions[0] && (!c.characterName || c.characterName === characterName));
+            const findCredit = credits.find(c => c.movie_id.toString() === movieId.toString() &&
+                c.staff_id === createStaffResult.id &&
+                c.actor_positions[0] === SemiData.positions[0] &&
+                (!c.character_name || c.character_name === characterName));
             if (findCredit) {
-                findCredit.actorPositions = SemiData.positions;
-                if (!findCredit.characterName) {
-                    findCredit.characterName = characterName;
+                findCredit.actor_positions = SemiData.positions;
+                if (!findCredit.character_name) {
+                    findCredit.character_name = characterName;
                 }
-                if (!findCredit.characterRole) {
-                    findCredit.characterRole = SemiData.characterRole || '';
+                if (!findCredit.character_role) {
+                    findCredit.character_role = SemiData.characterRole || '';
                 }
             } else {
                 credits.push({
-                    movieId: movieId.toString(),
-                    staffId: createStaffResult.id,
-                    characterId: null,
-                    actorPositions: SemiData.positions,
-                    characterName: characterName,
-                    characterRole: SemiData.characterRole || '',
+                    id: 0,
+                    movie_id: movieId.toString(),
+                    staff_id: createStaffResult.id,
+                    character_id: null,
+                    actor_positions: SemiData.positions,
+                    character_name: characterName,
+                    character_role: SemiData.characterRole || '',
+                    created_at: new Date(),
+                    updated_at: new Date(),
                 });
             }
 
-            if (!createStaffResult.imageData) {
+            if (!createStaffResult.image_data) {
                 const castImage = await S3Storage.uploadCastImageToS3ByURl(name, 'staff', createStaffResult.id, originalImages[0]);
                 if (castImage) {
                     const res = await StaffRepo.addCastImage(createStaffResult.id, 'staff', castImage);
-                    if (res && res.blurHash === "") {
+                    if (res && res.blurHash === '') {
                         // TODO : implement
                         // await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.staff, createStaffResult.id, castImage.url)
                     }
@@ -379,27 +389,33 @@ async function addStaffOrCharacterFromJikanData(
         const createCharacterResult = await StaffRepo.upsertCharacter(name, rawName, data);
         if (createCharacterResult) {
 
-            const findCredit = credits.find(c => c.movieId.toString() === movieId.toString() && c.characterId === createCharacterResult.id && c.characterName === rawName);
+            const findCredit = credits.find(c =>
+                c.movie_id.toString() === movieId.toString() &&
+                c.character_id === createCharacterResult.id &&
+                c.character_name === rawName);
             if (findCredit) {
-                if (!findCredit.characterRole) {
-                    findCredit.characterRole = SemiData.role || '';
+                if (!findCredit.character_role) {
+                    findCredit.character_role = SemiData.role || '';
                 }
             } else {
                 credits.push({
-                    movieId: movieId.toString(),
-                    staffId: null,
-                    characterId: createCharacterResult.id,
-                    actorPositions: [],
-                    characterName: rawName,
-                    characterRole: SemiData.role || '',
+                    id: 0,
+                    movie_id: movieId.toString(),
+                    staff_id: null,
+                    character_id: createCharacterResult.id,
+                    actor_positions: [],
+                    character_name: rawName,
+                    character_role: SemiData.role || '',
+                    created_at: new Date(),
+                    updated_at: new Date(),
                 });
             }
 
-            if (!createCharacterResult.imageData) {
+            if (!createCharacterResult.image_data) {
                 const castImage = await S3Storage.uploadCastImageToS3ByURl(name, 'staff', createCharacterResult.id, originalImages[0]);
                 if (castImage) {
                     const res = await StaffRepo.addCastImage(createCharacterResult.id, 'character', castImage);
-                    if (res && res.blurHash === "") {
+                    if (res && res.blurHash === '') {
                         // TODO : implement
                         // await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.character, createCharacterResult.id, castImage.url)
                     }
@@ -414,23 +430,30 @@ async function addStaffOrCharacterFromJikanData(
 
 async function handleCredits(credits: Credit[]): Promise<void> {
     try {
-        const result = credits.filter(c => c.staffId);
+        const result = credits.filter(c => c.staff_id);
         for (let j = 0; j < credits.length; j++) {
-            if (!credits[j].staffId && credits[j].characterId && credits[j].characterName) {
+            if (!credits[j].staff_id && credits[j].character_id && credits[j].character_name) {
                 for (let k = 0; k < result.length; k++) {
-                    if (result[k].characterName === credits[j].characterName && (!result[k].characterId || !result[k].characterRole)) {
-                        result[k].characterId = credits[j].characterId;
-                        if (!result[k].characterRole) {
-                            result[k].characterRole = credits[j].characterRole;
+                    if (result[k].character_name === credits[j].character_name &&
+                        (!result[k].character_id || !result[k].character_role)) {
+                        result[k].character_id = credits[j].character_id;
+                        if (!result[k].character_role) {
+                            result[k].character_role = credits[j].character_role;
                         }
                     }
                 }
             }
         }
 
-        const promiseQueue = new PQueue({concurrency: 30});
+        const promiseQueue = new PQueue({ concurrency: 5 });
         for (let j = 0; j < result.length; j++) {
-            promiseQueue.add(() => StaffRepo.insertOrUpdateCredit(result[j].movieId, result[j].staffId, result[j].characterId, result[j].actorPositions, result[j].characterRole));
+            promiseQueue.add(() => StaffRepo.insertOrUpdateCredit(
+                result[j].movie_id,
+                result[j].staff_id || null,
+                result[j].character_id || null,
+                result[j].actor_positions,
+                result[j].character_name,
+                result[j].character_role));
         }
         await promiseQueue.onIdle();
     } catch (error) {

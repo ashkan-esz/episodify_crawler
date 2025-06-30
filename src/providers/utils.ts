@@ -8,8 +8,8 @@ export function extractStaffDataFromJikanAbout(jikanData: any): {
     age: number,
     deathday: string,
     gender: string,
-    hairColor: string,
-    eyeColor: string,
+    hair_color: string,
+    eye_color: string,
     country: string,
 } {
     if (!jikanData || !jikanData.about) {
@@ -21,8 +21,8 @@ export function extractStaffDataFromJikanAbout(jikanData: any): {
             age: 0,
             deathday: '',
             gender: '',
-            hairColor: '',
-            eyeColor: '',
+            hair_color: '',
+            eye_color: '',
             country: ''
         };
     }
@@ -50,8 +50,8 @@ export function extractStaffDataFromJikanAbout(jikanData: any): {
         age: age || 0,
         deathday: deathday || '',
         gender: gender || '',
-        hairColor: hairColor || '',
-        eyeColor: eyeColor || '',
+        hair_color: hairColor || '',
+        eye_color: eyeColor || '',
         country: country || '',
     };
 }

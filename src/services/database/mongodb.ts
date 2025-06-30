@@ -1,6 +1,12 @@
 import config from '@/config';
-import { MongoClient, Db, MongoClientOptions, ClientSession, TransactionOptions } from 'mongodb';
-import { LogEntry } from 'winston';
+import { logger } from '@/utils';
+import {
+    MongoClient,
+    type Db,
+    type MongoClientOptions,
+    type ClientSession,
+    type TransactionOptions,
+} from 'mongodb';
 
 // Environment validation
 if (!config.MONGODB_DATABASE_URL) {
@@ -14,7 +20,6 @@ class MongoDBManager {
     private connectionPromise: Promise<Db> | null = null;
     private shutdownSignalReceived = false;
     private readonly maxAttempts = 3;
-    private logger: (entry: LogEntry) => void = console.log;
     private healthMonitor: NodeJS.Timeout | null = null;
     private baseHealthCheckInterval = 60000;
     private consecutiveSuccessfulPings = 0;
@@ -27,21 +32,16 @@ class MongoDBManager {
         links: 'links',
     };
 
-    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-    public setLogger(logger: (entry: LogEntry) => void) {
-        this.logger = logger;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-    private log(level: LogEntry['level'], message: string, metadata?: object) {
-        this.logger({
+    private log(level: string, message: string, metadata?: object) {
+        logger.warn({
             level,
             message: `[MongoDB] ${message}`,
             metadata,
         });
     }
 
-    private constructor() {}
+    private constructor() {
+    }
 
     public static getInstance(): MongoDBManager {
         if (!MongoDBManager.instance) {
@@ -181,11 +181,15 @@ class MongoDBManager {
     }
 
     private startHealthMonitor(): void {
-        if (this.healthMonitor) return; // Avoid duplicates
+        if (this.healthMonitor) {
+            return;
+        } // Avoid duplicates
 
         this.healthMonitor = setInterval(async () => {
             try {
-                if (!this.db) return;
+                if (!this.db) {
+                    return;
+                }
 
                 // Perform actual database ping
                 await this.db.command({ ping: 1 }, { timeoutMS: 1000 });

@@ -1,6 +1,6 @@
 import { TitleRelation } from '@/types/movie';
 import { kyselyDB } from '@services/database';
-import { saveError } from '@utils/logger';
+import { mapDbErrorCode, saveError } from '@utils/logger';
 import type { ObjectId } from 'mongodb';
 
 export async function addRelatedMovies(
@@ -42,10 +42,10 @@ export async function addRelatedMovies(
 
         return 'ok';
     } catch (error: any) {
-        if (error.code === 'P2003') {
+        if (mapDbErrorCode(error.code) !== 'foreign_key_violation') {
             return 'notfound';
         }
-        if (error.code !== 'P2002') {
+        if (mapDbErrorCode(error.code) !== 'unique_violation') {
             saveError(error);
             return 'error';
         }

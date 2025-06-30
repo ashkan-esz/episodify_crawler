@@ -101,5 +101,35 @@ export async function saveErrorIfNeeded(error: any): Promise<void> {
     }
 }
 
+/**
+ * Maps known database error codes (Prisma, Postgres) to human-readable error types.
+ * @param code - The error code from the database or ORM
+ * @returns A string representing the error type, or 'unknown' if not recognized
+ */
+export function mapDbErrorCode(code: string | number | undefined): string {
+    switch (code) {
+        // Unique constraint violation
+        case 'P2002': // Prisma
+        case '23505': // Postgres
+            return 'unique_violation';
+        // Foreign key violation
+        case 'P2003': // Prisma
+        case '23503': // Postgres
+            return 'foreign_key_violation';
+        // Not null violation
+        case '23502': // Postgres
+            return 'not_null_violation';
+        // Check violation
+        case '23514': // Postgres
+            return 'check_violation';
+        // Exclusion violation
+        case '23P01': // Postgres
+            return 'exclusion_violation';
+        // Add more as needed
+        default:
+            return 'unknown';
+    }
+}
+
 // Export the logger instance if needed elsewhere
 export default logger; 
