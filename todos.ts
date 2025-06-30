@@ -26,7 +26,6 @@
     //TODO : use 'dive' to check docker image
     //TODO : use https://elysiajs.com/patterns/deploy
     //TODO : use bun compile
-    //TODO : use lighter package for 'prisma'
     //TODO : remove package 'sharp'
 
     //TODO : **********************************
@@ -46,7 +45,6 @@
     //todo : use supabase instead of self-host postgresql
     //todo : remove the need for postgresql database
     //TODO : fix postgres docker image error
-    //TODO : fix prisma error
 
     //TODO : CHANGED :
     //TODO : CHANGED :
@@ -133,10 +131,9 @@
 
     //TODO : new README.md
 
+    //TODO : remove usage of console.log
     //TODO : crawler logger
     //TODO : logger
     //TODO : better error handling
 
-    //TODO : add prisma
-    //TODO : add postgres
 

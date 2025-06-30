@@ -232,7 +232,7 @@ Completed:
 - Project initialization with Bun and TypeScript
 - Directory structure creation
 - Configuration setup (TypeScript, ESLint, Prettier)
-- Database schemas (Prisma and Mongoose)
+- Database schemas (Kysely and Mongoose)
 - Docker environment setup
 - Basic application structure
 - Logger utility

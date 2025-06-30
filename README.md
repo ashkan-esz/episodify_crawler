@@ -45,12 +45,7 @@ cp .env.example .env
 docker-compose up -d
 ```
 
-5. Run database migrations:
-```bash
-bunx prisma migrate dev
-```
-
-6. Start the development server:
+5. Start the development server:
 ```bash
 bun run dev
 ```
@@ -127,7 +122,6 @@ src/
 └── workers/          # Background workers
 
 docker/              # Docker configuration
-prisma/              # Database migrations
 ```
 
 ## Cache Key Conventions

@@ -48,16 +48,6 @@ compose-logs:
 	@echo "Tailing logs for the app service..."
 	@docker-compose logs -f app
 
-# Execute Prisma migrate dev within the running app container
-compose-migrate-dev: compose-up
-	@echo "Running Prisma migrate dev..."
-	@docker-compose exec app bunx prisma migrate dev
-
-# Execute Prisma generate within the running app container
-compose-prisma-generate: compose-up
-	@echo "Running Prisma generate..."
-	@docker-compose exec app bunx prisma generate
-
 # Clean up Docker resources (use with caution)
 clean: compose-down
 	@echo "Removing Docker volumes and stopped containers..."
@@ -76,10 +66,8 @@ help:
 	@echo "  compose-up            Start all services with Docker Compose (recommended for development)"
 	@echo "  compose-down          Stop and remove Docker Compose services"
 	@echo "  compose-logs          Tail logs for the 'app' service in Docker Compose"
-	@echo "  compose-migrate-dev   Run Prisma migrate dev within the app container"
-	@echo "  compose-prisma-generate Run Prisma generate within the app container"
 	@echo "  clean                 Stop services and remove Docker volumes/containers"
 	@echo "  help                  Show this help message"
 
 # Phony targets ensure these commands run even if files with the same name exist
-.PHONY: build run stop compose-up compose-down compose-logs compose-migrate-dev compose-prisma-generate clean help 
+.PHONY: build run stop compose-up compose-down compose-logs clean help

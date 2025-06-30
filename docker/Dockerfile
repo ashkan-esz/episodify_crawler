@@ -7,11 +7,8 @@ WORKDIR /app
 COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile
 
-# Copy source code (including prisma/schema.prisma)
+# Copy source code
 COPY . .
-
-# Generate Prisma client
-RUN bunx prisma generate
 
 # Build application (outputs to /app/dist)
 RUN bun run build
@@ -32,11 +29,8 @@ RUN bun install --production --frozen-lockfile --no-save \
     && rm -rf /root/.bun/install/cache \
     && find /app/node_modules -type d \( -name "__tests__" -o -name "test" -o -name "docs" -o -name "examples" \) -exec rm -rf {} + || true
 
-# Copy built assets and generated Prisma client
+# Copy built assets
 COPY --from=builder --chown=1000:1000 /app/dist ./dist
-COPY --from=builder /app/node_modules/@prisma /app/node_modules/@prisma
-COPY --from=builder /app/node_modules/.prisma /app/node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma/client /app/node_modules/@prisma/client
 
 # Create non-root user
 RUN addgroup -S appgroup -g 1001 \

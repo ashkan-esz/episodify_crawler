@@ -9,18 +9,19 @@ import { CrawlerErrors } from '@/status/warnings';
 import { AbortController } from '@aws-sdk/abort-controller';
 import {
     CreateBucketCommand,
-    CreateBucketCommandInput,
+    type CreateBucketCommandInput,
     DeleteObjectCommand,
     DeleteObjectsCommand,
-    HeadObjectCommand, HeadObjectCommandInput,
+    HeadObjectCommand, type HeadObjectCommandInput,
     ListObjectsCommand,
-    ListObjectsCommandInput,
-    PutObjectCommand, PutObjectCommandInput,
+    type ListObjectsCommandInput,
+    PutObjectCommand,
+    type PutObjectCommandInput,
     S3Client,
 } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
-import { MovieType, VPNStatus } from '@/types';
-import { MoviePosterS3, MovieTrailerS3 } from '@/types/movie';
+import { type MovieType, VPNStatus } from '@/types';
+import type { MoviePosterS3, MovieTrailerS3 } from '@/types/movie';
 import { getArrayBufferResponse, getFileSize } from '@utils/axios';
 import { getDecodedLink } from '@utils/crawler';
 import { compressImage, getImageThumbnail } from '@utils/image';
@@ -132,8 +133,8 @@ export async function uploadSubtitleToS3ByURl(
     fileName: string,
     cookie: any,
     originalUrl: string,
-    retryCounter: number = 0,
-    retryWithSleepCounter: number = 0,
+    retryCounter = 0,
+    retryWithSleepCounter = 0,
 ): Promise<any> {
     try {
         if (!originalUrl) {
@@ -198,8 +199,8 @@ export async function uploadTitlePosterToS3(
     type: MovieType,
     year: string,
     originalUrl: string,
-    forceUpload: boolean = false,
-    isWide: boolean = false,
+    forceUpload = false,
+    isWide = false,
     ): Promise<MoviePosterS3 | null> {
     try {
         const extra = isWide ? 'wide' : '';
@@ -399,9 +400,9 @@ export async function uploadImageToS3(
     fileName: string,
     fileUrl: string,
     originalUrl: string,
-    forceUpload: boolean = false,
-    retryCounter: number = 0,
-    retryWithSleepCounter: number = 0,
+    forceUpload = false,
+    retryCounter = 0,
+    retryWithSleepCounter = 0,
     ): Promise<MoviePosterS3 | null> {
     try {
         if (!originalUrl) {
@@ -498,7 +499,7 @@ async function uploadFileToS3(
     file: any,
     fileName: string,
     fileUrl: string,
-    extraCheckFileSize: boolean = true,
+    extraCheckFileSize = true,
     pageLink: string): Promise<number> {
     const parallelUploads3 = new Upload({
         client: s3,
@@ -552,7 +553,7 @@ export async function getDbBackupFilesList(): Promise<any[]> {
 
 export async function removeDbBackupFileFromS3(
     fileName: string,
-    retryCounter: number = 0,
+    retryCounter = 0,
 ): Promise<string> {
     fileName = getDecodedLink(fileName);
     const result = await deleteFileFromS3(bucketNamesObject.backup, fileName);
@@ -571,8 +572,8 @@ export async function checkFileExist(
     bucketName: string,
     fileName: string,
     fileUrl: string,
-    retryCounter: number = 0,
-    retryWithSleepCounter: number = 0,
+    retryCounter = 0,
+    retryWithSleepCounter = 0,
 ): Promise<string> {
     try {
         const params: HeadObjectCommandInput = {
@@ -609,7 +610,7 @@ export async function checkFileExist(
 
 export async function removeProfileImageFromS3(
     fileName: string,
-    retryCounter: number = 0,
+    retryCounter = 0,
 ): Promise<string> {
     fileName = getDecodedLink(fileName);
     const result = await deleteFileFromS3(bucketNamesObject.profileImage, fileName);
@@ -623,7 +624,7 @@ export async function removeProfileImageFromS3(
 
 export async function deletePosterFromS3(
     fileName: string,
-    retryCounter: number = 0,
+    retryCounter = 0,
 ): Promise<boolean> {
     const result = await deleteFileFromS3(bucketNamesObject.poster, fileName);
     if (result === 'error' && retryCounter < 2) {
@@ -636,7 +637,7 @@ export async function deletePosterFromS3(
 
 export async function deleteTrailerFromS3(
     fileName: string,
-    retryCounter: number = 0,
+    retryCounter = 0,
 ): Promise<boolean> {
     const result = await deleteFileFromS3(bucketNamesObject.downloadTrailer, fileName);
     if (result === 'error' && retryCounter < 2) {
@@ -649,7 +650,7 @@ export async function deleteTrailerFromS3(
 
 export async function removeAppFileFromS3(
     fileName: string,
-    retryCounter: number = 0,
+    retryCounter = 0,
 ): Promise<string> {
     fileName = getDecodedLink(fileName);
     const result = await deleteFileFromS3(bucketNamesObject.downloadApp, fileName);
@@ -695,11 +696,22 @@ export async function deleteUnusedFiles(retryCounter = 0): Promise<string> {
                 dataBaseFiles = dataBaseFiles.map((item: any) => item.trailer_s3.url.split('/').pop());
             }
             if (checkBuckets[k] === bucketNamesObject.cast) {
-                dataBaseFiles = await S3FilesRepo.getAllS3CastImageDB();
-                if (!dataBaseFiles) {
+                // Staff images
+                const staffImages = await S3FilesRepo.getStaffS3Images();
+                if (!staffImages) {
                     continue;
                 }
-                dataBaseFiles = dataBaseFiles.map((item: any) => item.url.split('/').pop());
+
+                // Character images
+                const characterImages = await S3FilesRepo.getCharacterS3Images();
+                if (!characterImages) {
+                    continue;
+                }
+
+                dataBaseFiles = [
+                    staffImages.map((item: any) => item.url.split('/').pop()),
+                    characterImages.map((item: any) => item.url.split('/').pop())
+                ]
             }
 
             let lastKey = '';
@@ -750,8 +762,8 @@ export async function deleteUnusedFiles(retryCounter = 0): Promise<string> {
 export async function deleteFileFromS3(
     bucketName: string,
     fileName: string,
-    retryCounter: number = 0,
-    retryWithSleepCounter: number = 0,
+    retryCounter = 0,
+    retryWithSleepCounter = 0,
 ): Promise<string> {
     try {
         const params = {
@@ -790,8 +802,8 @@ export async function deleteFileFromS3(
 export async function deleteMultipleFilesFromS3(
     bucketName: string,
     filesNames: string[],
-    retryCounter: number = 0,
-    retryWithSleepCounter: number = 0,
+    retryCounter = 0,
+    retryWithSleepCounter = 0,
 ): Promise<string> {
     try {
         const params = {
@@ -880,8 +892,8 @@ export async function createBuckets() {
 
 async function createBucket(
     bucketName: string,
-    retryCounter: number = 0,
-    retryWithSleepCounter: number = 0,
+    retryCounter = 0,
+    retryWithSleepCounter = 0,
 ): Promise<boolean> {
     try {
         const params: CreateBucketCommandInput = {
