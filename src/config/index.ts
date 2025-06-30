@@ -62,7 +62,6 @@ const configSchema = z.object({
     CRAWLER_CPU_LIMIT: z.coerce.number().default(95),
     CRAWLER_PAUSE_DURATION_LIMIT: z.coerce.number().default(10),
     CRAWLER_MANUAL_GC_ON_HIGH_LOAD: z.coerce.boolean().default(false),
-    DISABLE_THUMBNAIL_CREATE: z.coerce.boolean().default(false),
     IGNORE_HENTAI: z.coerce.boolean().default(false),
 });
 

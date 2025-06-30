@@ -38,7 +38,6 @@ import {
     removeDuplicateElements,
     replaceSpecialCharacters,
 } from '@utils/crawler';
-import { getImageThumbnail } from '@utils/image';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
 
 export async function addApiData(
@@ -76,14 +75,6 @@ export async function addApiData(
                 blurHash: s3poster.blurHash,
             });
             titleModel.posters = sortPosters(titleModel.posters);
-        }
-        if (!titleModel.posters[0].thumbnail) {
-            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.generatingThumbnail);
-            const thumbnailData = await getImageThumbnail(titleModel.posters[0].url, true);
-            if (thumbnailData) {
-                titleModel.posters[0].size = thumbnailData.fileSize;
-                titleModel.posters[0].thumbnail = thumbnailData.dataURIBase64;
-            }
         }
     }
 

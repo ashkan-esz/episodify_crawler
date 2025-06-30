@@ -13,4 +13,3 @@ export * as Axios from "./axios";
 export { default as logger } from "./logger";
 export * as StatusLogger from "./statusLogger";
 export * as JapanRegions from "./japanRegions";
-export * as ImageUtils from "./image";

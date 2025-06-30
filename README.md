@@ -89,7 +89,6 @@ bun run dev
 | **`CRAWLER_CPU_LIMIT`**                | if the cpu usage is higher than this value, crawler will pause                                                                 | `false`  | 95            |
 | **`CRAWLER_PAUSE_DURATION_LIMIT`**     | Number of minutes to crawler can be paused on high load                                                                        | `false`  | 10            |
 | **`CRAWLER_MANUAL_GC_ON_HIGH_LOAD`**   |                                                                                                                                | `false`  | 10            |
-| **`DISABLE_THUMBNAIL_CREATE`**         | thumbnails doesnt create                                                                                                       | `false`  | false         |
 | **`IGNORE_HENTAI`**                    | dont add hentai to db                                                                                                          | `false`  | true          |
 | **`OMDB_API_KEY{i}`**                  | `i` start from 1. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/)                                              | `true`   |               |
 | **`GOOGLE_API_KEY`**                   | see [google console](https://console.cloud.google.com/apis)                                                                    | `true`   |               |

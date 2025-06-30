@@ -24,7 +24,6 @@ import { type MovieType, VPNStatus } from '@/types';
 import type { MoviePosterS3, MovieTrailerS3 } from '@/types/movie';
 import { getArrayBufferResponse, getFileSize } from '@utils/axios';
 import { getDecodedLink } from '@utils/crawler';
-import { compressImage, getImageThumbnail } from '@utils/image';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
 // import axios from 'axios';
 import ytdl from "@distube/ytdl-core";
@@ -412,14 +411,13 @@ export async function uploadImageToS3(
         if (retryCounter === 0 && !forceUpload) {
             const s3Image = await checkFileExist(bucketName, fileName, fileUrl);
             if (s3Image) {
-                const thumbnailData = await getImageThumbnail(s3Image, true);
                 return {
                     url: s3Image,
                     originalUrl: "",
                     originalSize: 0,
-                    size: (thumbnailData && thumbnailData.fileSize) ? thumbnailData.fileSize : await getFileSize(s3Image),
+                    size: await getFileSize(s3Image),
                     vpnStatus: s3VpnStatus,
-                    thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
+                    thumbnail: "",
                     blurHash: "",
                 };
             }
@@ -429,33 +427,28 @@ export async function uploadImageToS3(
         if (response === null) {
             return null;
         }
-        if (response.data?.length === 0) {
-            return null;
-        }
-        const dataBuffer = await compressImage(response.data);
-        if (dataBuffer === null) {
+        if (!response.data || response.data?.length === 0) {
             return null;
         }
 
         const params: PutObjectCommandInput = {
             ContentType: 'image/jpeg',
-            ContentLength: dataBuffer.length.toString(),
+            ContentLength: response.data.length.toString(),
             Bucket: bucketName,
-            Body: dataBuffer,
+            Body: response.data,
             Key: fileName,
             ACL: 'public-read',
         };
         const command = new PutObjectCommand(params);
         await s3.send(command);
 
-        const thumbnailData = await getImageThumbnail(response.data);
         return {
             url: fileUrl,
             originalUrl: originalUrl,
             originalSize: Number(response.data.length),
-            size: Number(dataBuffer.length),
+            size: Number(response.data.length),
             vpnStatus: s3VpnStatus,
-            thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
+            thumbnail: "",
             blurHash: "",
         };
     } catch (error: any) {

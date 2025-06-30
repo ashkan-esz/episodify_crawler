@@ -12,7 +12,6 @@ import type {
 import { S3Storage } from '@/storage';
 import { getFileSize } from '@utils/axios';
 import { removeDuplicateLinks } from '@utils/crawler';
-import { getImageThumbnail } from '@utils/image';
 import { saveError } from '@utils/logger';
 
 const posterSources = sortPostersOrder;
@@ -77,17 +76,7 @@ async function handlePosterUpdate(
             }
             posterExist = true;
         }
-        //add thumbnail
-        if (!db_data.posters[i].thumbnail && db_data.posters[i].info !== 's3Poster') {
-            const thumbnailData = await getImageThumbnail(db_data.posters[i].url, true);
-            if (thumbnailData) {
-                posterUpdated = true;
-                db_data.posters[i].thumbnail = thumbnailData.dataURIBase64;
-                if (db_data.posters[i].size === 0 && thumbnailData.fileSize) {
-                    db_data.posters[i].size = thumbnailData.fileSize;
-                }
-            }
-        }
+
         //add size
         if (db_data.posters[i].size === 0 && db_data.posters[i].info !== 's3Poster') {
             db_data.posters[i].size = await getFileSize(db_data.posters[i].url);
@@ -96,18 +85,14 @@ async function handlePosterUpdate(
     }
 
     if (!posterExist) {  //new poster
-        const thumbnailData = await getImageThumbnail(poster, true);
-        const thumbnail = thumbnailData ? thumbnailData.dataURIBase64 : '';
-        const fileSize = (thumbnailData && thumbnailData.fileSize)
-            ? thumbnailData.fileSize
-            : await getFileSize(poster);
+        const fileSize =  await getFileSize(poster);
 
         db_data.posters.push({
             url: poster,
             info: sourceName,
             size: fileSize,
             vpnStatus: sourceVpnStatus.poster,
-            thumbnail: thumbnail,
+            thumbnail: '',
             blurHash: '',
         });
     }
@@ -122,16 +107,6 @@ async function handlePosterUpdate(
         if (!prevS3Poster) {
             //s3Poster doesn't exist in posters array
             posterUpdated = true;
-            if (!db_data.poster_s3.thumbnail) {
-                const thumbnailData = await getImageThumbnail(db_data.poster_s3.url, true);
-                if (thumbnailData) {
-                    s3PosterUpdate = true;
-                    db_data.poster_s3.thumbnail = thumbnailData.dataURIBase64;
-                    if (!db_data.poster_s3.size) {
-                        db_data.poster_s3.size = thumbnailData.fileSize;
-                    }
-                }
-            }
             db_data.posters.push({
                 url: db_data.poster_s3.url,
                 info: 's3Poster',
@@ -150,15 +125,6 @@ async function handlePosterUpdate(
                     if (!db_data.poster_s3.size && findPoster.size && findPoster.size < 1024 * 1024) {
                         db_data.poster_s3.size = findPoster.size;
                         db_data.poster_s3.originalSize = findPoster.size;
-                    }
-                } else {
-                    const thumbnailData = await getImageThumbnail(db_data.poster_s3.url, true);
-                    if (thumbnailData) {
-                        s3PosterUpdate = true;
-                        db_data.poster_s3.thumbnail = thumbnailData.dataURIBase64;
-                        if (!db_data.poster_s3.size) {
-                            db_data.poster_s3.size = thumbnailData.fileSize;
-                        }
                     }
                 }
             }

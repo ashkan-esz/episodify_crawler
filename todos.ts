@@ -16,7 +16,7 @@
     //--------------------------------------------
     //--------------------------------------------
 
-    //TODO : add the new crawler to docker-compose
+    //TODO : add the new crawler to docker-compose in 'episodify_api' project
     //TODO : upload docker image
     //TODO : reduce docker image size
     //TODO : make docker image
@@ -26,7 +26,9 @@
     //TODO : use 'dive' to check docker image
     //TODO : use https://elysiajs.com/patterns/deploy
     //TODO : use bun compile
-    //TODO : remove package 'sharp'
+
+    //TODO : check dependencies
+    //TODO : update dependencies
 
     //TODO : **********************************
     //TODO : test
@@ -105,6 +107,7 @@
     //TODO : send movies update notification in movie-api
     //TODO : create blurHash in movie-api
     //TODO : create thumbnail in movie-api
+    //TODO : compress images in movie-api
     //TODO : remove usage of rabbitmq in crawler
 
     //TODO : refactor admin auth
@@ -126,14 +129,9 @@
     //TODO : optimize cheerio
     //TODO : optimize crawler
 
-    //TODO : check dependencies
-    //TODO : update dependencies
-
     //TODO : new README.md
 
     //TODO : remove usage of console.log
     //TODO : crawler logger
     //TODO : logger
     //TODO : better error handling
-
-
