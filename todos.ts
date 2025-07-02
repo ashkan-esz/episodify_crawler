@@ -13,6 +13,12 @@
 
     //TODo : refactor 'searchTools' -> getLinks
 
+    //todo : check crawler errors and warnings
+    //todo : check sentry errors
+    //todo : check duplicate titles
+
+    //todo : write article about this project (nodejs -> bun), post on linkedIn
+
     //--------------------------------------------
     //--------------------------------------------
 
@@ -27,8 +33,10 @@
     //TODO : use https://elysiajs.com/patterns/deploy
     //TODO : use bun compile
 
-    //TODO : check dependencies
+    //TODO : update bun
     //TODO : update dependencies
+    //TODO : remove dependencies
+    //TODO : check dependencies
 
     //TODO : **********************************
     //TODO : test
@@ -53,13 +61,6 @@
     //TODO : CHANGED : crawler status ( pauseData,  )
 
     //TODO : re check project structure
-
-    //TODO : add their dependencies into devDependencies
-    //TODO : add 'sample' section into ignoreList
-
-    //TODO : update dependencies
-    //TODO : remove dependencies
-    //TODO : check dependencies
 
     //TODO :
     //TODO : change the way of handling blurGHash and thumbnail generation
@@ -135,3 +136,6 @@
     //TODO : crawler logger
     //TODO : logger
     //TODO : better error handling
+
+    //TODO : check extracted title from 'bartarMoviez'
+

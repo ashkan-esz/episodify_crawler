@@ -1,4 +1,4 @@
-import { CrawlerLinkType, DownloadLink, MovieType } from '@/types';
+import { CrawlerLinkType, type DownloadLink, type MovieType } from '@/types';
 import {
     countriesRegex,
     encodersRegex,
@@ -13,7 +13,10 @@ import {
     updateSourcePageData,
     updateSourcePageData_batch,
 } from '@/samples/sourcePages/sourcePageSample';
-import { getSourcesMethods, sourcesNames } from '@services/crawler/sourcesArray';
+import {
+    getSourcesMethods,
+    sourcesNames,
+} from '@services/crawler/sourcesArray';
 import { getSeasonEpisode, removeDuplicateLinks } from '@utils/crawler';
 import { checkFormat } from '@utils/link';
 import { saveError } from '@utils/logger';
@@ -54,22 +57,38 @@ export function getDownloadLinksFromPageContent(
                     ? sourceMethods.getQualitySample($, links[j], type) || ''
                     : '';
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
-                    let season = 0,
-                        episode = 0,
-                        isNormalCase = false;
+                    let season = 0;
+                    let episode = 0;
+                    let isNormalCase = false;
                     if (type.includes('serial') || link_info.match(/^s\d+e\d+(-?e\d+)?\./i)) {
                         if (type.includes('anime')) {
-                            ({ season, episode, isNormalCase } = getSeasonEpisode(link_info));
+                            ({
+                                season,
+                                episode,
+                                isNormalCase,
+                            } = getSeasonEpisode(link_info));
                             if (
                                 (season === 0 && episode === 0) ||
                                 link_info.match(/^\d\d\d\d?p(\.|$)/)
                             ) {
-                                ({ season, episode, isNormalCase } = getSeasonEpisode(link, true));
+                                ({
+                                    season,
+                                    episode,
+                                    isNormalCase,
+                                } = getSeasonEpisode(link, true));
                             }
                         } else {
-                            ({ season, episode, isNormalCase } = getSeasonEpisode(link, true));
+                            ({
+                                season,
+                                episode,
+                                isNormalCase,
+                            } = getSeasonEpisode(link, true));
                             if (season === 0 && !isNormalCase) {
-                                ({ season, episode, isNormalCase } = getSeasonEpisode(link_info));
+                                ({
+                                    season,
+                                    episode,
+                                    isNormalCase,
+                                } = getSeasonEpisode(link_info));
                             }
                         }
                     }
@@ -138,7 +157,12 @@ export function getLinksDoesntMatchLinkRegex(
     );
 
     const isSerial = type.includes('serial');
-    const badSeasonEpisode = downloadLinks.filter(({ season, episode, info, link }) => {
+    const badSeasonEpisode = downloadLinks.filter(({
+                                                       season,
+                                                       episode,
+                                                       info,
+                                                       link,
+                                                   }) => {
         if (type.includes('movie') && (season !== 0 || episode !== 0)) {
             return true;
         }
@@ -179,7 +203,7 @@ export function getLinksDoesntMatchLinkRegex(
 
 export async function comparePrevDownloadLinksWithNewMethod(
     sourceName: string[] | null = null,
-    mode: string = 'pageContent',
+    mode = 'pageContent',
     { updateMode = true, batchUpdate = true, batchUpdateCount = 50 } = {},
 ): Promise<{
     total: number;
@@ -246,8 +270,8 @@ export async function comparePrevDownloadLinksWithNewMethod(
                         mode === 'pageContent'
                             ? getDownloadLinksFromPageContent($, title, type, year, sName)
                             : mode === 'checkRegex'
-                              ? getLinksDoesntMatchLinkRegex(downloadLinks, type)
-                              : getDownloadLinksFromLinkInfo(downloadLinks);
+                                ? getLinksDoesntMatchLinkRegex(downloadLinks, type)
+                                : getDownloadLinksFromLinkInfo(downloadLinks);
 
                     if (mode === 'checkRegex') {
                         if (newDownloadLinks.length === 0) {
@@ -280,7 +304,7 @@ export async function comparePrevDownloadLinksWithNewMethod(
                             {
                                 type: 'list',
                                 name: 'ans',
-                                message: `press enter to continue`,
+                                message: "press enter to continue",
                                 choices: ['Yes'],
                             },
                         ];
@@ -320,7 +344,10 @@ export async function comparePrevDownloadLinksWithNewMethod(
                         printDiffLinks(downloadLinks, newDownloadLinks);
                         stats.diffs++;
                         if (updateMode) {
-                            const { answer, resetFlag } = await handleUpdatePrompt(
+                            const {
+                                answer,
+                                resetFlag,
+                            } = await handleUpdatePrompt(
                                 newDownloadLinks,
                                 sourcePages[j],
                                 pageDataUpdateArray,
@@ -407,7 +434,7 @@ async function handleUpdatePrompt(
         {
             type: 'list',
             name: 'ans',
-            message: `update this movie data?`,
+            message: "update this movie data?",
             choices: ['Yes', 'No'],
         },
     ];

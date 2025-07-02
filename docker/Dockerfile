@@ -32,14 +32,6 @@ RUN bun install --production --frozen-lockfile --no-save \
 # Copy built assets
 COPY --from=builder --chown=1000:1000 /app/dist ./dist
 
-# Create non-root user
-RUN addgroup -S appgroup -g 1001 \
-    && adduser -S appuser -G appgroup -u 1001 \
-    && chown -R appuser:appgroup /app
-
-# Switch to non-root user
-USER appuser
-
 EXPOSE 3000
 
 CMD ["bun", "run", "start"]

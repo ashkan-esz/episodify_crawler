@@ -12,3 +12,6 @@ logs
 .db
 .cursorrules
 .cursor
+
+src/samples/titles/**.json
+src/samples/*.json

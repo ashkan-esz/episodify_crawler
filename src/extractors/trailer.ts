@@ -1,5 +1,5 @@
 import { VPNStatus } from '@/types';
-import { MovieTrailer } from '@/types/movie';
+import type { MovieTrailer } from '@/types/movie';
 import {
     getSourcePagesSamples,
     updateSourcePageData,
@@ -171,8 +171,8 @@ function purgeTrailer(
 
 export async function comparePrevTrailerWithNewMethod(
     sourceName: string[] | null = null,
-    updateMode: boolean = true,
-    autoUpdateIfNeed: boolean = false,
+    updateMode = true,
+    autoUpdateIfNeed = false,
 ): Promise<{
     total: number;
     checked: number;
