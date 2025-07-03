@@ -12,7 +12,10 @@ ENV_FILE = .env
 # Build the Docker image
 build:
 	@echo "Building Docker image: $(IMAGE_NAME)..."
-	@docker buildx build --platform=linux/amd64 --network=host -t $(IMAGE_NAME) -f $(DOCKERFILE) .
+	@docker buildx build --platform=linux/amd64 \
+		--no-cache \
+		--network=host \
+		-t $(IMAGE_NAME) -f $(DOCKERFILE) .
 	@echo "Docker image $(IMAGE_NAME) built successfully."
 
 # Run the application container directly (without Compose)
@@ -20,7 +23,7 @@ build:
 run:
 	@echo "Running Docker container: $(CONTAINER_NAME)..."
 	@docker run --name $(CONTAINER_NAME) --rm \
-		-p 3000:3000 \
+		--network=host \
 		--env-file $(ENV_FILE) \
 		$(IMAGE_NAME)
 	@echo "Container $(CONTAINER_NAME) started."
