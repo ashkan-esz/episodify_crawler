@@ -1,14 +1,17 @@
 import config from '@/config';
 import { Jikan } from '@/providers';
-import { search_in_title_page, wrapper_module } from '@services/crawler/searchTools';
 import {
-    CrawlerExtraConfigs,
-    DownloadLink, getWatchOnlineLinksModel,
+    search_in_title_page,
+    wrapper_module,
+} from '@services/crawler/searchTools';
+import {
+    type CrawlerExtraConfigs,
+    type DownloadLink, getWatchOnlineLinksModel,
     MovieType,
-    SourceConfig, SourceExtractedData,
+    type SourceConfig, type SourceExtractedData,
 } from '@/types';
-import { MovieRates, MovieTrailer } from '@/types/movie';
-import { getSubtitleModel, Subtitle } from '@/types/subtitle';
+import type { MovieRates, MovieTrailer } from '@/types/movie';
+import { getSubtitleModel, type Subtitle } from '@/types/subtitle';
 import save from '@services/crawler/save';
 import { subtitleFormatsRegex } from '@services/crawler/subtitle';
 import {
@@ -17,7 +20,11 @@ import {
 } from '@utils/crawler';
 import { saveError } from '@utils/logger';
 // import {Jikan} from '@/crawler/providers';
-import { PosterExtractor, SummaryExtractor, TrailerExtractor } from '@/extractors';
+import {
+    PosterExtractor,
+    SummaryExtractor,
+    TrailerExtractor,
+} from '@/extractors';
 import {
     encodersRegex,
     fixLinkInfo,
@@ -37,12 +44,12 @@ export default async function generic(
     sourceConfig: SourceConfig,
     pageCount: number | null,
     extraConfigs: CrawlerExtraConfigs): Promise<number[]> {
-    let p1 = 0,
-        p2 = 0,
-        p3 = 0;
-    let count1 = 0,
-        count2 = 0,
-        count3 = 0;
+    let p1 = 0;
+    let p2 = 0;
+    let p3 = 0;
+    let count1 = 0;
+    let count2 = 0;
+    let count3 = 0;
 
     if (sourceConfig.movie_url) {
         const { lastPage, linksCount } = await wrapper_module(
@@ -113,7 +120,7 @@ async function search_title(
         text = text.replace('download', '');
 
         let year = '';
-        let detectedTitle = '';
+        let detectedTitle: string;
         let type = CrawlerUtils.getType(title || text);
 
         if (
@@ -143,18 +150,33 @@ async function search_title(
             type = convertTypeToAnime(type);
         }
 
-        const isCeremony = title.includes('دانلود مراسم');
-        const isCollection = title.includes('کالکشن فیلم') || title.includes('کالکشن انیمیشن');
+        const isCeremony = title.includes('دانلود مراسم') || text.includes('دانلود مراسم');
+        const isCollection = title.includes('کالکشن فیلم') ||
+            text.includes('کالکشن فیلم') ||
+            title.includes('کالکشن انیمیشن') ||
+            text.includes('کالکشن انیمیشن');
 
         if (text && text.length > 10 && text.length < title.length) {
-            ({ title: detectedTitle, year } = getTitleAndYear(text, year, type));
+            ({
+                title: detectedTitle,
+                year,
+            } = getTitleAndYear(text, year, type));
             if (!detectedTitle) {
-                ({ title: detectedTitle, year } = getTitleAndYear(title, year, type));
+                ({
+                    title: detectedTitle,
+                    year,
+                } = getTitleAndYear(title, year, type));
             }
         } else {
-            ({ title: detectedTitle, year } = getTitleAndYear(title, year, type));
+            ({
+                title: detectedTitle,
+                year,
+            } = getTitleAndYear(title, year, type));
             if (!detectedTitle) {
-                ({ title: detectedTitle, year } = getTitleAndYear(text, year, type));
+                ({
+                    title: detectedTitle,
+                    year,
+                } = getTitleAndYear(text, year, type));
             }
         }
 
@@ -172,7 +194,7 @@ async function search_title(
         let pageSearchResult = await search_in_title_page(
             sourceConfig,
             extraConfigs,
-            title,
+            detectedTitle,
             type,
             pageLink,
             pageNumber,
@@ -196,7 +218,7 @@ async function search_title(
             pageSearchResult = await search_in_title_page(
                 sourceConfig,
                 extraConfigs,
-                title,
+                detectedTitle,
                 type,
                 pageLink,
                 pageNumber,
@@ -221,21 +243,21 @@ async function search_title(
         if (!year) {
             year = fixYear($2);
         }
-        year = fixWrongYear(title, type, year);
+        year = fixWrongYear(detectedTitle, type, year);
 
-        title = replaceShortTitleWithFullTitle(title, type);
+        detectedTitle = replaceShortTitleWithFullTitle(detectedTitle, type);
 
         downloadLinks = handleLinksExtraStuff(type, downloadLinks, sourceConfig);
 
         if (isCollection) {
-            title += ' collection';
-            addTitleNameToInfo(downloadLinks, title, year);
+            detectedTitle += ' collection';
+            addTitleNameToInfo(downloadLinks, detectedTitle, year);
         } else if (isCeremony) {
-            addTitleNameToInfo(downloadLinks, title, year);
+            addTitleNameToInfo(downloadLinks, detectedTitle, year);
         }
 
         const extractedData: SourceExtractedData = {
-            title: title,
+            title: detectedTitle,
             type: type,
             year: year,
             pageNumber: pageNumber,
@@ -245,7 +267,7 @@ async function search_title(
             watchOnlineLinks: sourceConfig.config.has_watch_online ? [] : [],
             torrentLinks: [],
             persianSummary: sourceConfig.config.has_summary
-                ? SummaryExtractor.getPersianSummary($2, title || text, year)
+                ? SummaryExtractor.getPersianSummary($2, detectedTitle, year)
                 : '',
             poster: sourceConfig.config.has_poster
                 ? PosterExtractor.getPoster(
@@ -295,7 +317,7 @@ function getTitle(
     link: any,
     pageLink: string,
     url: string,
-    ): { text: string, title: string } {
+): { text: string, title: string } {
     let title = link.attr('title') || '';
     let text =
         $($(link).children()[0] || link)
@@ -555,7 +577,7 @@ function checkInValidTitle(title: string): boolean {
     );
 }
 
-function checkValidTitle(title: string) : boolean {
+function checkValidTitle(title: string): boolean {
     return (
         title.includes('دانلود') ||
         title.includes('فیلم') ||
@@ -657,15 +679,20 @@ function fixYear($: any): string {
 function fixWrongYear(title: string, type: MovieType, year: string): string {
     if (title === 'room 104' && type === MovieType.SERIAL) {
         return '2017'; // 2019 --> 2017
-    } else if (title === 'the walking dead' && type === MovieType.SERIAL) {
+    }
+    if (title === 'the walking dead' && type === MovieType.SERIAL) {
         return '2010'; // 2019 --> 2010
-    } else if (title === 'the blacklist' && type === MovieType.SERIAL) {
+    }
+    if (title === 'the blacklist' && type === MovieType.SERIAL) {
         return '2013'; // 2016 --> 2013
-    } else if (title === 'i am the night' && type === MovieType.SERIAL) {
+    }
+    if (title === 'i am the night' && type === MovieType.SERIAL) {
         return '2019'; // 2011 --> 2019
-    } else if (title === 'living with yourself' && type === MovieType.SERIAL) {
+    }
+    if (title === 'living with yourself' && type === MovieType.SERIAL) {
         return '2019'; // 2010 --> 2019
-    } else if (title === 'the l word generation q' && type === MovieType.SERIAL) {
+    }
+    if (title === 'the l word generation q' && type === MovieType.SERIAL) {
         return '2019'; // 2021 --> 2019
     }
     return year;
@@ -678,7 +705,7 @@ function replaceShortTitleWithFullTitle(title: string, type: MovieType): string 
 function fixWrongSeasonNumber(
     seasonNumber: number,
     linkHref: string,
-    ): { seasonNumber: number; seasonName: string;} {
+): { seasonNumber: number; seasonName: string; } {
     let seasonName = '';
     if (linkHref.includes('kenpuu.denki.berserk')) {
         seasonNumber = 0;
@@ -1193,14 +1220,14 @@ function addTitleNameToInfo(
         const nameMatch = fileName.match(/.+\d\d\d\d?p/gi) || fileName.match(/.+(hdtv)/gi);
         const name = nameMatch
             ? nameMatch
-                  .pop()
-                  ?.replace(
-                      /\d\d\d\d?p|[()]|hdtv|BluRay|WEB-DL|WEBRip|BR-?rip|(hq|lq)?DvdRip|%21|!|UNRATED|Uncut|EXTENDED|REPACK|Imax|Direct[ou]rs?[.\s]?Cut/gi,
-                      '',
-                  )
-                  .replace(/\.|_|\+|%20| |(\[.+])|\[|\s\s+/g, ' ')
-                  .replace(/\.|_|\+|%20| |(\[.+])|\[|\s\s+/g, ' ')
-                  .trim()
+                .pop()
+                ?.replace(
+                    /\d\d\d\d?p|[()]|hdtv|BluRay|WEB-DL|WEBRip|BR-?rip|(hq|lq)?DvdRip|%21|!|UNRATED|Uncut|EXTENDED|REPACK|Imax|Direct[ou]rs?[.\s]?Cut/gi,
+                    '',
+                )
+                .replace(/\.|_|\+|%20| |(\[.+])|\[|\s\s+/g, ' ')
+                .replace(/\.|_|\+|%20| |(\[.+])|\[|\s\s+/g, ' ')
+                .trim()
             ?? ''
             : '';
         title = title.replace(/s/g, '');
@@ -1228,7 +1255,7 @@ function addTitleNameToInfo(
             }
         }
     } catch (error: any) {
-       saveError(error);
+        saveError(error);
     }
     return downloadLinks;
 }

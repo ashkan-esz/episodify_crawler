@@ -5,7 +5,7 @@ export function replaceSpecialCharacters(input: string, whiteList: string[] = []
     return input
         .replace('&#39;', '')
         .replace(/[;؛:·…/☆★°♂♡♪δ⅙√◎␣＋+×＿_–−-]|(\|)/g, ' ')
-        .replace(/[”“"'’‘٫.:?¿？‼!¡#%,()~♥♡△�؟∽Ωωψ‎]/g, (r) => (whiteList.includes(r) ? r : ''))
+        .replace(/[”“"'’‘٫.:?¿？‼!¡#%*,()~♥♡△�؟∽Ωωψ‎]/g, (r) => (whiteList.includes(r) ? r : ''))
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
         .replace('½', ' 1/2')
@@ -197,7 +197,7 @@ export function validateYear(year: string | number): string {
     return year;
 }
 
-export function checkDubbed(link: string, info: string = ''): boolean {
+export function checkDubbed(link: string, info = ''): boolean {
     link = link.toLowerCase();
     info = info.toLowerCase();
     return (
@@ -265,7 +265,7 @@ export function getYear(
     return '';
 }
 
-export function getSeasonEpisode(input: string, isLinkInput: boolean = false) {
+export function getSeasonEpisode(input: string, isLinkInput = false) {
     try {
         if (!input) {
             return { season: 0, episode: 0, isNormalCase: false };
@@ -309,7 +309,8 @@ export function getSeasonEpisode(input: string, isLinkInput: boolean = false) {
                         episode: Number(episode),
                         isNormalCase: true,
                     };
-                } else if (case1.match(/^s20\d\de\d\d$/i)) {
+                }
+                if (case1.match(/^s20\d\de\d\d$/i)) {
                     return {
                         season: 1,
                         episode: Number(episode),
@@ -474,8 +475,8 @@ export function getSeasonEpisode(input: string, isLinkInput: boolean = false) {
 export function checkBetterQuality(
     quality: string,
     prevQuality: string,
-    withSubIsBetter: boolean = true,
-    handleMalformedInfo: boolean = false,
+    withSubIsBetter = true,
+    handleMalformedInfo = false,
 ): boolean {
     if (quality === prevQuality) {
         return false;
@@ -581,8 +582,8 @@ export function checkBetterQuality(
         } else if (t1 && t2) {
             // both has it
             const order = ['censored', 'duubed', 'hardsub', 'softsub'];
-            let i1: number = -1,
-                i2: number = -1;
+            let i1 = -1;
+            let i2 = -1;
             for (let i = 0; i < order.length; i++) {
                 if (quality.includes(order[i])) {
                     i1 = i;
@@ -617,7 +618,7 @@ export function removeDuplicateLinks<
         url?: string;
         info: string;
     },
->(input: T[], replaceInfo: boolean = false, replaceBadInfoOnly: boolean = false): T[] {
+>(input: T[], replaceInfo = false, replaceBadInfoOnly = false): T[] {
     const result: T[] = [];
     for (let i = 0; i < input.length; i++) {
         let exist = false;
@@ -678,9 +679,9 @@ export function convertHourToMinute(input: string): string {
         const hour = Number(split[0]);
         const min = Number(split[1].replace('min', ''));
         return hour * 60 + min + ' min';
-    } else {
-        return input;
     }
+
+    return input;
 }
 
 export function purgeObjFalsyValues(obj: Record<string, any>): Record<string, any> {
@@ -784,7 +785,7 @@ export function getCurrentJalaliYear(): number {
     // Persian New Year (Nowruz) is March 21
     if (gregorianMonth > 3 || (gregorianMonth === 3 && gregorianDay >= 21)) {
         return gregorianYear - 621; // After Nowruz
-    } else {
-        return gregorianYear - 622; // Before Nowruz
     }
+
+    return gregorianYear - 622; // Before Nowruz
 }
