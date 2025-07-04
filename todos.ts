@@ -109,6 +109,7 @@
     //TODO : create blurHash in movie-api
     //TODO : create thumbnail in movie-api
     //TODO : compress images in movie-api
+    //TODO : remove unused files from s3 in movie-api
     //TODO : remove usage of rabbitmq in crawler
 
     //TODO : refactor admin auth
@@ -137,5 +138,8 @@
     //TODO : logger
     //TODO : better error handling
 
+    //TODO : check sentry errors
+    //TODO : check extracted seasonEpisode 'S2E264'
     //TODO : check extracted title from 'bartarMoviez'
+
 

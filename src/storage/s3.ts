@@ -1,44 +1,28 @@
 import config from '@/config';
 import { updateCronJobsStatus } from '@/jobs/job.status';
 import { S3FilesRepo, ServerAnalysisRepo } from '@/repo';
-import {
-    changePageLinkStateFromCrawlerStatus,
-    updateTrailerUploadLimit,
-} from '@/status/status';
+import { updateTrailerUploadLimit } from '@/status/status';
 import { CrawlerErrors } from '@/status/warnings';
-import { AbortController } from '@aws-sdk/abort-controller';
-import {
-    CreateBucketCommand,
-    type CreateBucketCommandInput,
-    DeleteObjectCommand,
-    DeleteObjectsCommand,
-    HeadObjectCommand, type HeadObjectCommandInput,
-    ListObjectsCommand,
-    type ListObjectsCommandInput,
-    PutObjectCommand,
-    type PutObjectCommandInput,
-    S3Client,
-} from '@aws-sdk/client-s3';
-import { Upload } from '@aws-sdk/lib-storage';
+import { S3Client } from 'bun';
 import { type MovieType, VPNStatus } from '@/types';
 import type { MoviePosterS3, MovieTrailerS3 } from '@/types/movie';
 import { getArrayBufferResponse, getFileSize } from '@utils/axios';
 import { getDecodedLink } from '@utils/crawler';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
 // import axios from 'axios';
-import ytdl from "@distube/ytdl-core";
+import ytdl from '@distube/ytdl-core';
+import PQueue from 'p-queue';
 
 const s3 = new S3Client({
     region: 'default',
-    forcePathStyle: false,
+    // forcePathStyle: false,
     endpoint: config.CLOUAD_STORAGE_ENDPOINT,
-    credentials: {
-        accessKeyId: config.CLOUAD_STORAGE_ACCESS_KEY,
-        secretAccessKey: config.CLOUAD_STORAGE_SECRET_ACCESS_KEY,
-    },
-    maxAttempts: 5,
+    accessKeyId: config.CLOUAD_STORAGE_ACCESS_KEY,
+    secretAccessKey: config.CLOUAD_STORAGE_SECRET_ACCESS_KEY,
+    retry: 5,
+    // maxAttempts: 5, // Not directly supported as an option in Bun.S3Client constructor
     // httpOptions: {
-    //     timeout: 5 * 60 * 1000 // 5 minutes
+    //     timeout: 5 * 60 * 1000 // 5 minutes - Connection timeout handled differently in Bun
     // }
 });
 
@@ -69,15 +53,15 @@ export const bucketNames = Object.freeze(
 );
 
 export const bucketNamesObject = Object.freeze({
-    staticFiles: config.BUCKET_NAME_PREFIX + 'serverstatic',
-    cast: config.BUCKET_NAME_PREFIX + 'cast',
-    downloadSubtitle: config.BUCKET_NAME_PREFIX + 'download-subtitle',
-    poster: config.BUCKET_NAME_PREFIX + 'poster',
-    downloadTrailer: config.BUCKET_NAME_PREFIX + 'download-trailer',
-    profileImage: config.BUCKET_NAME_PREFIX + 'profile-image',
-    downloadApp: config.BUCKET_NAME_PREFIX + 'download-app',
-    backup: config.BUCKET_NAME_PREFIX + 'downloader-db-backup',
-    mediaFile: config.BUCKET_NAME_PREFIX + 'media-file',
+    staticFiles: `${config.BUCKET_NAME_PREFIX}serverstatic`,
+    cast: `${config.BUCKET_NAME_PREFIX}cast`,
+    downloadSubtitle: `${config.BUCKET_NAME_PREFIX}download-subtitle`,
+    poster: `${config.BUCKET_NAME_PREFIX}poster`,
+    downloadTrailer: `${config.BUCKET_NAME_PREFIX}download-trailer`,
+    profileImage: `${config.BUCKET_NAME_PREFIX}profile-image`,
+    downloadApp: `${config.BUCKET_NAME_PREFIX}download-app`,
+    // backup: `${config.BUCKET_NAME_PREFIX}downloader-db-backup`,
+    mediaFile: `${config.BUCKET_NAME_PREFIX}media-file`,
 });
 
 export function getS3Client(): S3Client {
@@ -90,6 +74,7 @@ export const saveWarningTimeout = 180 * 1000; //180s
 
 let uploadingTrailer = 0;
 
+//TODO : use p-queue
 async function waitForTrailerUpload(): Promise<void> {
     let start = Date.now();
     while (uploadingTrailer >= trailerUploadConcurrency) {
@@ -117,7 +102,7 @@ export async function uploadCastImageToS3ByURl(
     castType: string,
     id: number,
     originalUrl: string,
-    ): Promise<MoviePosterS3 | null> {
+): Promise<MoviePosterS3 | null> {
     try {
         const fileName = getFileName(name, '', castType, id.toString(), 'jpg');
         const fileUrl = `https://${bucketNamesObject.cast}.${bucketsEndpointSuffix}/${fileName}`;
@@ -145,7 +130,7 @@ export async function uploadSubtitleToS3ByURl(
             if (s3Subtitle) {
                 return {
                     url: s3Subtitle,
-                    originalUrl: "",
+                    originalUrl: '',
                     size: await getFileSize(s3Subtitle),
                     vpnStatus: s3VpnStatus,
                 };
@@ -156,20 +141,19 @@ export async function uploadSubtitleToS3ByURl(
         if (response === null) {
             return null;
         }
-        const params: PutObjectCommandInput = {
-            ContentType: response.headers["content-type"],
-            ContentLength: response.data.length.toString(),
-            Bucket: bucketNamesObject.downloadSubtitle,
-            Body: response.data,
-            Key: fileName,
-            ACL: 'public-read',
-        };
-        const command = new PutObjectCommand(params);
-        await s3.send(command);
+
+        const s3File = s3.file(fileName, { bucket: bucketNamesObject.downloadSubtitle });
+        await s3File.write(response.data, {
+            type: response.headers['content-type'], // Maps to ContentType
+            // ACL is set via the 'acl' option
+            acl: 'public-read',
+            // Bun's S3 client automatically handles ContentLength
+        });
+
         return {
             url: fileUrl,
             originalUrl: originalUrl,
-            size: Number(response.data.length),
+            size: Number(response.data.byteLength), // Use byteLength for ArrayBuffer/Uint8Array
             vpnStatus: s3VpnStatus,
         };
     } catch (error: any) {
@@ -200,7 +184,7 @@ export async function uploadTitlePosterToS3(
     originalUrl: string,
     forceUpload = false,
     isWide = false,
-    ): Promise<MoviePosterS3 | null> {
+): Promise<MoviePosterS3 | null> {
     try {
         const extra = isWide ? 'wide' : '';
         const fileName = getFileName(title, type, year, extra, 'jpg');
@@ -221,13 +205,14 @@ export async function uploadTitleTrailerFromYoutubeToS3(
     type: MovieType,
     year: string,
     originalUrl: string,
-    retryCounter: number = 0,
-    retryWithSleepCounter: number = 0,
-    ): Promise<MovieTrailerS3 | null> {
+    retryCounter = 0,
+    retryWithSleepCounter = 0,
+): Promise<MovieTrailerS3 | null> {
     try {
         if (!originalUrl) {
             return null;
         }
+
         const fileName = getFileName(title, type, year, '', 'mp4');
         const fileUrl = `https://${bucketNamesObject.downloadTrailer}.${bucketsEndpointSuffix}/${fileName}`;
         if (retryCounter === 0) {
@@ -239,7 +224,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(
             if (s3Trailer) {
                 return {
                     url: s3Trailer,
-                    originalUrl: "",
+                    originalUrl: '',
                     size: await getFileSize(s3Trailer),
                     vpnStatus: s3VpnStatus,
                 };
@@ -248,8 +233,11 @@ export async function uploadTitleTrailerFromYoutubeToS3(
 
         await waitForTrailerUpload();
         // eslint-disable-next-line no-async-promise-executor
+        // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
         return await new Promise(async (resolve, reject) => {
-            const abortController = new AbortController();
+            // AbortController is no longer directly used for S3 uploads with Bun's native client.
+            // Stream errors from ytdl will still be caught by the outer try-catch block.
+            // const abortController = new AbortController();
             let videoReadStream: any = null;
             try {
                 if (!ytdl.validateURL(originalUrl)) {
@@ -257,14 +245,15 @@ export async function uploadTitleTrailerFromYoutubeToS3(
                 }
                 videoReadStream = ytdl(originalUrl, {
                     filter: 'audioandvideo',
-                    quality: "highestvideo",
+                    quality: 'highestvideo',
                     highWaterMark: 1 << 25,
                 });
 
                 videoReadStream.on('error', (err: any) => {
                     videoReadStream.destroy();
                     videoReadStream.emit('close');
-                    abortController.abort();
+                    // No abortController.abort() needed here as Bun's writer manages internally.
+                    // abortController.abort();
                     reject(err);
                 });
 
@@ -288,7 +277,9 @@ export async function uploadTitleTrailerFromYoutubeToS3(
         decreaseUploadingTrailerNumber();
         if (
             ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 4) ||
-            (error.statusCode === 410 && retryCounter < 1)
+            // Bun's S3 client errors might not have 'statusCode' or '$metadata.httpStatusCode' directly.
+            // Adapt the error handling based on Bun's error structure if specific S3 error codes are needed.
+            (error.statusCode === 410 && retryCounter < 1) // Keep this if statusCode is expected from non-S3 errors
         ) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
@@ -299,15 +290,9 @@ export async function uploadTitleTrailerFromYoutubeToS3(
             await new Promise((resolve => setTimeout(resolve, 2000)));
             return await uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
         }
-        if (error.$metadata?.httpStatusCode === 408 && retryWithSleepCounter < 5) {
-            retryWithSleepCounter++;
-            await new Promise((resolve => setTimeout(resolve, 15000)));
-            return await uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
-        }
-        // if (error.statusCode === 410 || error.statusCode === 403) {
-        //     return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, false);
-        // }
-        if (error.name !== "AbortError" && error.message !== 'Video unavailable' && !error.message.includes('This is a private video')) {
+        // Removed error.$metadata?.httpStatusCode === 408 check, as it's AWS SDK specific.
+        // If Bun's S3 client throws a similar timeout error, its 'code' property should be checked.
+        if (error.name !== 'AbortError' && error.message !== 'Video unavailable' && !error.message.includes('This is a private video')) {
             saveError(error);
         }
         return null;
@@ -402,7 +387,7 @@ export async function uploadImageToS3(
     forceUpload = false,
     retryCounter = 0,
     retryWithSleepCounter = 0,
-    ): Promise<MoviePosterS3 | null> {
+): Promise<MoviePosterS3 | null> {
     try {
         if (!originalUrl) {
             return null;
@@ -413,12 +398,12 @@ export async function uploadImageToS3(
             if (s3Image) {
                 return {
                     url: s3Image,
-                    originalUrl: "",
+                    originalUrl: '',
                     originalSize: 0,
                     size: await getFileSize(s3Image),
                     vpnStatus: s3VpnStatus,
-                    thumbnail: "",
-                    blurHash: "",
+                    thumbnail: '',
+                    blurHash: '',
                 };
             }
         }
@@ -431,25 +416,21 @@ export async function uploadImageToS3(
             return null;
         }
 
-        const params: PutObjectCommandInput = {
-            ContentType: 'image/jpeg',
-            ContentLength: response.data.length.toString(),
-            Bucket: bucketName,
-            Body: response.data,
-            Key: fileName,
-            ACL: 'public-read',
-        };
-        const command = new PutObjectCommand(params);
-        await s3.send(command);
+        const s3File = s3.file(fileName, { bucket: bucketName });
+        await s3File.write(response.data, {
+            type: 'image/jpeg', // ContentType
+            acl: 'public-read', // ACL
+            // ContentLength is handled automatically by Bun
+        });
 
         return {
             url: fileUrl,
             originalUrl: originalUrl,
-            originalSize: Number(response.data.length),
-            size: Number(response.data.length),
+            originalSize: Number(response.data.byteLength),
+            size: Number(response.data.byteLength),
             vpnStatus: s3VpnStatus,
-            thumbnail: "",
-            blurHash: "",
+            thumbnail: '',
+            blurHash: '',
         };
     } catch (error: any) {
         if ((error.code === 'ENOTFOUND' || error.code === 'EAI_AGAIN') && retryCounter < 2) {
@@ -493,69 +474,37 @@ async function uploadFileToS3(
     fileName: string,
     fileUrl: string,
     extraCheckFileSize = true,
-    pageLink: string): Promise<number> {
-    const parallelUploads3 = new Upload({
-        client: s3,
-        params: {
-            Bucket: bucketName,
-            Body: file,
-            Key: fileName,
-            ACL: 'public-read',
-        },
+    pageLink = ''): Promise<number> {
+
+    const s3File = s3.file(fileName, { bucket: bucketName });
+    const writer = s3File.writer({
+        // queueSize and partSize are configurable in writer options
         queueSize: 4, // optional concurrency configuration
         partSize: 1024 * 1024 * 5, // optional size of each part, in bytes, at least 5MB
-        leavePartsOnError: false, // optional manually handle dropped parts
+        // leavePartsOnError is not directly exposed as an option in Bun's writer, as it handles errors internally.
+        // leavePartsOnError: false, // optional manually handle dropped parts
     });
 
     let fileSize = 0;
-    parallelUploads3.on("httpUploadProgress", (progress) => {
-        const uploaded = ((progress?.loaded ?? 0) / (1024 * 1024)).toFixed(1);
-        if (pageLink) {
-            changePageLinkStateFromCrawlerStatus(pageLink, `  (Uploading ${uploaded}/??)`, true);
-        }
-        fileSize = progress.total ?? 0;
-    });
 
-    // let uploadResult = await parallelUploads3.done();
-    await parallelUploads3.done();
+    // TODO : implement
+    // parallelUploads3.on("httpUploadProgress", (progress) => {
+    //     const uploaded = ((progress?.loaded ?? 0) / (1024 * 1024)).toFixed(1);
+    //     if (pageLink) {
+    //         changePageLinkStateFromCrawlerStatus(pageLink,
+    //             `  (Uploading ${uploaded}/??)`, true);
+    //     }
+    //     fileSize = progress.total ?? 0;
+    // });
 
+    writer.write(file); // Write the entire file at once
+    await writer.end(); // Finalize the upload
+
+    //TODO : check better way
     if (!fileSize && extraCheckFileSize) {
         fileSize = await getFileSize(fileUrl);
     }
     return fileSize;
-}
-
-//------------------------------------------
-//------------------------------------------
-
-export async function getDbBackupFilesList(): Promise<any[]> {
-    try {
-        const params: ListObjectsCommandInput = {
-            Bucket: bucketNamesObject.backup,
-            MaxKeys: 1000,
-        };
-        const command = new ListObjectsCommand(params);
-        const response = await s3.send(command);
-        const files = response.Contents;
-        return files || [];
-    } catch (error) {
-        saveError(error);
-        return [];
-    }
-}
-
-export async function removeDbBackupFileFromS3(
-    fileName: string,
-    retryCounter = 0,
-): Promise<string> {
-    fileName = getDecodedLink(fileName);
-    const result = await deleteFileFromS3(bucketNamesObject.backup, fileName);
-    if (result === 'error' && retryCounter < 2) {
-        retryCounter++;
-        await new Promise((resolve => setTimeout(resolve, 200)));
-        return await removeDbBackupFileFromS3(fileName, retryCounter);
-    }
-    return result;
 }
 
 //------------------------------------------
@@ -569,32 +518,37 @@ export async function checkFileExist(
     retryWithSleepCounter = 0,
 ): Promise<string> {
     try {
-        const params: HeadObjectCommandInput = {
-            Bucket: bucketName,
-            Key: fileName,
-        };
-        const command = new HeadObjectCommand(params);
-        const result = await s3.send(command);
-        if (result['$metadata'].httpStatusCode === 200) {
+        const exists = await s3.exists(fileName, { bucket: bucketName });
+        if (exists) {
             return fileUrl;
         }
         return '';
     } catch (error: any) {
-        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
-            retryCounter++;
-            await new Promise((resolve => setTimeout(resolve, 200)));
-            return await checkFileExist(bucketName, fileName,fileUrl, retryCounter, retryWithSleepCounter);
-        }
         if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
-            await new Promise((resolve => setTimeout(resolve, 1000)));
-            return await checkFileExist(bucketName, fileName,fileUrl, retryCounter, retryWithSleepCounter);
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            return await checkFileExist(
+                bucketName,
+                fileName,
+                fileUrl,
+                retryCounter,
+                retryWithSleepCounter,
+            );
         }
-        const statusCode = error['$metadata'].httpStatusCode;
-        if (statusCode !== 404 && statusCode !== 200) {
-            saveError(error);
+        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
+            retryCounter++;
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            return await checkFileExist(
+                bucketName,
+                fileName,
+                fileUrl,
+                retryCounter,
+                retryWithSleepCounter,
+            );
         }
-        return statusCode !== 404 ? fileUrl : '';
+        error.filePath = 'cloudStorage > checkFileExist';
+        saveErrorIfNeeded(error);
+        return '';
     }
 }
 
@@ -657,6 +611,9 @@ export async function removeAppFileFromS3(
 
 export async function deleteUnusedFiles(retryCounter = 0): Promise<string> {
     try {
+
+        //TODO : move this operation into 'episodify_api' project
+
         const checkBuckets = [
             bucketNamesObject.poster,
             bucketNamesObject.downloadTrailer,
@@ -664,7 +621,7 @@ export async function deleteUnusedFiles(retryCounter = 0): Promise<string> {
         ];
 
         for (let k = 0; k < checkBuckets.length; k++) {
-            updateCronJobsStatus('removeS3UnusedFiles', 'checking bucket ' + checkBuckets[k]);
+            updateCronJobsStatus('removeS3UnusedFiles', `checking bucket ${checkBuckets[k]}`);
             let dataBaseFiles: any = [];
             // files that are in use
             if (checkBuckets[k] === bucketNamesObject.poster) {
@@ -703,35 +660,31 @@ export async function deleteUnusedFiles(retryCounter = 0): Promise<string> {
 
                 dataBaseFiles = [
                     staffImages.map((item: any) => item.url.split('/').pop()),
-                    characterImages.map((item: any) => item.url.split('/').pop())
-                ]
+                    characterImages.map((item: any) => item.url.split('/').pop()),
+                ];
             }
 
             let lastKey = '';
             let deleteCounter = 0;
             while (true) {
-                const params: ListObjectsCommandInput = {
-                    Bucket: checkBuckets[k],
-                    MaxKeys: 1000,
-                };
-                if (lastKey) {
-                    params.Marker = lastKey;
-                }
-                const command = new ListObjectsCommand(params);
-                const response = await s3.send(command);
-                const files = response.Contents;
+                const response = await s3.list({
+                    maxKeys: 1000,
+                    continuationToken: lastKey || undefined,
+                }, {
+                    bucket: checkBuckets[k],
+                });
+
+                lastKey = response.continuationToken || '';
+                const files = response.contents;
                 if (!files || files.length === 0) {
                     break;
                 }
+
                 const promiseArray = [];
                 for (let i = 0; i < files.length; i++) {
-                    if (dataBaseFiles.includes(files[i].Key)) {
-                        lastKey = files[i].Key ?? '';
-                    } else {
-                        deleteCounter++;
-                        const deletePromise = deleteFileFromS3(checkBuckets[k], files[i].Key ?? '');
-                        promiseArray.push(deletePromise);
-                    }
+                    deleteCounter++;
+                    const deletePromise = deleteFileFromS3(checkBuckets[k], files[i].key ?? '');
+                    promiseArray.push(deletePromise);
                 }
                 await Promise.allSettled(promiseArray);
                 updateCronJobsStatus(
@@ -759,17 +712,12 @@ export async function deleteFileFromS3(
     retryWithSleepCounter = 0,
 ): Promise<string> {
     try {
-        const params = {
-            Bucket: bucketName,
-            Key: fileName,
-        };
-        const command = new DeleteObjectCommand(params);
-        await s3.send(command);
-        return 'ok';
+        await s3.delete(fileName, { bucket: bucketName });
+        return 'deleted';
     } catch (error: any) {
-        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
-            retryCounter++;
-            await new Promise((resolve) => setTimeout(resolve, 200));
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
+            retryWithSleepCounter++;
+            await new Promise((resolve) => setTimeout(resolve, 1000));
             return await deleteFileFromS3(
                 bucketName,
                 fileName,
@@ -777,9 +725,9 @@ export async function deleteFileFromS3(
                 retryWithSleepCounter,
             );
         }
-        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
-            retryWithSleepCounter++;
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
+            retryCounter++;
+            await new Promise((resolve) => setTimeout(resolve, 200));
             return await deleteFileFromS3(
                 bucketName,
                 fileName,
@@ -799,19 +747,17 @@ export async function deleteMultipleFilesFromS3(
     retryWithSleepCounter = 0,
 ): Promise<string> {
     try {
-        const params = {
-            Bucket: bucketName,
-            Delete: {
-                Objects: filesNames.map((item) => ({ Key: item })),
-            },
-        };
-        const command = new DeleteObjectsCommand(params);
-        await s3.send(command);
-        return 'ok';
+        if (filesNames.length === 0) {
+            // return 'no files to delete';
+            return 'ok';
+        }
+
+        await batchDeleteFiles(filesNames, bucketName);
+        return 'deleted';
     } catch (error: any) {
-        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
-            retryCounter++;
-            await new Promise((resolve) => setTimeout(resolve, 200));
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
+            retryWithSleepCounter++;
+            await new Promise((resolve) => setTimeout(resolve, 1000));
             return await deleteMultipleFilesFromS3(
                 bucketName,
                 filesNames,
@@ -819,9 +765,9 @@ export async function deleteMultipleFilesFromS3(
                 retryWithSleepCounter,
             );
         }
-        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
-            retryWithSleepCounter++;
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
+            retryCounter++;
+            await new Promise((resolve) => setTimeout(resolve, 200));
             return await deleteMultipleFilesFromS3(
                 bucketName,
                 filesNames,
@@ -835,86 +781,104 @@ export async function deleteMultipleFilesFromS3(
 }
 
 export async function resetBucket(bucketName: string): Promise<boolean> {
-    //use with caution
-    const params = {
-        Bucket: bucketName,
-    };
-    const command = new ListObjectsCommand(params);
-    while (true) {
-        try {
-            const response = await s3.send(command);
-            const files = response.Contents;
-            if (!files || files.length === 0) {
-                return true;
-            }
-            const promiseArray = [];
-            for (let i = 0; i < files.length; i++) {
-                const deleteCommand = new DeleteObjectCommand({
-                    Bucket: bucketName,
-                    Key: files[i].Key,
-                });
-                const deletePromise = s3.send(deleteCommand);
-                promiseArray.push(deletePromise);
-            }
-            await Promise.allSettled(promiseArray);
-        } catch (error) {
-            saveError(error);
-            return false;
-        }
-    }
-}
-
-//------------------------------------------
-//------------------------------------------
-
-export async function createBuckets() {
     try {
-        console.log(`creating s3 buckets (${bucketNames.join(', ')})`);
-        const promiseArray = [];
-        for (let i = 0; i < bucketNames.length; i++) {
-            const prom = createBucket(bucketNames[i]);
-            promiseArray.push(prom);
-        }
-        await Promise.allSettled(promiseArray);
-        console.log('creating s3 buckets --done!');
-        console.log();
-    } catch (error) {
-        saveError(error);
-    }
-}
+        console.log(`[S3] Resetting bucket: ${bucketName}`);
 
-async function createBucket(
-    bucketName: string,
-    retryCounter = 0,
-    retryWithSleepCounter = 0,
-): Promise<boolean> {
-    try {
-        const params: CreateBucketCommandInput = {
-            Bucket: bucketName,
-            ACL: bucketName.includes('backup') ? 'private' : 'public-read', // 'private' | 'public-read'
-        };
-        const command = new CreateBucketCommand(params);
-        // const result = await s3.send(command);
-        await s3.send(command);
+        while (true) {
+            const listedObjects = await s3.list({}, {
+                bucket: bucketName,
+            });
+
+            if (!listedObjects.contents || listedObjects.contents.length === 0) {
+                break;
+            }
+
+            const keysToDelete = listedObjects.contents.map((content) => content.key).filter(Boolean) as string[];
+            if (keysToDelete.length > 0) {
+                await batchDeleteFiles(keysToDelete, bucketName);
+                console.log(`[S3] Successfully deleted ${keysToDelete.length} objects from ${bucketName}`);
+            }
+        }
+
+        console.log(`[S3] Bucket ${bucketName} is already empty.`);
         return true;
     } catch (error: any) {
-        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
-            retryCounter++;
-            await new Promise((resolve) => setTimeout(resolve, 200));
-            return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
-        }
-        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
-            retryWithSleepCounter++;
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
-        }
-        if (error.message === "Cannot read property '#text' of undefined") {
-            return true;
-        }
+        // if (error.code === 'ENOTFOUND' && retryCounter < 2) {
+        //     retryCounter++;
+        //     await new Promise((resolve) => setTimeout(resolve, 200));
+        //     return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
+        // }
+        // if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
+        //     retryWithSleepCounter++;
+        //     await new Promise((resolve) => setTimeout(resolve, 1000));
+        //     return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
+        // }
+        // if (error.message === "Cannot read property '#text' of undefined") {
+        //     return true;
+        // }
+
         saveError(error);
         return false;
     }
 }
+
+async function batchDeleteFiles(fileKeys: string[], bucketName: string): Promise<void> {
+    const promiseQueue = new PQueue({ concurrency: 50 });
+    for (let i = 0; i < fileKeys.length; i++) {
+        promiseQueue.add(() => s3.delete(fileKeys[i], { bucket: bucketName }));
+        await promiseQueue.onSizeLessThan(100);
+    }
+    await promiseQueue.onIdle();
+}
+
+// export async function createBuckets() {
+//     try {
+//         console.log(`creating s3 buckets (${bucketNames.join(', ')})`);
+//         const promiseArray = [];
+//         for (let i = 0; i < bucketNames.length; i++) {
+//             const prom = createBucket(bucketNames[i]);
+//             promiseArray.push(prom);
+//         }
+//         await Promise.allSettled(promiseArray);
+//         console.log('creating s3 buckets --done!');
+//         console.log();
+//     } catch (error) {
+//         saveError(error);
+//     }
+// }
+
+// async function createBucket(
+//     bucketName: string,
+//     retryCounter = 0,
+//     retryWithSleepCounter = 0,
+// ): Promise<boolean> {
+//     try {
+//         const params: CreateBucketCommandInput = {
+//             Bucket: bucketName,
+//             ACL: bucketName.includes('backup') ? 'private' : 'public-read', // 'private' | 'public-read'
+//         };
+//         const command = new CreateBucketCommand(params);
+//         // const result = await s3.send(command);
+//         await s3.send(command);
+//         return true;
+//     } catch (error: any) {
+//         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
+//             retryCounter++;
+//             await new Promise((resolve) => setTimeout(resolve, 200));
+//             return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
+//         }
+//         if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
+//             retryWithSleepCounter++;
+//             await new Promise((resolve) => setTimeout(resolve, 1000));
+//             return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
+//         }
+//         if (error.message === "Cannot read property '#text' of undefined") {
+//             return true;
+//         }
+//         saveError(error);
+//         return false;
+//     }
+// }
 
 //------------------------------------------
 //------------------------------------------
