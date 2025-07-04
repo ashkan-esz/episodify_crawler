@@ -120,7 +120,6 @@ export function removeSeasonText(text: string): string {
 }
 
 export function fixSeasonEpisode(text: string, isLinkInput: boolean): SeasonEpisode {
-    // console.log(text)
     const se = CrawlerUtils.getSeasonEpisode(text, isLinkInput);
     if (se.season === 1 && se.episode === 0) {
         const temp = text
@@ -236,6 +235,13 @@ function dropOutlierEpisodeNumber(titles: TorrentTitle[]): TorrentTitle[] {
                     season: s,
                     episodes: [e],
                 });
+            }
+        }
+
+        for (let j = 0; j < seasons.length; j++) {
+            if (seasons[j].episodes.length === 1 &&
+                seasons[j].episodes[0] === 264 ){
+                seasons[j].episodes[0] = 0;
             }
         }
 
