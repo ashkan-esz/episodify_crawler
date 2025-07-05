@@ -1,8 +1,7 @@
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
-import os from 'os';
-import process from 'process';
-import { performance } from 'perf_hooks';
-import cluster from 'cluster';
+import os from 'node:os';
+import { performance } from 'node:perf_hooks';
+import process from 'node:process';
 
 // ====================== Type Definitions ======================
 type Status = 'pending' | 'working' | 'success' | 'failed' | 'warning';
@@ -41,7 +40,6 @@ interface LoggerOptions {
     structuredOutput?: 'json' | 'ndjson';
     distributedTracing?: boolean;
     summaryOutput?: SummaryOutput;
-    enablePerformanceAnalysis?: boolean;
     maxHistory?: number;
 }
 
@@ -78,7 +76,6 @@ const isCI = !!process.env.CI;
 const isProduction = process.env.NODE_ENV === 'production';
 const isKubernetes = !!process.env.KUBERNETES_SERVICE_HOST;
 const isServerless = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-const isWorker = cluster.isWorker;
 
 // ====================== Performance Configuration ======================
 const getPerformanceProfile = () => {
@@ -130,8 +127,6 @@ export class UltimateStatusLogger {
     private steps: Map<string, Step> = new Map();
     private stepOrder: string[] = [];
     private performanceProfile: ReturnType<typeof getPerformanceProfile>;
-    private lastRenderTime = 0;
-    private frameCount = 0;
     private spinnerIndex = 0;
     private logBuffer: LogEntry[] = [];
     private originalConsole: Record<string, any> | null = null;
@@ -145,7 +140,7 @@ export class UltimateStatusLogger {
     private stepChildren: Map<string, string[]> = new Map();
     private stepDepth: Map<string, number> = new Map();
     private stepTimings: Map<string, StepTiming> = new Map();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+    // biome-ignore lint/complexity/noBannedTypes: <explanation>
     private lifecycleListeners: Map<LifecycleEvent, Function[]> = new Map();
     private customMetrics: Record<string, {value: any, unit: string, timestamp: number}> = {};
     private hasCriticalError = false;
@@ -166,7 +161,6 @@ export class UltimateStatusLogger {
             structuredOutput: 'json',
             distributedTracing: false,
             summaryOutput: 'text',
-            enablePerformanceAnalysis: false,
             maxHistory: 50,
             ...options
         };
@@ -857,11 +851,6 @@ export class UltimateStatusLogger {
 
         // Trigger shutdown hook
         this.triggerLifecycleHook('shutdown');
-
-        // Special handling for worker processes
-        if (isWorker) {
-            process.send!({ type: 'init-complete', success: !this.hasCriticalError });
-        }
     }
 
     private generateSummaryReport() {
@@ -919,54 +908,5 @@ export class UltimateStatusLogger {
         this.customMetrics[name].value += amount;
         this.customMetrics[name].timestamp = Date.now();
         this.scheduleRender();
-    }
-}
-
-// ====================== Plugin System ======================
-export class PluginManager {
-    private plugins: Map<string, StatusLoggerPlugin> = new Map();
-
-    constructor(private logger: UltimateStatusLogger) {}
-
-    register(plugin: StatusLoggerPlugin) {
-        if (this.plugins.has(plugin.name)) {
-            console.warn(`Plugin ${plugin.name} already registered`);
-            return;
-        }
-
-        try {
-            plugin.initialize(this.logger);
-            this.plugins.set(plugin.name, plugin);
-            this.logger.setMetric(`plugin_${plugin.name}`, 'active');
-        } catch (error) {
-            console.error(`Failed to initialize plugin ${plugin.name}:`, error);
-        }
-    }
-
-    unregister(name: string) {
-        if (this.plugins.has(name)) {
-            this.plugins.delete(name);
-            this.logger.setMetric(`plugin_${name}`, 'inactive');
-        }
-    }
-}
-
-// ====================== Built-in Plugins ======================
-export class ErrorReportingPlugin implements StatusLoggerPlugin {
-    name = 'error-reporting';
-    version = '1.0';
-
-    initialize(logger: UltimateStatusLogger) {
-        logger.registerLifecycleHook('step-complete',
-            (name: string, status: string, error?: Error) => {
-                if (status === 'failed' && error) {
-                    this.reportError(error, name);
-                }
-            });
-    }
-
-    private reportError(error: Error, step: string) {
-        // In a real implementation, this would send to an error tracking service
-        console.error(`[ERROR REPORT] Step: ${step}`, error);
     }
 }
