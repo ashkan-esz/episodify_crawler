@@ -1,38 +1,103 @@
 import config from '@/config';
 import * as Sentry from '@sentry/bun';
-import pino from 'pino';
-import path from 'node:path';
-import fs from 'node:fs';
 
-const logsDir = path.join(process.cwd(), 'logs');
-if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir);
+export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+
+class BunLogger {
+    private level: number;
+    private levels: Record<LogLevel, number> = {
+        trace: 10,
+        debug: 20,
+        info: 30,
+        warn: 40,
+        error: 50,
+        fatal: 60,
+    };
+
+    private colors = {
+        trace: '\x1b[90m',  // gray
+        debug: '\x1b[36m',  // cyan
+        info: '\x1b[32m',   // green
+        warn: '\x1b[33m',   // yellow
+        error: '\x1b[31m',  // red
+        fatal: '\x1b[35m',  // magenta
+        reset: '\x1b[0m',
+    };
+
+    constructor(level: LogLevel = 'info') {
+        this.level = this.levels[level];
+    }
+
+    setLevel(level: LogLevel) {
+        this.level = this.levels[level];
+    }
+
+    private log(level: LogLevel, message: string, data?: object) {
+        if (this.levels[level] < this.level) {
+            return;
+        }
+
+        const timestamp = this.getIranTime();
+        // const timestamp = new Date().toISOString();
+        const color = this.colors[level];
+
+        // if (Bun.env.NODE_ENV === 'production') {
+        //     // JSON output for production
+        //     const entry = JSON.stringify({
+        //         time: timestamp,
+        //         level,
+        //         msg: message,
+        //         ...data
+        //     });
+        //
+        //     level === 'error' || level === 'fatal'
+        //         ? console.error(entry)
+        //         : console.log(entry);
+        // } else {
+        // Colorized output for development
+        const prefix = `${color}[${timestamp}] ${level.toUpperCase()}:${this.colors.reset}`;
+        const dataStr = data ? ` ${JSON.stringify(data, null, 2)}` : '';
+
+        if (level === 'error' || level === 'fatal') {
+            console.error(`${prefix} ${message}${dataStr}`);
+        } else {
+            console.log(`${prefix} ${message}${dataStr}`);
+        }
+        // }
+    }
+
+    // Get Iran time (IRST/IRDT) with DST handling
+    private getIranTime(): string {
+        const now = new Date();
+        // Adjust to Iran time
+        const iranTime = new Date(
+            now.getTime() -
+            now.getTimezoneOffset() * 60 * 1000
+        );
+
+        return iranTime.toISOString()
+            .replace('T', ' ')
+            .replace('Z', ' (IRAN)');
+    }
+
+    // Log methods
+    trace = (msg: string, data?: object) => this.log('trace', msg, data);
+    debug = (msg: string, data?: object) => this.log('debug', msg, data);
+    info = (msg: string, data?: object) => this.log('info', msg, data);
+    warn = (msg: string, data?: object) => this.log('warn', msg, data);
+    error = (msg: string, data?: object) => this.log('error', msg, data);
+    fatal = (msg: string, data?: object) => this.log('fatal', msg, data);
 }
 
-// Configure Pino logger
-const transport = pino.transport({
-    targets: [
-        {
-            target: 'pino-pretty',
-            options: {
-                colorize: true,
-                translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
-                ignore: 'pid,hostname',
-            },
-            level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
-        },
-        {
-            target: 'pino/file',
-            options: {
-                destination: path.join(logsDir, 'app.log'),
-                mkdir: true,
-            },
-            level: 'error', // Only log errors to file
-        },
-    ],
-});
+const logger = new BunLogger(
+    (config.LOG_LEVEL as LogLevel) || 'info',
+);
 
-const logger = pino(transport);
+// Export the logger instance if needed elsewhere
+export default logger;
+
+//-------------------------------------------------
+//-------------------------------------------------
 
 // Configure Sentry
 if (config.CRAWLER_SENTRY_DNS) {
@@ -71,12 +136,12 @@ if (config.CRAWLER_SENTRY_DNS) {
  */
 export function saveError(error: any, context?: Record<string, any>): void {
     if (error instanceof Error) {
-        logger.error({
+        logger.error(`Error occurred: ${error.message}`, {
             err: error,
             context,
-        }, `Error occurred: ${error.message}`);
+        });
     } else {
-        logger.error({ error, context }, 'An unknown error occurred');
+        logger.error('An unknown error occurred', { error, context });
     }
 
     if (config.CRAWLER_SENTRY_DNS) {
@@ -130,6 +195,3 @@ export function mapDbErrorCode(code: string | number | undefined): string {
             return 'unknown';
     }
 }
-
-// Export the logger instance if needed elsewhere
-export default logger; 
