@@ -57,8 +57,8 @@ class MongoDBManager {
         if (this.connectionPromise) {
             return this.connectionPromise;
         }
-
-        return (this.connectionPromise = this.initializeConnection());
+        this.connectionPromise = this.initializeConnection()
+        return this.connectionPromise;
     }
 
     private async initializeConnection(attempt = 1): Promise<Db> {

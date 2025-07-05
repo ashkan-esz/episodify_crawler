@@ -75,7 +75,7 @@ async function checkSourcesUrl(
     try {
         let retryCounter = 0;
         for (let i = 0; i < sourcesUrls.length; i++) {
-            let responseUrl;
+            let responseUrl: string;
             const homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
             changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.checkingUrls + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
             try {
@@ -152,10 +152,10 @@ export async function checkUrlWork(
     sourceName: string,
     sourceUrl: string,
     allConfigs: any = null,
-    retryCounter: number = 0,
+    retryCounter = 0,
 ): Promise<string | null> {
     try {
-        let responseUrl;
+        let responseUrl: string;
         const homePageLink = sourceUrl.replace(/(\/page\/)|(\/(movie-)*anime\?page=)|(\/$)/g, '');
         try {
             // let pageData = await getPageData(homePageLink, sourceName, allConfigs);

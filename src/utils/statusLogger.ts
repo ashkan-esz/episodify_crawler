@@ -152,7 +152,7 @@ export class UltimateStatusLogger {
     private activeTraces: Map<string, TraceContext> = new Map();
 
     constructor(
-        private serviceName: string = 'App',
+        private serviceName = 'App',
         private options: LoggerOptions = {}
     ) {
         // Initialize options with defaults
@@ -907,12 +907,12 @@ export class UltimateStatusLogger {
 
     // ====================== Metrics ======================
 
-    setMetric(name: string, value: any, unit: string = '') {
+    setMetric(name: string, value: any, unit = '') {
         this.customMetrics[name] = { value, unit, timestamp: Date.now() };
         this.scheduleRender();
     }
 
-    incrementMetric(name: string, amount: number = 1) {
+    incrementMetric(name: string, amount = 1) {
         if (!this.customMetrics[name]) {
             this.customMetrics[name] = { value: 0, unit: 'count', timestamp: Date.now() };
         }

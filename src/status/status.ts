@@ -1,6 +1,9 @@
 import config from '@/config';
 import * as dynamicConfig from '@/config/dynamicConfig';
-import { blackListSources, remoteBrowsers } from '@services/crawler/remoteHeadlessBrowser';
+import {
+    blackListSources,
+    remoteBrowsers,
+} from '@services/crawler/remoteHeadlessBrowser';
 import { ServerAnalysisRepo } from '@/repo';
 import { axiosBlackListSources } from '@services/crawler/searchTools';
 import { linkStateMessages } from '@/status/warnings';
@@ -127,32 +130,33 @@ const crawlerLog = (): CrawlerLog => ({
     },
 });
 
-setInterval(async () => {
-    crawlerStatus.limits.cpu.value = [averageCpu];
-
-    getMemoryStatus(false).then((res) => {
-        crawlerStatus.limits.memory.value = res.used.toFixed(0);
-    });
-
-    const configsDb = dynamicConfig.getCachedCrawlerDbConfigs();
-    if (configsDb) {
-        crawlerStatus.disabledData.isDbDisabled = configsDb.disableCrawler;
-        crawlerStatus.disabledData.isDbDisabled_temporary = configsDb.crawlerDisabled;
-        crawlerStatus.disabledData.dbDisableStart = configsDb.disableCrawlerStart;
-    }
-
-    crawlerStatus.remoteBrowsers = remoteBrowsers.map((item: any) => {
-        const temp = { ...item };
-        delete temp.password;
-        return temp;
-    });
-
-    // TODO : check
-    // await import('../searchTools.ts'); //wait for axiosBlackListSources initialization
-
-    crawlerStatus.axiosBlackList.default = axiosBlackListSources;
-    crawlerStatus.axiosBlackList.remoteBrowsers = blackListSources;
-}, 1000);
+// TODO : need better solution
+// setInterval(async () => {
+//     crawlerStatus.limits.cpu.value = [averageCpu];
+//
+//     getMemoryStatus(false).then((res) => {
+//         crawlerStatus.limits.memory.value = res.used.toFixed(0);
+//     });
+//
+//     const configsDb = dynamicConfig.getCachedCrawlerDbConfigs();
+//     if (configsDb) {
+//         crawlerStatus.disabledData.isDbDisabled = configsDb.disableCrawler;
+//         crawlerStatus.disabledData.isDbDisabled_temporary = configsDb.crawlerDisabled;
+//         crawlerStatus.disabledData.dbDisableStart = configsDb.disableCrawlerStart;
+//     }
+//
+//     crawlerStatus.remoteBrowsers = remoteBrowsers.map((item: any) => {
+//         const temp = { ...item };
+//         delete temp.password;
+//         return temp;
+//     });
+//
+//     // TODO : check
+//     // await import('../searchTools.ts'); //wait for axiosBlackListSources initialization
+//
+//     crawlerStatus.axiosBlackList.default = axiosBlackListSources;
+//     crawlerStatus.axiosBlackList.remoteBrowsers = blackListSources;
+// }, 1000);
 
 export function getCrawlerStatusObj(): CrawlerStatus {
     return structuredClone(crawlerStatus);
@@ -165,7 +169,8 @@ class Mutex {
     private mutex = Promise.resolve();
 
     lock(): PromiseLike<() => void> {
-        let begin: (unlock: () => void) => void = () => {};
+        let begin: (unlock: () => void) => void = () => {
+        };
         this.mutex = this.mutex.then(() => new Promise(begin));
         return new Promise((res) => {
             begin = res;
@@ -307,6 +312,10 @@ export function changePageLinkStateFromCrawlerStatus(
     state: string,
     appendMode = false,
 ): void {
+    if (config.DEBUG_MODE) {
+        logger.info(`[PAGE_LINK]: ${pageLink}: ${state}`);
+    }
+
     pageLink = getDecodedLink(pageLink);
     const data = crawlerStatus.pageLinks.find((item) => item.url === pageLink);
     if (data) {
@@ -324,6 +333,10 @@ export function partialChangePageLinkStateFromCrawlerStatus(
     findValue: string,
     changeValue: string,
 ): void {
+    if (config.DEBUG_MODE) {
+        logger.info(`[PAGE_LINK]: ${pageLink}: ${changeValue}`);
+    }
+
     pageLink = getDecodedLink(pageLink);
     const data = crawlerStatus.pageLinks.find((item) => item.url === pageLink);
     if (data) {
@@ -494,7 +507,7 @@ export async function updateCrawlerStatus_sourceEnd(
 
 export async function updateCrawlerStatus_domainChangeHandlerStart(): Promise<void> {
     if (config.DEBUG_MODE) {
-        logger.info("Domain_change_handler: started");
+        logger.info('Domain_change_handler: started');
     }
 
     crawlerStatus.domainChangeHandler.isActive = true;
@@ -507,7 +520,7 @@ export async function updateCrawlerStatus_domainChangeHandlerStart(): Promise<vo
 
 export async function updateCrawlerStatus_domainChangeHandlerEnd(): Promise<number> {
     if (config.DEBUG_MODE) {
-        logger.info("Domain_change_handler: ended");
+        logger.info('Domain_change_handler: ended');
     }
 
     const duration = getDatesBetween(
@@ -530,7 +543,7 @@ export async function updateCrawlerStatus_domainChangeHandlerCrashed(
 ): Promise<number> {
     if (config.DEBUG_MODE) {
         // const sourceName = crawlerStatus.domainChangeHandler.
-        logger.warn("Domain_change_handler: crashed! []");
+        logger.warn('Domain_change_handler: crashed! []');
     }
 
     const duration = getDatesBetween(

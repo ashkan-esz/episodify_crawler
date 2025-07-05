@@ -225,18 +225,27 @@ Phase 5: Testing & Documentation
 
 ## Current Status / Progress Tracking
 
-Current Phase: Project Setup
-Status: Completed initial setup
+Current Phase: Core Infrastructure
+Status: Awaiting user to manually disable CPU/memory logging in `src/index.ts`.
 
 Completed:
 - Project initialization with Bun and TypeScript
 - Directory structure creation
 - Configuration setup (TypeScript, ESLint, Prettier)
 - Database schemas (Kysely and Mongoose)
-- Docker environment setup
+- Docker environment setup (`docker-compose.yml`)
 - Basic application structure
 - Logger utility
 - Environment configuration
+- Removed experimental Bun CPU profiling code (startSamplingProfiler) due to segmentation fault.
+- Created `docker-compose.prod.yml` with CRAWLER_CONCURRENCY=1, CPU/memory limits, and enabled all services.
+- Modified `src/utils/logger.ts` to set Sentry's `tracesSampleRate` and `sampleRate` to 0.
+- Disabled continuous CPU monitoring in `src/utils/serverStatus.ts`.
+- Disabled MongoDB health monitoring in `src/services/database/mongodb.ts`.
+- Disabled `setInterval` in `src/status/status.ts` for continuous crawler status updates.
+- Increased `heartbeatFrequencyMS` in `src/services/database/mongodb.ts` to reduce MongoDB health check frequency.
+- Disabled MongoDB health monitor initialization in `src/services/database/mongodb.ts`.
+- Attempted to disable CPU/memory logging in `src/index.ts` (requires manual user intervention due to tool issue).
 
 Next Phase: Core Infrastructure
 
@@ -252,4 +261,7 @@ Next Phase: Core Infrastructure
 
 ## Executor's Feedback or Assistance Requests
 
-Initial project setup is complete. The basic structure is in place with all necessary configurations. Ready to proceed with core infrastructure implementation.
+Initial project setup is complete. The basic structure is in place with all necessary configurations.
+**Important Note:** Attempting to use Bun's `startSamplingProfiler` resulted in a segmentation fault (Bun bug). The relevant code has been removed. Proceeding with core infrastructure implementation.
+
+I have removed the problematic profiling code, created the `docker-compose.prod.yml` file, modified the Sentry configuration to disable sampling, disabled continuous CPU monitoring, disabled MongoDB health monitoring, increased the MongoDB heartbeat frequency, and disabled the MongoDB health monitor initialization. I have also attempted to disable the CPU/memory logging in `src/index.ts`, but this requires manual user intervention. I am now awaiting the Planner's confirmation and guidance on proceeding with the "Core Infrastructure" phase, after the user has manually applied the changes and tested the new Docker configuration.

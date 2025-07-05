@@ -19,6 +19,8 @@
 
     //todo : write article about this project (nodejs -> bun), post on linkedIn
 
+    //TODO : check extracted titles
+
     //--------------------------------------------
     //--------------------------------------------
 
@@ -138,8 +140,4 @@
     //TODO : logger
     //TODO : better error handling
 
-    //TODO : check sentry errors
-    //TODO : check extracted seasonEpisode 'S2E264'
-    //TODO : check extracted title from 'bartarMoviez'
-
-
+    //TODO : profile memory / cpu usage
