@@ -1,7 +1,7 @@
 import config from '@/config';
 import { getFixedGenres, getFixedSummary } from '@/extractors';
 import { updateCronJobsStatus } from '@/jobs/job.status';
-import { MediaProvider } from '@/providers/index';
+import type { MediaProvider } from '@/providers/index';
 import * as kitsu from '@/providers/kitsu.provider';
 import { addStaffAndCharacters } from '@/providers/staffAndCharacter';
 import { CrawlerRepo, MovieRepo } from '@/repo';
@@ -12,10 +12,10 @@ import { MovieType, VPNStatus } from '@/types';
 import {
     dataLevelConfig,
     getMovieModel,
-    Movie,
+    type Movie,
     MovieReleaseState,
     MovieStatus,
-    TitleObj,
+    type TitleObj,
 } from '@/types/movie';
 import { Crawler as CrawlerUtils } from '@/utils';
 import { isValidNumberString } from '@services/crawler/movieTitle';
@@ -29,7 +29,7 @@ import axios from 'axios';
 // @ts-expect-error ...
 import isEqual from 'lodash.isequal';
 import { LRUCache } from 'lru-cache';
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 import PQueue from 'p-queue';
 
 type RateLimitConfig = {
@@ -56,8 +56,8 @@ export class JikanProvider implements MediaProvider {
 
     constructor() {
         this.cache = new LRUCache({
-            max: 500,
-            maxSize: 5000,
+            max: 100,
+            maxSize: 100,
             sizeCalculation: () => {
                 return 1;
             },
@@ -106,12 +106,12 @@ export class JikanProvider implements MediaProvider {
                     (jikanSearchResult[0].titles?.find((t: any) => t.type === 'Default')?.title ??
                         '')
                 ).replace(/the|\(tv\)|\s+/gi, '') ===
-                    (
-                        jikanSearchResult[1].title ||
-                        (jikanSearchResult[1].titles?.find((t: any) => t.type === 'Default')
+                (
+                    jikanSearchResult[1].title ||
+                    (jikanSearchResult[1].titles?.find((t: any) => t.type === 'Default')
                             ?.title ??
-                            '')
-                    ).replace(/the|\(tv\)|\s+/gi, '') &&
+                        '')
+                ).replace(/the|\(tv\)|\s+/gi, '') &&
                 jikanSearchResult[0].type.match(/ova|ona/gi) &&
                 Number(jikanSearchResult[0].episodes) < Number(jikanSearchResult[1].episodes)
             ) {
@@ -160,7 +160,7 @@ export class JikanProvider implements MediaProvider {
         let data = await this.callApi(animeSearchUrl, 0);
         data = data?.data;
         if (!data && title.length === 2) {
-            const searchTitle = title.split('').join("'");
+            const searchTitle = title.split('').join('\'');
             const animeSearchUrl =
                 `https://api.jikan.moe/v4/anime?q=${searchTitle}&limit=10${yearSearch}`.trim();
             data = await this.callApi(animeSearchUrl, 0);
@@ -204,10 +204,10 @@ export class JikanProvider implements MediaProvider {
                 .replace(/tv|the|precent|\s+/g, '')
                 .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
                 .trim() ===
-                apiTitle_simple
-                    .replace(/the|tv|precent|\s+/g, '')
-                    .replace(/volume \d/, (res: string) => res.replace('volume', 'vol'))
-                    .trim() ||
+            apiTitle_simple
+                .replace(/the|tv|precent|\s+/g, '')
+                .replace(/volume \d/, (res: string) => res.replace('volume', 'vol'))
+                .trim() ||
             this.normalizeText(title) === this.normalizeText(apiTitle_simple) ||
             this.normalizeText(title) === this.normalizeText(apiTitleEnglish_simple) ||
             title === apiTitleJapanese ||
@@ -216,11 +216,11 @@ export class JikanProvider implements MediaProvider {
                 .map((item: string) => item.replace(/\s+/g, ''))
                 .includes(title.replace(/\s+/g, '')) ||
             this.normalizeText(title) ===
-                this.normalizeText(apiTitle_simple + ' ' + apiTitleEnglish_simple) ||
+            this.normalizeText(apiTitle_simple + ' ' + apiTitleEnglish_simple) ||
             this.normalizeText(title) ===
-                this.normalizeText(apiTitle_simple + ' ' + titleSynonyms[0]) ||
+            this.normalizeText(apiTitle_simple + ' ' + titleSynonyms[0]) ||
             this.normalizeText(title) ===
-                this.normalizeText(apiTitle_simple + ' ' + titleSynonyms[1]) ||
+            this.normalizeText(apiTitle_simple + ' ' + titleSynonyms[1]) ||
             apiTitle.toLowerCase().includes('"' + title + '"')
         );
     }
@@ -271,8 +271,8 @@ export class JikanProvider implements MediaProvider {
                         data.duration.match(/\d+ sec/g)
                             ? ''
                             : CrawlerUtils.convertHourToMinute(
-                                  data.duration.replace('per' + ' ep', '').trim(),
-                              ).replace('23 min', '24 min'),
+                                data.duration.replace('per' + ' ep', '').trim(),
+                            ).replace('23 min', '24 min'),
                     releaseDay:
                         data.broadcast === null || data.broadcast === 'Unknown'
                             ? ''
@@ -305,7 +305,10 @@ export class JikanProvider implements MediaProvider {
         }
     }
 
-    async getCharactersStaff(jikanID: number): Promise<{ characters: any[]; staff: any[] } | null> {
+    async getCharactersStaff(jikanID: number): Promise<{
+        characters: any[];
+        staff: any[]
+    } | null> {
         if (jikanID) {
             const animeCharactersUrl = `https://api.jikan.moe/v4/anime/${jikanID}/characters`;
             const animeCharacters = await this.callApi(animeCharactersUrl, 0);
@@ -441,7 +444,7 @@ export class JikanProvider implements MediaProvider {
         let waitCounter = 0;
         while (waitCounter < 12) {
             try {
-                // eslint-disable-next-line no-async-promise-executor
+                // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
                 const response: any = await new Promise(async (resolve, reject) => {
                     await this.handleRateLimits();
 
@@ -1116,15 +1119,15 @@ export type JikanFields = {
     jikanPoster: string;
     updateFields:
         | {
-              rawTitle: string;
-              premiered: string;
-              year: string;
-              animeType: string;
-              duration: string;
-              releaseDay: string;
-              rated: string;
-              animeSource: string;
-              animeSeason: string;
-          }
+        rawTitle: string;
+        premiered: string;
+        year: string;
+        animeType: string;
+        duration: string;
+        releaseDay: string;
+        rated: string;
+        animeSource: string;
+        animeSeason: string;
+    }
         | Record<string, any>;
 };
