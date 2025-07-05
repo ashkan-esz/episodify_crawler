@@ -99,34 +99,36 @@ export default logger;
 //-------------------------------------------------
 //-------------------------------------------------
 
-// Configure Sentry
-if (config.CRAWLER_SENTRY_DNS) {
-    Sentry.init({
-        environment: config.NODE_ENV || 'development',
-        dsn: config.CRAWLER_SENTRY_DNS,
-        tracesSampleRate: 0.5, // Capture 50% of transactions for performance monitoring
-        // profilesSampleRate: 1.0, // Capture 100% of transactions for profiling
-        sampleRate: 0.5,
-        integrations: [
-            Sentry.httpIntegration(),
-            Sentry.mongoIntegration(),
-            Sentry.consoleIntegration(),
-            Sentry.contextLinesIntegration(),
-            Sentry.dedupeIntegration(),
-            Sentry.linkedErrorsIntegration(),
-        ],
-        beforeSend(event) {
-            // Example: Remove Authorization headers
-            if (event.request?.headers) {
-                delete event.request.headers['authorization'];
-            }
-            // Add more redaction as needed
-            return event;
-        },
-    });
-    logger.info('Sentry initialized.');
-} else {
-    logger.warn('SENTRY_DSN not found. Sentry reporting is disabled.');
+export function initSentry(): void {
+    if (config.CRAWLER_SENTRY_DNS) {
+        Sentry.init({
+            environment: config.NODE_ENV || 'development',
+            dsn: config.CRAWLER_SENTRY_DNS,
+            tracesSampleRate: 0.5, // Capture 50% of transactions for performance monitoring
+            // profilesSampleRate: 1.0, // Capture 100% of transactions for profiling
+            sampleRate: 0.5,
+            integrations: [
+                Sentry.httpIntegration(),
+                Sentry.mongoIntegration(),
+                Sentry.consoleIntegration(),
+                Sentry.contextLinesIntegration(),
+                Sentry.dedupeIntegration(),
+                Sentry.linkedErrorsIntegration(),
+            ],
+            beforeSend(event) {
+                // Example: Remove Authorization headers
+                if (event.request?.headers) {
+                    delete event.request.headers['authorization'];
+                }
+                delete event.environment;
+                // Add more redaction as needed
+                return event;
+            },
+        });
+        // logger.info('Sentry initialized.');
+    } else {
+        logger.warn('SENTRY_DSN not found. Sentry reporting is disabled.');
+    }
 }
 
 /**

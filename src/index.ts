@@ -8,7 +8,7 @@ import { helmet } from 'elysia-helmet';
 import { mongoDB, kyselyDB, Redis } from '@/services/database';
 import { MongoDBCollectionsRepo } from '@/repo';
 import { SourcesArray } from '@/services/crawler';
-import logger, { saveError } from '@/utils/logger';
+import logger, { initSentry, saveError } from '@/utils/logger';
 
 async function preStart(): Promise<void> {
     // Initialize status logger
@@ -16,6 +16,7 @@ async function preStart(): Promise<void> {
         enablePerformanceAnalysis: false,
     });
 
+    statusLogger.addStep('Sentry', [], { critical: false });
     statusLogger.addStep('Redis', [], { critical: false });
     statusLogger.addStep('MongoBD', [], { critical: true });
     statusLogger.addStep('MongoDB_Create_Collections', ['MongoBD'], { critical: true });
@@ -71,6 +72,14 @@ async function preStart(): Promise<void> {
             await Redis.connect();
         },
         'Connecting to Redis',
+    );
+
+    await statusLogger.executeStep(
+        'Sentry',
+        async () => {
+            initSentry();
+        },
+        'Connecting to Sentry',
     );
 
     // End status logger
@@ -136,7 +145,7 @@ export async function bootstrap(): Promise<void> {
         process.on('uncaughtException', (err) => {
             saveError(err);
         });
-    } catch (error) {
+    } catch (error: any) {
         logger.error('Failed to start the application:', error);
         process.exit(1);
     }
