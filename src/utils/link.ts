@@ -1,9 +1,9 @@
 import {
-    DownloadLink, Episode,
+    type DownloadLink, type Episode,
     getEpisodeModelPlaceholder,
-    MoviesGroupedLink,
+    type MoviesGroupedLink,
     Quality,
-    Season,
+    type Season,
 } from '@/types';
 import { checkBetterQuality, removeDuplicateLinks } from '@/utils/crawler';
 
@@ -440,7 +440,7 @@ export function checkEqualLinks(link1: DownloadLink, link2: DownloadLink) {
     );
 }
 
-export function sortLinksByQuality(links: DownloadLink[], handleMalformedInfo: boolean = false) {
+export function sortLinksByQuality(links: DownloadLink[], handleMalformedInfo = false) {
     return links.sort((a, b) =>
         checkBetterQuality(a.info, b.info, false, handleMalformedInfo) ? -1 : 1,
     );

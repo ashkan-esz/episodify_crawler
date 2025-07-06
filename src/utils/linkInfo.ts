@@ -1,4 +1,4 @@
-import { DownloadLink } from '@/types';
+import type { DownloadLink } from '@/types';
 import {checkDubbed, checkHardSub} from "./crawler";
 
 //----------------------------------------

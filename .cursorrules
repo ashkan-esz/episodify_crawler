@@ -226,7 +226,7 @@ Phase 5: Testing & Documentation
 ## Current Status / Progress Tracking
 
 Current Phase: Core Infrastructure
-Status: Awaiting user to manually disable CPU/memory logging in `src/index.ts`.
+Status: Initial memory optimization steps completed. CPU/memory logging `setInterval` in `src/index.ts` has been commented out, and `pageLinks` array management has been implemented. Awaiting user to rebuild Docker image and monitor CPU usage and memory.
 
 Completed:
 - Project initialization with Bun and TypeScript
@@ -242,26 +242,28 @@ Completed:
 - Modified `src/utils/logger.ts` to set Sentry's `tracesSampleRate` and `sampleRate` to 0.
 - Disabled continuous CPU monitoring in `src/utils/serverStatus.ts`.
 - Disabled MongoDB health monitoring in `src/services/database/mongodb.ts`.
-- Disabled `setInterval` in `src/status/status.ts` for continuous crawler status updates.
 - Increased `heartbeatFrequencyMS` in `src/services/database/mongodb.ts` to reduce MongoDB health check frequency.
 - Disabled MongoDB health monitor initialization in `src/services/database/mongodb.ts`.
-- Attempted to disable CPU/memory logging in `src/index.ts` (requires manual user intervention due to tool issue).
+- Commented out CPU/memory logging `setInterval` in `src/index.ts`.
+- Added `CRAWLER_MAX_PAGE_LINKS` to `src/config/index.ts`.
+- Implemented management mechanism for `pageLinks` array in `src/status/status.ts`.
 
 Next Phase: Core Infrastructure
 
 ## Next Steps and Action Items
 
-1. Implement core services:
+1. Rebuild Docker image and monitor CPU usage with `docker stats`.
+2. If CPU spikes persist, investigate other `setInterval` and `setTimeout` calls identified in the `grep_search` results.
+3. Review `LRUCache` configuration in `src/providers/jikan.provider.ts`.
+4. Investigate usage of `cheerio` in `src/services/external/googleCache.ts` (future optimization, not immediate).
+5. Implement core services:
    - Database connection services
    - Redis caching service
    - RabbitMQ queue service
-2. Set up base crawler infrastructure
-3. Implement error handling framework
-4. Create initial API endpoints
+6. Set up base crawler infrastructure
+7. Implement error handling framework
+8. Create initial API endpoints
 
 ## Executor's Feedback or Assistance Requests
 
-Initial project setup is complete. The basic structure is in place with all necessary configurations.
-**Important Note:** Attempting to use Bun's `startSamplingProfiler` resulted in a segmentation fault (Bun bug). The relevant code has been removed. Proceeding with core infrastructure implementation.
-
-I have removed the problematic profiling code, created the `docker-compose.prod.yml` file, modified the Sentry configuration to disable sampling, disabled continuous CPU monitoring, disabled MongoDB health monitoring, increased the MongoDB heartbeat frequency, and disabled the MongoDB health monitor initialization. I have also attempted to disable the CPU/memory logging in `src/index.ts`, but this requires manual user intervention. I am now awaiting the Planner's confirmation and guidance on proceeding with the "Core Infrastructure" phase, after the user has manually applied the changes and tested the new Docker configuration.
+I have completed the initial memory optimization steps, including disabling the `setInterval` for CPU/memory logging and implementing a management mechanism for the `pageLinks` array. I am now awaiting the user's feedback after they rebuild their Docker image and monitor both CPU usage and memory consumption. This will help us determine the effectiveness of these changes before proceeding with the core service implementations.

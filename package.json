@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "start": "bun run dist/index.js",
-    "build": "tsc && tsc-alias",
+    "build": "bun build src/index.ts --outdir ./dist --target bun --minify",
+    "build_compile": "bun build --compile --minify --sourcemap --target=bun-linux-x64 src/index.ts --outfile myapp",
     "lint": "biome check .",
     "lint:fix": "biome check --apply .",
     "format": "biome format .",
@@ -55,7 +56,6 @@
     "@types/node": "^22.15.31",
     "bun-types": "^1.2.16",
     "husky": "^9.1.7",
-    "tsc-alias": "^1.8.16",
     "typescript": "^5.8.3"
   }
 }

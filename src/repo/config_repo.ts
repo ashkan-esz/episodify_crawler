@@ -1,11 +1,11 @@
-import {
+import type {
     CrawlerDBConfig,
     GeneralDBConfig,
     TorrentDBConfig,
 } from '@config/dynamicConfig';
 import { mongoDB } from '@services/database';
 import { saveError } from '@utils/logger';
-import { InsertOneResult, UpdateResult } from 'mongodb';
+import type { InsertOneResult, UpdateResult } from 'mongodb';
 
 export async function getCrawlerConfigs(): Promise<CrawlerDBConfig | null | 'error'> {
     try {

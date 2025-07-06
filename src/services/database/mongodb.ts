@@ -1,5 +1,5 @@
 import config from '@/config';
-import { logger } from '@/utils';
+import logger from '@/utils/logger';
 import {
     MongoClient,
     type Db,
@@ -10,7 +10,7 @@ import {
 
 // Environment validation
 if (!config.MONGODB_DATABASE_URL) {
-    throw new Error('MONGODB_URI environment variable not set');
+    throw new Error('MONGODB_DATABASE_URL environment variable not set');
 }
 
 class MongoDBManager {
@@ -33,9 +33,8 @@ class MongoDBManager {
     };
 
     private log(level: string, message: string, metadata?: object) {
-        logger.warn({
+        logger.warn(`[MongoDB] ${message}`, {
             level,
-            message: `[MongoDB] ${message}`,
             metadata,
         });
     }

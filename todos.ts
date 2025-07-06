@@ -120,10 +120,6 @@
     //TODO : option to choose between 'secure' or 'weak' authentication
     //TODO : add new simple method for authentication
 
-    //TODO : 'axios' -> 'upFetch', 'kai', 'oFetch'
-
-    //TODO : wait for 'api' project in startup
-
     //TODO : check intervals
     //TODO : ask cursor about improvements
     //TODO : use profiler
@@ -141,3 +137,9 @@
     //TODO : better error handling
 
     //TODO : profile memory / cpu usage
+    //TODO : reduce memory usage
+    //TODO : update dependencies
+    //TODO : remove dependencies
+    //TODO : check dependencies
+
+    //TODO : 'axios' -> 'upFetch', 'kai', 'oFetch'

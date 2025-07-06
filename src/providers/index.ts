@@ -32,7 +32,7 @@ export interface MediaProvider {
     getEditedTitle(title: string): string;
 }
 
-import { MovieType } from '@/types';
+import type { MovieType } from '@/types';
 import * as tvmaze from './tvmaze.provider';
 import * as omdb from './omdb.provider';
 import * as kitsu from './kitsu.provider';
