@@ -1,14 +1,14 @@
-import axios from 'axios';
+import { ofetch } from 'ofetch';
 import * as cheerio from 'cheerio';
 import { saveLinksStatus } from '@services/crawler/searchTools';
 import {
-    CrawlerExtraConfigs,
+    type CrawlerExtraConfigs,
     CrawlerLinkType,
-    DownloadLink,
+    type DownloadLink,
     MovieType, PageState, PageType,
-    SourceConfig,
-    SourceExtractedData,
-    TorrentTitle,
+    type SourceConfig,
+    type SourceExtractedData,
+    type TorrentTitle,
 } from '@/types';
 import { replaceSpecialCharacters } from '@utils/crawler';
 import { releaseRegex, releaseRegex2 } from '@utils/linkInfo';
@@ -25,15 +25,21 @@ export default async function shanaproject(
 ): Promise<number[]> {
     try {
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_Start);
-        const res = await axios.get(sourceConfig.movie_url);
+        const res = await ofetch(sourceConfig.movie_url, {
+            timeout: 10_000,
+            retry: 3,
+            retryDelay: 5000,
+            retryStatusCodes: [...Torrent._retryStatusCodes],
+        });
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_End);
 
-        const $ = cheerio.load(res.data);
+        const $ = cheerio.load(res);
         const titles = extractLinks($, sourceConfig.movie_url, sourceConfig);
 
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
         // console.log(JSON.stringify(titles, null, 4));
+        // return [1, linksCount];
 
         if (extraConfigs.returnAfterExtraction) {
             return [1, linksCount];
@@ -50,7 +56,7 @@ export default async function shanaproject(
 
         return [1, linksCount]; //pageNumber
     } catch (error: any) {
-        if (error.code === 'EAI_AGAIN') {
+        if (error.code === 'EAI_AGAIN' || error.message?.includes('EAI_AGAIN')) {
             if (extraConfigs.retryCounter < 2) {
                 await new Promise((resolve) => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
@@ -58,15 +64,10 @@ export default async function shanaproject(
             }
             return [1, 0];
         }
-        if (
-            [500, 504, 521, 522, 525].includes(error.response?.status) &&
-            extraConfigs.retryCounter < 2
-        ) {
-            await new Promise((resolve) => setTimeout(resolve, 3000));
-            extraConfigs.retryCounter++;
-            return await shanaproject(sourceConfig, pageCount, extraConfigs);
-        }
-        if (![521, 522, 525].includes(error.response?.status)) {
+
+        if (![521, 522, 525].includes(
+            (error.status ?? error.statusCode ?? error.response?.status)
+        )) {
             saveError(error);
         }
         return [1, 0];
@@ -82,11 +83,17 @@ export async function searchByTitle(
     try {
         const searchTitle = title.replace(/\s+/g, '+');
         const searchUrl = `${sourceUrl.split('/?')[0].replace(/\/$/, '')}/search/?title=${searchTitle}&subber=`;
+
         saveLinksStatus(sourceUrl, PageType.MainPage, PageState.Fetching_Start);
-        const res = await axios.get(searchUrl);
+        const res = await ofetch(searchUrl, {
+            timeout: 10_000,
+            retry: 3,
+            retryDelay: 5000,
+            retryStatusCodes: [...Torrent._retryStatusCodes],
+        });
         saveLinksStatus(sourceUrl, PageType.MainPage, PageState.Fetching_End);
 
-        const $ = cheerio.load(res.data);
+        const $ = cheerio.load(res);
         let titles = extractLinks($, sourceUrl, sourceConfig);
 
         if (extraConfigs.equalTitlesOnly) {
@@ -98,7 +105,7 @@ export async function searchByTitle(
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
         // console.log(JSON.stringify(titles, null, 4))
-        // return
+        // return [1, linksCount];
 
         if (extraConfigs.returnTitlesOnly) {
             return titles;

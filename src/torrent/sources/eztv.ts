@@ -1,22 +1,21 @@
+import { ofetch } from 'ofetch';
+import * as cheerio from 'cheerio';
 import {
-    CrawlerExtraConfigs,
-    CrawlerLinkType, DownloadLink,
+    type CrawlerExtraConfigs,
+    CrawlerLinkType,
+    type DownloadLink,
     MovieType,
     PageState,
     PageType,
-    SourceConfig,
-    SourceExtractedData,
-    TorrentTitle,
+    type SourceConfig,
+    type SourceExtractedData,
+    type TorrentTitle,
 } from '@/types';
 import save from '@services/crawler/save';
 import { saveLinksStatus } from '@services/crawler/searchTools';
 import { addPageLinkToCrawlerStatus } from '@/status/status';
 import { replaceSpecialCharacters } from '@utils/crawler';
 import { saveError } from '@utils/logger';
-import axios from 'axios';
-import { wrapper } from 'axios-cookiejar-support';
-import * as cheerio from 'cheerio';
-import { CookieJar } from 'tough-cookie';
 import * as Torrent from '../torrent';
 
 export default async function eztv(
@@ -26,21 +25,24 @@ export default async function eztv(
 ): Promise<number[]> {
     try {
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_Start);
-        const jar = new CookieJar();
-        const client = wrapper(axios.create({ jar }));
-        const res = await client.get(sourceConfig.movie_url, {
-            headers: {
+        const res = await ofetch(sourceConfig.movie_url, {
+            timeout: 10_000,
+            retry: 3,
+            retryDelay: 5000,
+            retryStatusCodes: [...Torrent._retryStatusCodes],
+            headers:{
                 Cookie: 'layout=def_wlinks;',
-            },
+            }
         });
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_End);
 
-        const $ = cheerio.load(res.data);
+        const $ = cheerio.load(res);
         const titles = extractLinks($, sourceConfig.movie_url, sourceConfig);
 
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
         // console.log(JSON.stringify(titles, null, 4));
+        // return [1, linksCount];
 
         if (extraConfigs.returnAfterExtraction) {
             return [1, linksCount];
@@ -57,7 +59,7 @@ export default async function eztv(
 
         return [1, linksCount]; //pageNumber
     } catch (error: any) {
-        if (error.code === 'EAI_AGAIN') {
+        if (error.code === 'EAI_AGAIN' || error.message?.includes('EAI_AGAIN')) {
             if (extraConfigs.retryCounter < 2) {
                 await new Promise((resolve) => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
@@ -65,15 +67,10 @@ export default async function eztv(
             }
             return [1, 0];
         }
-        if (
-            [500, 504, 521, 522, 525].includes(error.response?.status) &&
-            extraConfigs.retryCounter < 2
-        ) {
-            await new Promise((resolve) => setTimeout(resolve, 3000));
-            extraConfigs.retryCounter++;
-            return await eztv(sourceConfig, pageCount, extraConfigs);
-        }
-        if (![521, 522, 525].includes(error.response?.status)) {
+
+        if (![521, 522, 525].includes(
+            (error.status ?? error.statusCode ?? error.response?.status)
+        )) {
             saveError(error);
         }
         return [1, 0];
@@ -89,17 +86,20 @@ export async function searchByTitle(
     try {
         const searchTitle = title.replace(/\s+/g, '+');
         const searchUrl = sourceUrl.split('/home')[0] + '/search/' + searchTitle;
+
         saveLinksStatus(searchUrl, PageType.MainPage, PageState.Fetching_Start);
-        const jar = new CookieJar();
-        const client = wrapper(axios.create({ jar }));
-        const res = await client.get(searchUrl, {
-            headers: {
+        const res = await ofetch(sourceConfig.movie_url, {
+            timeout: 10_000,
+            retry: 3,
+            retryDelay: 5000,
+            retryStatusCodes: [...Torrent._retryStatusCodes],
+            headers:{
                 Cookie: 'layout=def_wlinks;',
-            },
+            }
         });
         saveLinksStatus(searchUrl, PageType.MainPage, PageState.Fetching_End);
 
-        const $ = cheerio.load(res.data);
+        const $ = cheerio.load(res);
         let titles = extractLinks($, sourceUrl, sourceConfig);
 
         if (extraConfigs.equalTitlesOnly) {
@@ -110,7 +110,8 @@ export async function searchByTitle(
 
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
-        // console.log(JSON.stringify(titles, null, 4));
+        // console.log(JSON.stringify(titles, null, 4))
+        // return [1, linksCount];
 
         if (extraConfigs.returnTitlesOnly) {
             return titles;
@@ -130,9 +131,12 @@ export async function searchByTitle(
 
         return [1, linksCount]; //pageNumber
     } catch (error: any) {
-        if (error.response?.status !== 521 && error.response?.status !== 522) {
+        if (![521, 522, 525].includes(
+            (error.status ?? error.statusCode ?? error.response?.status)
+        )) {
             saveError(error);
         }
+
         return [1, 0];
     }
 }
@@ -181,7 +185,7 @@ function extractLinks($: any, sourceUrl: string, sourceConfig: SourceConfig): To
 
                 let title = getTitle(info);
                 const yearMatch = title.match(/(?<!(at|of))\s\d\d\d\d/i);
-                let year: string = '';
+                let year = '';
                 if (yearMatch?.[0] && Number(yearMatch[0]) >= 1999 && Number(yearMatch[0]) < 2050) {
                     title = title.replace(yearMatch[0], '').trim();
                     year = Number(yearMatch[0]).toString();

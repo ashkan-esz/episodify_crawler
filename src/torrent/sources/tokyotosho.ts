@@ -27,11 +27,10 @@ export default async function tokyotosho(
     try {
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_Start);
         const res = await ofetch(sourceConfig.movie_url, {
-            timeout: 6_000,
+            timeout: 10_000,
             retry: 3,
-            retryDelay: 3000,
+            retryDelay: 5000,
             retryStatusCodes: [...Torrent._retryStatusCodes],
-            ignoreResponseError: true,
         });
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_End);
 
@@ -67,7 +66,9 @@ export default async function tokyotosho(
             return [1, 0];
         }
 
-        if (![521, 522, 525].includes((error.status ?? error.statusCode))) {
+        if (![521, 522, 525].includes(
+            (error.status ?? error.statusCode ?? error.response?.status)
+        )) {
             saveError(error);
         }
         return [1, 0];
@@ -86,9 +87,9 @@ export async function searchByTitle(
         saveLinksStatus(sourceUrl, PageType.MainPage, PageState.Fetching_Start);
 
         const res = await ofetch(searchUrl, {
-            timeout: 6_000,
+            timeout: 10_000,
             retry: 3,
-            retryDelay: 3000,
+            retryDelay: 5000,
             retryStatusCodes: [...Torrent._retryStatusCodes],
         });
 
@@ -126,9 +127,12 @@ export async function searchByTitle(
 
         return [1, linksCount]; //pageNumber
     } catch (error: any) {
-        if (![521, 522, 525].includes((error.status ?? error.statusCode))) {
+        if (![521, 522, 525].includes(
+            (error.status ?? error.statusCode ?? error.response?.status)
+        )) {
             saveError(error);
         }
+
         return [1, 0];
     }
 }
