@@ -1,9 +1,13 @@
 import PQueue from 'p-queue';
-import { TorrentSaveCrawlDataFunc } from '@/torrent/index';
-import { CrawlerExtraConfigs, SeasonEpisode, SourceConfig, TorrentTitle } from '@/types';
+import type { TorrentSaveCrawlDataFunc } from '@/torrent/index';
+import type { CrawlerExtraConfigs, SeasonEpisode, SourceConfig, TorrentTitle } from '@/types';
 import { Crawler as CrawlerUtils, LinkInfo as LinkInfoUtils } from '@/utils';
 import { checkForceStopCrawler, updatePageNumberCrawlerStatus } from '@/status/status';
 import { pauseCrawler } from '@/status/controller';
+
+export const _retryStatusCodes = Object.freeze(
+    [429, 500, 504, 521, 522, 525]
+);
 
 export const _japaneseCharactersRegex =
     /[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0-\u30FF]|[\uFF00-\uFFEF]|[\u4E00-\u9FAF]|[\u2605-\u2606]|[\u2190-\u2195]|\u203B/g;

@@ -1,4 +1,4 @@
-import { CrawlerExtraConfigs, SourceConfig, TorrentTitle } from '@/types';
+import type { CrawlerExtraConfigs, SourceConfig, TorrentTitle } from '@/types';
 
 export interface TorrentSourceCrawler {
     (
