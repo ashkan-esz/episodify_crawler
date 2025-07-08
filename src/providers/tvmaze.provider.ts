@@ -1,17 +1,23 @@
-import { ServerAnalysisRepo } from '@/repo';
-import { Episode, EpisodeInfo, getEpisodeModel, MovieType } from '@/types';
 import { getFixedGenres, getFixedSummary } from '@/extractors';
+import { ServerAnalysisRepo } from '@/repo';
 import { CrawlerErrors } from '@/status/warnings';
-import { saveError } from '@utils/logger';
-import axios from 'axios';
-import { MediaProvider } from './index';
+import {
+    type Episode,
+    type EpisodeInfo,
+    getEpisodeModel,
+    type MovieType,
+} from '@/types';
 import { Crawler as CrawlerUtils } from '@/utils';
+import { saveError } from '@utils/logger';
+import { ofetch } from 'ofetch';
+import type { MediaProvider } from './index';
 
 export class TVMazeProvider implements MediaProvider {
     public readonly name = 'TVMaze';
     public readonly baseUrl = 'https://api.tvmaze.com';
 
-    constructor() {}
+    constructor() {
+    }
 
     async getApiData(
         title: string,
@@ -34,8 +40,10 @@ export class TVMazeProvider implements MediaProvider {
         let waitCounter = 0;
         while (waitCounter < 12) {
             try {
-                const response = await axios.get(url);
-                const data = response.data;
+                const data = await ofetch(url, {
+                    retry: 2,
+                    retryDelay: 5000,
+                });
                 const titleMatch = this.checkTitle(
                     data,
                     title,
@@ -44,29 +52,32 @@ export class TVMazeProvider implements MediaProvider {
                     imdbID,
                     premiered,
                 );
+
                 if (titleMatch) {
                     return data;
-                } else {
-                    return await this.checkMultiSearches(
-                        title,
-                        alternateTitles,
-                        titleSynonyms,
-                        imdbID,
-                        premiered,
-                    );
                 }
+
+                return await this.checkMultiSearches(
+                    title,
+                    alternateTitles,
+                    titleSynonyms,
+                    imdbID,
+                    premiered,
+                );
+
             } catch (error: any) {
-                if (error.response && error.response.status === 429) {
+                if (error.status === 429 || error.statusCode === 429) {
                     //too much request
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                     waitCounter++;
-                } else if (error.code === 'EAI_AGAIN') {
+                } else if (error.code === 'EAI_AGAIN' ||
+                    error.message?.includes(error.code === 'EAI_AGAIN')) {
                     if (waitCounter > 6) {
                         return null;
                     }
                     await new Promise((resolve) => setTimeout(resolve, 3000));
                     waitCounter += 3;
-                } else if (error.response && error.response.status === 404) {
+                } else if (error.status === 404 || error.statusCode === 404) {
                     if (type.includes('anime') && canRetry) {
                         const newTitle = this.getEditedTitle(title);
                         if (newTitle !== title) {
@@ -83,7 +94,11 @@ export class TVMazeProvider implements MediaProvider {
                     }
                     return null;
                 } else {
-                    if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                    if (
+                        error.code === 'ERR_UNESCAPED_CHARACTERS' ||
+                        error.message.includes('Invalid URL') ||
+                        error.message.includes('URI malformed')
+                    ) {
                         error.isFetchError = true;
                         error.url = url;
                     }
@@ -199,8 +214,8 @@ export class TVMazeProvider implements MediaProvider {
                     duration: data.runtime
                         ? data.runtime + ' min'
                         : data.averageRuntime
-                          ? data.averageRuntime + ' min'
-                          : '',
+                            ? data.averageRuntime + ' min'
+                            : '',
                     status: data.status.toLowerCase(),
                     movieLang: data.language ? data.language.toLowerCase() : '',
                     releaseDay: data.schedule.days
@@ -226,23 +241,32 @@ export class TVMazeProvider implements MediaProvider {
         let waitCounter = 0;
         while (waitCounter < 12) {
             try {
-                const response = await axios.get(url, { timeout: 20000 });
-                return response.data;
+                return await ofetch(url, {
+                    timeout: 20000,
+                });
             } catch (error: any) {
-                if (error.message === 'timeout of 20000ms exceeded') {
+                if (
+                    error.message?.includes('operation was aborted') ||
+                    error.message?.includes('timeout')
+                ) {
                     return null;
                 }
-                if (error.response && error.response.status === 429) {
+
+                if (error.status === 429 || error.statusCode === 429) {
                     //too much request
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                     waitCounter++;
-                } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                } else if (
+                    error.code === 'ERR_UNESCAPED_CHARACTERS' ||
+                    error.message.includes('Invalid URL') ||
+                    error.message.includes('URI malformed')
+                ) {
                     error.isFetchError = true;
                     error.url = url;
                     await saveError(error);
                     return null;
                 } else {
-                    if (error.response && error.response.status !== 404) {
+                    if (error.status !== 404 && error.statusCode !== 404) {
                         await saveError(error);
                     }
                     return null;
@@ -264,13 +288,13 @@ export class TVMazeProvider implements MediaProvider {
             .replace(' zunousen', ' zuno sen')
             .replace(' kusoge', ' kusogee')
             .replace('summons', 'calls')
-            .replace('dont', "don't")
-            .replace('wont', "won't")
-            .replace('heavens', "heaven's")
-            .replace('havent', "haven't")
-            .replace(' im ', " i'm ")
+            .replace('dont', 'don\'t')
+            .replace('wont', 'won\'t')
+            .replace('heavens', 'heaven\'s')
+            .replace('havent', 'haven\'t')
+            .replace(' im ', ' i\'m ')
             .replace(' comedy', ' come')
-            .replace(' renai ', " ren'ai ")
+            .replace(' renai ', ' ren\'ai ')
             .replace(/(?<=(^|\s))vol \d/, (res) => res.replace('vol', 'volume'));
     }
 
@@ -379,9 +403,9 @@ export class TVMazeProvider implements MediaProvider {
             releaseStamp: nextEpisodeInfo.airstamp || '',
             summary: nextEpisodeInfo.summary
                 ? nextEpisodeInfo.summary
-                      .replace(/<p>|<\/p>|<b>|<\/b>/g, '')
-                      .replace(/([.…])+$/, '')
-                      .trim()
+                    .replace(/<p>|<\/p>|<b>|<\/b>/g, '')
+                    .replace(/([.…])+$/, '')
+                    .trim()
                 : '',
         };
     }
@@ -418,16 +442,16 @@ export type TVMazeFields = {
     isAnime: boolean;
     updateFields:
         | {
-              rawTitle: string;
-              premiered: string;
-              year: string;
-              duration: string;
-              status: string;
-              movieLang: string;
-              releaseDay: string;
-              officialSite: string;
-              webChannel: string;
-          }
+        rawTitle: string;
+        premiered: string;
+        year: string;
+        duration: string;
+        status: string;
+        movieLang: string;
+        releaseDay: string;
+        officialSite: string;
+        webChannel: string;
+    }
         | Record<string, any>;
     releaseDay?: string;
 };
