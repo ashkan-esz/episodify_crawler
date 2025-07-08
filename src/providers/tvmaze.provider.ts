@@ -84,7 +84,7 @@ export class TVMazeProvider implements MediaProvider {
                     return null;
                 } else {
                     if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-                        error.isAxiosError = true;
+                        error.isFetchError = true;
                         error.url = url;
                     }
                     await saveError(error);
@@ -237,7 +237,7 @@ export class TVMazeProvider implements MediaProvider {
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                     waitCounter++;
                 } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-                    error.isAxiosError = true;
+                    error.isFetchError = true;
                     error.url = url;
                     await saveError(error);
                     return null;

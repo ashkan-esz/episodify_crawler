@@ -363,7 +363,7 @@ export class OMDBProvider implements MediaProvider {
                             key.callCount = key.limit + 1;
                         }
                     } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-                        error.isAxiosError = true;
+                        error.isFetchError = true;
                         error.url = url;
                         await saveError(error);
                         return null;

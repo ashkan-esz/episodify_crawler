@@ -108,7 +108,7 @@ async function checkSourcesUrl(
                         responseUrl = await getResponseUrl(url);
                         sourcesUrls[i].checked = true;
                     } catch (error2: any) {
-                        error2.isAxiosError = true;
+                        error2.isFetchError = true;
                         error2.url = homePageLink;
                         error2.url2 = url;
                         error2.filePath = 'domainChangeHandler';
@@ -174,7 +174,7 @@ export async function checkUrlWork(
                     // responseUrl = await getResponseUrl(url);
                     return await checkUrlWork(sourceName, url, allConfigs, retryCounter);
                 } catch (error2: any) {
-                    error2.isAxiosError = true;
+                    error2.isFetchError = true;
                     error2.url = homePageLink;
                     error2.url2 = url;
                     error2.filePath = 'domainChangeHandler';

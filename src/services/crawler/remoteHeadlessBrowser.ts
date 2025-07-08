@@ -310,8 +310,8 @@ export let blackListSources = [];
 
 // async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName, extraConfigs) {
 //     if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-//         error.isAxiosError2 = true;
-//         error.isAxiosError = true;
+//         error.isFetchError2 = true;
+//         error.isFetchError = true;
 //         error.url = url;
 //         error.filePath = 'remoteHeadlessBrowser';
 //     }
@@ -432,7 +432,7 @@ export let blackListSources = [];
 //                     return await useAxiosGet(url, sourceName, sourceAuthStatus, pageType, retryCounter);
 //                 }
 //             }
-//             error.isAxiosError = true;
+//             error.isFetchError = true;
 //             error.url = url;
 //             error.filePath = 'remoteHeadlessBrowser > useAxiosGet';
 //         } else if (error.response && error.response.status) {
@@ -461,7 +461,7 @@ export let blackListSources = [];
 //             saveCrawlerWarning(warningMessages.source.axios403);
 //         } else if (error.message !== 'certificate has expired' && error.code !== "ERR_TLS_CERT_ALTNAME_INVALID") {
 //             if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
-//                 error.isAxiosError2 = true;
+//                 error.isFetchError = true;
 //                 error.url = url;
 //                 error.filePath = 'remoteHeadlessBrowser > useAxiosGet 2';
 //             } else {
@@ -471,7 +471,7 @@ export let blackListSources = [];
 //                 Object.assign(error, temp);
 //                 error.stack0 = temp.stack;
 //                 error.message0 = temp.message;
-//                 error.isAxiosError2 = true;
+//                 error.isFetchError2 = true;
 //                 error.url = url;
 //                 error.filePath = 'remoteHeadlessBrowser > useAxiosGet 2';
 //             }
@@ -636,7 +636,7 @@ export let blackListSources = [];
 //         needSave = true;
 //     }
 //     if (needSave) {
-//         error.isAxiosError2 = true;
+//         error.isFetchError2 = true;
 //         error.url = url;
 //         error.browserServer = selectedBrowser.endpoint;
 //         error.prevUsedBrowsers = prevUsedBrowsers;

@@ -541,7 +541,7 @@ async function getLinks(
                         );
                     }
                 }
-                error.isAxiosError = true;
+                error.isFetchError = true;
                 error.url = url;
                 error.filePath = 'searchTools';
                 await saveErrorIfNeeded(error);

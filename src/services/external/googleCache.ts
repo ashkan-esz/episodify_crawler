@@ -51,7 +51,7 @@ export async function getFromGoogleCache(
                     return await getFromGoogleCache(url, retryCounter);
                 }
             }
-            error.isAxiosError = true;
+            error.isFetchError = true;
             error.url = getDecodedLink(url);
             error.filePath = 'searchTools';
             await saveError(error);

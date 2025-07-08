@@ -168,7 +168,7 @@ export async function uploadSubtitleToS3ByURl(
             return await uploadSubtitleToS3ByURl(originalUrl, fileName, cookie, retryCounter, retryWithSleepCounter);
         }
         if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-            error.isAxiosError = true;
+            error.isFetchError = true;
             error.url = originalUrl;
             error.filePath = 'cloudStorage > uploadSubtitleToS3ByURl';
         }
@@ -454,7 +454,7 @@ export async function uploadImageToS3(
                 }
             }
             if (error.response?.status !== 404) {
-                error.isAxiosError = true;
+                error.isFetchError = true;
                 error.url = originalUrl;
                 error.filePath = 'cloudStorage > uploadImageToS3 > ' + bucketName;
                 await saveError(error);
