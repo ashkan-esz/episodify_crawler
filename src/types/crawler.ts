@@ -8,7 +8,7 @@ export type CrawlerExtraConfigs = {
     apiUpdateState: ExtraConfigsSwitchState;
     trailerUploadState: ExtraConfigsSwitchState;
     torrentState: ExtraConfigsSwitchState;
-    axiosBlockThreshHold: number;
+    fetchBlockThreshHold: number;
     remoteBrowserBlockThreshHold: number;
     crawlerConcurrency: number;
     dontUseRemoteBrowser: boolean;
@@ -30,7 +30,7 @@ export const defaultCrawlerExtraConfigs: CrawlerExtraConfigs = Object.freeze({
     apiUpdateState: ExtraConfigsSwitchState.NONE,
     trailerUploadState: ExtraConfigsSwitchState.NONE,
     torrentState: ExtraConfigsSwitchState.NONE,
-    axiosBlockThreshHold: 0,
+    fetchBlockThreshHold: 0,
     remoteBrowserBlockThreshHold: 0,
     crawlerConcurrency: 0,
     dontUseRemoteBrowser: false,

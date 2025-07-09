@@ -9,7 +9,6 @@ import type { MoviePosterS3, MovieTrailerS3 } from '@/types/movie';
 import { getArrayBufferResponse, getFileSize } from '@utils/axios';
 import { getDecodedLink } from '@utils/crawler';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
-// import axios from 'axios';
 import ytdl from '@distube/ytdl-core';
 import PQueue from 'p-queue';
 

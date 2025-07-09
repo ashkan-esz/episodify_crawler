@@ -111,7 +111,7 @@ export type CrawlerStatus = {
         sources: CrawlerStatusSource[];
     };
     remoteBrowsers: RemoteBrowser[];
-    axiosBlackList: {
+    fetchBlackList: {
         default: {
             sourceName: string;
             errorCounter: number;

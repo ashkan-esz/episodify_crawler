@@ -12,7 +12,7 @@ export const CrawlerErrors = Object.freeze({
         badPosters: (source: string) => `Source (${source}): badPosters`,
         badPersianSummary: (source: string) => `Source (${source}): badPersianSummary`,
         possibleVip: (source: string) => `Source (${source}): possible vip conversion`,
-        axios403: (sourceName: string) => `Source (${sourceName}): 403 Error (Axios)`,
+        fetch403: (sourceName: string) => `Source (${sourceName}): 403 Error (Fetch)`,
         disabled: (sourceName: string, err: string) =>
             `Source (${sourceName}): Disabled, reasons: ${err}`,
         disabledSkip: (sourceName: string) =>
@@ -41,25 +41,25 @@ export const CrawlerErrors = Object.freeze({
             eaiError: 'EAI_AGAIN error on omdb api call',
         },
         tvmaze: {
-            lotsOfApiCall: `lots of tvmaze api call`,
+            lotsOfApiCall: "lots of tvmaze api call",
         },
         jikan: {
-            lotsOfApiCall: `lots of jikan api call`,
+            lotsOfApiCall: "lots of jikan api call",
             eaiError: 'EAI_AGAIN error on jikan api call',
         },
         kitsu: {
-            lotsOfApiCall: `lots of kitsu api call`,
+            lotsOfApiCall: "lots of kitsu api call",
         },
         amv: {
-            lotsOfApiCall: `lots of amv api call`,
+            lotsOfApiCall: "lots of amv api call",
             eaiError: 'EAI_AGAIN error on amv api call',
         },
     },
-    axios: {
+    fetch: {
         timeoutError: (time: string, sourceName: string) =>
-            `Axios timeout error (${time}): ${sourceName}`,
-        abortError: (sourceName: string) => `Axios aborted error: ${sourceName}`,
-        eaiError: (sourceName: string) => `Axios EAI_AGAIN error: ${sourceName}`,
+            `Fetch timeout error (${time}): ${sourceName}`,
+        abortError: (sourceName: string) => `Fetch aborted error: ${sourceName}`,
+        eaiError: (sourceName: string) => `Fetch EAI_AGAIN error: ${sourceName}`,
     },
     operations: {
         imageHighWait: (seconds: number) => `High wait for image operation to start (${seconds})`,
@@ -74,8 +74,8 @@ export const linkStateMessages = Object.freeze({
     sourcePage: Object.freeze({
         start: 'start',
         fetchingStart: 'fetching start',
-        fetchingStart_axios: 'fetching start (axios)',
-        retryAxiosCookie: 'fetching, retry with axios and cookies',
+        fetchingStart_fetch: 'fetching start (fetch)',
+        retryFetchCookie: 'fetching, retry with fetch and cookies',
         retryOnNotFound: 'fetching, retry with not found error',
         retryUnEscapedCharacters: 'fetching, retry on unEscaped characters url',
         fromCache: 'fetching page data from google cache',
@@ -83,8 +83,8 @@ export const linkStateMessages = Object.freeze({
     }),
     gettingPageData: Object.freeze({
         gettingPageData: 'getting page data',
-        gettingPageData_axios: 'getting page data (axios)',
-        retryAxiosCookie: 'getting page data, retry with axios and cookies',
+        gettingPageData_fetch: 'getting page data (fetch)',
+        retryFetchCookie: 'getting page data, retry with fetch and cookies',
         retryOnNotFound: 'getting page data, retry with not found error',
         retryUnEscapedCharacters: 'getting page data, retry on unEscaped characters url',
         fromCache: 'getting page data from google cache',
@@ -140,7 +140,7 @@ export const linkStateMessages = Object.freeze({
     domainChangeHandler: Object.freeze({
         start: 'start',
         checkingUrls: 'checking sources urls',
-        retryAxios: 'checking sources urls (retry with axios)',
+        retryFetch: 'checking sources urls (retry with fetch)',
         crawlingSources: 'crawling sources',
         end: 'end',
     }),

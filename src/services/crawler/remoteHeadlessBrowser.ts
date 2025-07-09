@@ -458,7 +458,7 @@ export let blackListSources = [];
 //             saveCrawlerWarning(warningMessages.axios.eaiError);
 //         } else if (error.message === 'Request failed with status code 403') {
 //             const warningMessages = getCrawlerWarningMessages(sourceName);
-//             saveCrawlerWarning(warningMessages.source.axios403);
+//             saveCrawlerWarning(warningMessages.source.fetch403);
 //         } else if (error.message !== 'certificate has expired' && error.code !== "ERR_TLS_CERT_ALTNAME_INVALID") {
 //             if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
 //                 error.isFetchError = true;

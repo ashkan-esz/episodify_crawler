@@ -60,7 +60,7 @@ axiosRetry(axios, {
 const scriptRegex = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
 const styleRegex = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi;
 
-type AxiosBlackListSource = {
+type FetchBlackListSource = {
     errorCounter: number;
     lastErrorTime: number;
     isBlocked: boolean;
@@ -69,7 +69,7 @@ type AxiosBlackListSource = {
     sourceName: string;
 };
 
-export const axiosBlackListSources: AxiosBlackListSource[] = [];
+export const fetchBlackListSources: FetchBlackListSource[] = [];
 
 //---------------------------------------------
 //---------------------------------------------
@@ -254,9 +254,9 @@ export async function search_in_title_page(
                     ? getQualitySample($, links[j], type) || ''
                     : '';
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
-                    let season = 0,
-                        episode = 0,
-                        isNormalCase = false;
+                    let season = 0;
+                    let episode = 0;
+                    let isNormalCase = false;
                     if (type.includes('serial') || link_info.match(/^s\d+e\d+(-?e\d+)?\./i)) {
                         if (type.includes('anime') || getSeasonEpisodeFromInfo) {
                             ({ season, episode, isNormalCase } = getSeasonEpisode(link_info));
@@ -411,8 +411,8 @@ async function getLinks(
             // }
             // if (!pageData || (!pageData.pageContent && !pageData.isAxiosCalled)) {
 
-            freeAxiosBlackListSources();
-            const sourceData = axiosBlackListSources.find(
+            freeFetchBlackListSources();
+            const sourceData = fetchBlackListSources.find(
                 (item) => item.sourceName === config.sourceName,
             );
             if (
@@ -432,12 +432,12 @@ async function getLinks(
                     ) {
                         changeSourcePageFromCrawlerStatus(
                             pageLink,
-                            linkStateMessages.sourcePage.retryAxiosCookie,
+                            linkStateMessages.sourcePage.retryFetchCookie,
                         );
                     } else {
                         changeSourcePageFromCrawlerStatus(
                             pageLink,
-                            linkStateMessages.sourcePage.fetchingStart_axios,
+                            linkStateMessages.sourcePage.fetchingStart_fetch,
                         );
                     }
                 } else {
@@ -448,12 +448,12 @@ async function getLinks(
                     ) {
                         changePageLinkStateFromCrawlerStatus(
                             pageLink,
-                            linkStateMessages.gettingPageData.retryAxiosCookie,
+                            linkStateMessages.gettingPageData.retryFetchCookie,
                         );
                     } else {
                         changePageLinkStateFromCrawlerStatus(
                             pageLink,
-                            linkStateMessages.gettingPageData.gettingPageData_axios,
+                            linkStateMessages.gettingPageData.gettingPageData_fetch,
                         );
                     }
                 }
@@ -498,7 +498,7 @@ async function getLinks(
                     links = $('a');
                 }
                 if (links.length < 5 && !sourceLinkData) {
-                    addSourceToAxiosBlackList(config.sourceName, extraConfigs);
+                    addSourceToFetchBlackList(config.sourceName, extraConfigs);
                 }
             }
             // }
@@ -547,7 +547,7 @@ async function getLinks(
                 await saveErrorIfNeeded(error);
             } else {
                 if (!sourceLinkData) {
-                    addSourceToAxiosBlackList(config.sourceName, extraConfigs);
+                    addSourceToFetchBlackList(config.sourceName, extraConfigs);
                 }
 
                 if (config.use_google_cache) {
@@ -560,7 +560,7 @@ async function getLinks(
 
                 if (error.message === 'timeout of 10000ms exceeded') {
                     ServerAnalysisRepo.saveCrawlerWarning(
-                        CrawlerErrors.axios.timeoutError('10s', config.sourceName),
+                        CrawlerErrors.fetch.timeoutError('10s', config.sourceName),
                     );
                     if (pageType === PageType.MainPage && retryCounter < 2) {
                         retryCounter++;
@@ -575,7 +575,7 @@ async function getLinks(
                     }
                 } else if (error.message === 'timeout of 15000ms exceeded') {
                     ServerAnalysisRepo.saveCrawlerWarning(
-                        CrawlerErrors.axios.timeoutError('15s', config.sourceName),
+                        CrawlerErrors.fetch.timeoutError('15s', config.sourceName),
                     );
                     if (pageType === PageType.MainPage && retryCounter < 2) {
                         retryCounter++;
@@ -589,7 +589,7 @@ async function getLinks(
                         );
                     }
                 } else if (error.message === 'aborted') {
-                    ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.axios.abortError(config.sourceName));
+                    ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.fetch.abortError(config.sourceName));
                     if (pageType === PageType.MainPage && retryCounter < 2) {
                         retryCounter++;
                         return await getLinks(
@@ -602,10 +602,10 @@ async function getLinks(
                         );
                     }
                 } else if (error.code === 'EAI_AGAIN') {
-                    ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.axios.eaiError(config.sourceName));
+                    ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.fetch.eaiError(config.sourceName));
                 } else if (error.message === 'Request failed with status code 403') {
                     ServerAnalysisRepo.saveCrawlerWarning(
-                        CrawlerErrors.source.axios403(config.sourceName),
+                        CrawlerErrors.source.fetch403(config.sourceName),
                     );
                 } else {
                     await saveErrorIfNeeded(error);
@@ -737,8 +737,8 @@ export async function getConcurrencyNumber(
 //---------------------------------------------
 //---------------------------------------------
 
-function addSourceToAxiosBlackList(sourceName: string, extraConfigs: CrawlerExtraConfigs): void {
-    const sourceData = axiosBlackListSources.find((item) => item.sourceName === sourceName);
+function addSourceToFetchBlackList(sourceName: string, extraConfigs: CrawlerExtraConfigs): void {
+    const sourceData = fetchBlackListSources.find((item) => item.sourceName === sourceName);
     if (sourceData) {
         if (Date.now() - sourceData.lastErrorTime > 5 * 60 * 1000) {
             //kind of resetting counter
@@ -750,12 +750,12 @@ function addSourceToAxiosBlackList(sourceName: string, extraConfigs: CrawlerExtr
             sourceData.totalErrorCounter++;
         }
         sourceData.lastErrorTime = Date.now();
-        const errorBlockCount = Number(extraConfigs?.axiosBlockThreshHold || 15);
+        const errorBlockCount = Number(extraConfigs?.fetchBlockThreshHold || 15);
         if (sourceData.errorCounter >= errorBlockCount) {
             sourceData.isBlocked = true;
         }
     } else {
-        axiosBlackListSources.push({
+        fetchBlackListSources.push({
             sourceName: sourceName,
             errorCounter: 1,
             lastErrorTime: Date.now(),
@@ -766,13 +766,13 @@ function addSourceToAxiosBlackList(sourceName: string, extraConfigs: CrawlerExtr
     }
 }
 
-function freeAxiosBlackListSources(): void {
-    for (let i = 0; i < axiosBlackListSources.length; i++) {
+function freeFetchBlackListSources(): void {
+    for (let i = 0; i < fetchBlackListSources.length; i++) {
         //free source after 5 minute
-        if (Date.now() - axiosBlackListSources[i].lastErrorTime >= 5 * 60 * 1000) {
-            axiosBlackListSources[i].errorCounter = 0;
-            axiosBlackListSources[i].lastErrorTime = 0;
-            axiosBlackListSources[i].isBlocked = false;
+        if (Date.now() - fetchBlackListSources[i].lastErrorTime >= 5 * 60 * 1000) {
+            fetchBlackListSources[i].errorCounter = 0;
+            fetchBlackListSources[i].lastErrorTime = 0;
+            fetchBlackListSources[i].isBlocked = false;
         }
     }
 }

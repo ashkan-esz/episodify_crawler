@@ -88,11 +88,11 @@ async function checkSourcesUrl(
                 // if (pageData && pageData.pageContent) {
                 //     responseUrl = pageData.responseUrl;
                 // } else {
-                //     changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.retryAxios + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
+                //     changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.retryFetch + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
                 //     responseUrl = await getResponseUrl(homePageLink);
                 // }
 
-                changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.retryAxios + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
+                changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.retryFetch + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
                 responseUrl = await getResponseUrl(homePageLink);
 
                 sourcesUrls[i].checked = true;

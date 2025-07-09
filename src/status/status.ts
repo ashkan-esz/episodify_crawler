@@ -5,7 +5,7 @@ import {
     remoteBrowsers,
 } from '@services/crawler/remoteHeadlessBrowser';
 import { ServerAnalysisRepo } from '@/repo';
-import { axiosBlackListSources } from '@services/crawler/searchTools';
+import { fetchBlackListSources } from '@services/crawler/searchTools';
 import { linkStateMessages } from '@/status/warnings';
 import {
     CrawlerExtraConfigs,
@@ -99,7 +99,7 @@ function getDefaultCrawlerStatus(): CrawlerStatus {
             sources: [],
         },
         remoteBrowsers: [],
-        axiosBlackList: {
+        fetchBlackList: {
             default: [],
             remoteBrowsers: [],
         },
@@ -152,10 +152,10 @@ const crawlerLog = (): CrawlerLog => ({
 //     });
 //
 //     // TODO : check
-//     // await import('../searchTools.ts'); //wait for axiosBlackListSources initialization
+//     // await import('../searchTools.ts'); //wait for fetchBlackListSources initialization
 //
-//     crawlerStatus.axiosBlackList.default = axiosBlackListSources;
-//     crawlerStatus.axiosBlackList.remoteBrowsers = blackListSources;
+//     crawlerStatus.fetchBlackList.default = fetchBlackListSources;
+//     crawlerStatus.fetchBlackList.remoteBrowsers = blackListSources;
 // }, 1000);
 
 export function getCrawlerStatusObj(): CrawlerStatus {
