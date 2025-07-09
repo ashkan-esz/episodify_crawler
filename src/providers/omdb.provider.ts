@@ -1,14 +1,13 @@
 import config from '@/config';
 import { ServerAnalysisRepo } from '@/repo';
-import { Episode, getEpisodeModel, MovieType } from '@/types';
-import { MovieRates } from '@/types/movie';
+import { type Episode, getEpisodeModel, type MovieType } from '@/types';
+import type { MovieRates } from '@/types/movie';
 import { getFixedGenres, getFixedSummary } from '@/extractors';
-import { MediaProvider } from '@/providers/index';
+import type { MediaProvider } from '@/providers/index';
 import { CrawlerErrors } from '@/status/warnings';
 import { saveError } from '@utils/logger';
-import axios from 'axios';
 import PQueue from 'p-queue';
-import { Crawler as CrawlerUtils, logger } from '@/utils';
+import { Crawler as CrawlerUtils, logger, FetchUtils } from '@/utils';
 
 type ApiKey = {
     apiKey: string;
@@ -60,14 +59,14 @@ export class OMDBProvider implements MediaProvider {
             const titleYear = premiered.split('-')[0];
             const searchType = (type.includes('movie')) ? 'movie' : 'series';
             const url = `https://www.omdbapi.com/?t=${encodeURIComponent(title)}&type=${searchType}&plot=full`;
-            let data;
+            let data: any;
             let yearIgnored = false;
             if (titleYear) {
                 data = await this.callApi(url + `&y=${titleYear}`);
                 if (data === null) {
                     data = await this.callApi(url);
                     yearIgnored = true;
-                    if (data && data.Year && (Number(data.Year) - Number(titleYear) > 7)) {
+                    if (data?.Year && (Number(data.Year) - Number(titleYear) > 7)) {
                         return null;
                     }
                 }
@@ -89,7 +88,7 @@ export class OMDBProvider implements MediaProvider {
                         }
                     }
 
-                    const splitTitle = title.split(" ").filter(item => item.endsWith('s'));
+                    const splitTitle = title.split(' ').filter(item => item.endsWith('s'));
                     for (let i = 0; i < splitTitle.length; i++) {
                         const newSpl = splitTitle[i].replace(/s$/, '\'s');
                         newTitle = title.replace(splitTitle[i], newSpl);
@@ -126,7 +125,7 @@ export class OMDBProvider implements MediaProvider {
             if (data) {
                 data.yearIgnored = yearIgnored;
             }
-            if (this.checkTitle(data, title, alternateTitles, titleSynonyms,'','', titleYear, yearIgnored, type)) {
+            if (this.checkTitle(data, title, alternateTitles, titleSynonyms, '', '', titleYear, yearIgnored, type)) {
                 return data;
             }
             if (canRetry) {
@@ -136,7 +135,7 @@ export class OMDBProvider implements MediaProvider {
                 }
 
                 if (newTitle !== title) {
-                    const retryRes = await this.getApiData(newTitle, alternateTitles, titleSynonyms,'', premiered, type, false);
+                    const retryRes = await this.getApiData(newTitle, alternateTitles, titleSynonyms, '', premiered, type, false);
                     if (retryRes) {
                         return retryRes;
                     }
@@ -145,7 +144,7 @@ export class OMDBProvider implements MediaProvider {
 
             return null;
         } catch (error: any) {
-            if (!error.response || error.response.status !== 500) {
+            if (!FetchUtils.checkErrStatusCode(error, 500)) {
                 await saveError(error);
             }
             return null;
@@ -219,7 +218,7 @@ export class OMDBProvider implements MediaProvider {
                 .replace('4', 'iv')
                 .replace('3', 'iii')
                 .replace('2', 'ii')
-                .replace('1', 'i'))
+                .replace('1', 'i'));
     }
 
     getApiFields(data: any, type: MovieType): OMDBFields | null {
@@ -236,7 +235,7 @@ export class OMDBProvider implements MediaProvider {
                 omdbTitle: CrawlerUtils.replaceSpecialCharacters(data.Title.toLowerCase()),
                 yearIgnored: data.yearIgnored,
                 year: data.Year.split(/[-–]/g)[0],
-                poster: data?.Poster?.replace('N/A', '') || "",
+                poster: data?.Poster?.replace('N/A', '') || '',
                 updateFields: {
                     rawTitle: data.Title.trim().replace(/^["']|["']$/g, '').replace(/volume \d/i,
                         (res: string) => res.replace('Volume', 'Vol')),
@@ -252,13 +251,13 @@ export class OMDBProvider implements MediaProvider {
             apiFields.updateFields = CrawlerUtils.purgeObjFalsyValues(apiFields.updateFields);
             return apiFields;
         } catch (error: any) {
-            if (!error.response || error.response.status !== 500) {
+            if (!FetchUtils.checkErrStatusCode(error, 500)) {
                 saveError(error);
             }
             return null;
         }
     }
-    
+
     checkTitle(
         data: any,
         title: string,
@@ -331,7 +330,7 @@ export class OMDBProvider implements MediaProvider {
     async callApi(url: string): Promise<any> {
         try {
             let key = null;
-            let response;
+            let response: any;
             while (true) {
                 try {
                     key = this.getApiKey();
@@ -343,18 +342,21 @@ export class OMDBProvider implements MediaProvider {
                         }
                         return null;
                     }
-                    response = await axios.get(url + `&apikey=${key.apiKey}`);
+                    response = await FetchUtils.myFetch(url + `&apikey=${key.apiKey}`);
                     break;
                 } catch (error: any) {
                     if (
-                        (error.response && error.response.data.Error === 'Request limit reached!') ||
-                        (error.response && error.response.status === 401)
+                        FetchUtils.checkErrStatusRateLimit(error) ||
+                        FetchUtils.checkErrStatusCode(error, 401)
                     ) {
-                        if (error.response.data.Error && error.response.data.Error !== 'Request limit reached!' && key) {
+                        if (!FetchUtils.checkErrStatusRateLimit(error) && key) {
+                            const errorMessage = error.response?.data?.Error ||
+                                error.response?.Error ||
+                                error.data?.Error;
                             if (config.DEBUG_MODE) {
-                                console.log(`ERROR: Invalid omdb api key: ${key.apiKey}, (${error.response.data?.Error})`);
+                                logger.warn(`ERROR: Invalid omdb api key: ${key.apiKey}, (${errorMessage})`);
                             } else {
-                                const m = CrawlerErrors.api.omdb.invalid(key.apiKey, error.response.data?.Error)
+                                const m = CrawlerErrors.api.omdb.invalid(key.apiKey, errorMessage);
                                 ServerAnalysisRepo.saveCrawlerWarning(m);
                             }
                             key.limit = 0;
@@ -362,21 +364,18 @@ export class OMDBProvider implements MediaProvider {
                         if (key) {
                             key.callCount = key.limit + 1;
                         }
-                    } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                    } else if (FetchUtils.checkErrStatusCodeBadUrl(error)) {
                         error.isFetchError = true;
                         error.url = url;
                         await saveError(error);
                         return null;
                     } else {
-                        if (error.code === 'EAI_AGAIN') {
+                        if (FetchUtils.checkErrStatusCodeEAI(error)) {
                             ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.api.omdb.eaiError);
                             continue;
-                        } else if (error.response?.status !== 500 &&
-                            error.response?.status !== 503 &&
-                            error.response?.status !== 520 &&
-                            error.response?.status !== 521 &&
-                            error.response?.status !== 522 &&
-                            error.response?.status !== 524) {
+                        }
+                        if (![500, 503, 520, 521, 522, 524].includes(
+                            FetchUtils.getErrStatusCode(error))) {
                             saveError(error);
                         }
                         return null;
@@ -385,18 +384,16 @@ export class OMDBProvider implements MediaProvider {
             }
 
             if (
-                response.data.Response === 'False' ||
-                (response.data.Error && response.data.Error.includes('not found'))
+                response.Response === 'False' ||
+                response.Error?.includes('not found')
             ) {
                 return null;
             }
-            return response.data;
+            return response;
         } catch (error: any) {
-            if (error.response?.status !== 500 &&
-                error.response?.status !== 503 &&
-                error.response?.status !== 520 &&
-                error.response?.status !== 521 &&
-                error.response?.status !== 524) {
+            if (![500, 503, 520, 521, 524].includes(
+                FetchUtils.getErrStatusCode(error),
+            )) {
                 await saveError(error);
             }
             return null;
@@ -407,13 +404,13 @@ export class OMDBProvider implements MediaProvider {
         const ratingObj: any = {};
         for (let i = 0; i < ratings.length; i++) {
             const sourceName = ratings[i].Source.toLowerCase();
-            if (sourceName === "internet movie database") {
+            if (sourceName === 'internet movie database') {
                 ratingObj.imdb = Number(ratings[i].Value.split('/')[0]);
             }
-            if (sourceName === "rotten tomatoes") {
+            if (sourceName === 'rotten tomatoes') {
                 ratingObj.rottenTomatoes = Number(ratings[i].Value.replace('%', ''));
             }
-            if (sourceName === "metacritic") {
+            if (sourceName === 'metacritic') {
                 ratingObj.metacritic = Number(ratings[i].Value.split('/')[0]);
             }
         }
@@ -425,8 +422,8 @@ export class OMDBProvider implements MediaProvider {
         yearIgnored: boolean,
         totalSeasons: any,
         premiered: string,
-        lastSeasonsOnly: boolean = false,
-        ): Promise<Episode[] | null> {
+        lastSeasonsOnly = false,
+    ): Promise<Episode[] | null> {
         try {
             const titleYear = premiered.split('-')[0];
             let episodes: Episode[] = [];
@@ -464,7 +461,7 @@ export class OMDBProvider implements MediaProvider {
 
             return episodes;
         } catch (error: any) {
-            if (!error.response || error.response.status !== 500) {
+            if (!FetchUtils.checkErrStatusCode(error, 500)) {
                 await saveError(error);
             }
             return null;
@@ -477,7 +474,7 @@ export class OMDBProvider implements MediaProvider {
         episodes: any[],
         seasonEpisodes: any[],
         j: number,
-        k: number,): Promise<any> {
+        k: number): Promise<any> {
         const url = `https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&Episode=${k}&type=series` + searchYear;
         return this.callApi(url).then(episodeResult => {
             const lastEpisodeDuration = (episodes.length === 0) ? '0 min' : episodes[episodes.length - 1].duration;
@@ -545,25 +542,23 @@ export class OMDBProvider implements MediaProvider {
         const promiseQueue = new PQueue({ concurrency: 3 });
         for (let i = 0; i < this.apiKeys.length; i++) {
             promiseQueue.add(() =>
-                axios
-                    .get(`https://www.omdbapi.com/?t=attack&apikey=${this.apiKeys[i].apiKey}`)
-                    .then((response) => {
+                FetchUtils.myFetch(`https://www.omdbapi.com/?t=attack&apikey=${this.apiKeys[i].apiKey}`)
+                    .then((res) => {
                         if (
-                            response.data.Response === 'False' ||
-                            (response.data.Error && response.data.Error.includes('not found'))
+                            res.Response === 'False' ||
+                            res.Error?.includes('not found')
                         ) {
-                            badKeys.push(response.data.Error);
+                            badKeys.push(res.Error);
                         }
                     })
                     .catch((error) => {
                         if (
-                            (error.response &&
-                                error.response.data.Error === 'Request limit reached!') ||
-                            (error.response && error.response.status === 401)
+                            FetchUtils.checkErrStatusRateLimit(error) ||
+                            FetchUtils.checkErrStatusCode(error, 401)
                         ) {
-                            badKeys.push(error.response?.data?.Error);
+                            badKeys.push(error.response?.Error);
                         } else {
-                            badKeys.push(error.code);
+                            badKeys.push(FetchUtils.getErrStatusCode(error).toString());
                         }
                     }),
             );
@@ -591,14 +586,14 @@ export type OMDBFields = {
     poster: string;
     updateFields:
         | {
-              rawTitle: string;
-              duration: string;
-              totalSeasons: number;
-              rated: any;
-              movieLang: string;
-              country: string;
-              boxOffice: string;
-              awards: string;
-          }
+        rawTitle: string;
+        duration: string;
+        totalSeasons: number;
+        rated: any;
+        movieLang: string;
+        country: string;
+        boxOffice: string;
+        awards: string;
+    }
         | Record<string, any>;
 };

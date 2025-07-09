@@ -53,3 +53,9 @@ export function checkErrStatusCodeBadUrl(error: any): boolean {
         error.message.includes('Invalid URL') ||
         error.message.includes('URI malformed');
 }
+
+export function checkErrStatusRateLimit(error: any): boolean {
+    return error.response?.data?.Error === 'Request limit reached!' ||
+        error.response?.Error === 'Request limit reached!' ||
+        error.data?.Error === 'Request limit reached!'
+}
