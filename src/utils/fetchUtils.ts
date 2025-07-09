@@ -57,5 +57,6 @@ export function checkErrStatusCodeBadUrl(error: any): boolean {
 export function checkErrStatusRateLimit(error: any): boolean {
     return error.response?.data?.Error === 'Request limit reached!' ||
         error.response?.Error === 'Request limit reached!' ||
-        error.data?.Error === 'Request limit reached!'
+        error.data?.Error === 'Request limit reached!' ||
+        error.message === 'Request failed with status code 429';
 }

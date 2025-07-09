@@ -3,21 +3,21 @@ import { ServerAnalysisRepo } from '@/repo';
 import { removeScriptAndStyle } from '@services/crawler/searchTools';
 import { getDecodedLink } from '@utils/crawler';
 import { saveError } from '@utils/logger';
-import axios from 'axios';
-import * as cheerio from "cheerio";
+import * as FetchUtils from '@utils/fetchUtils';
+import * as cheerio from 'cheerio';
 
 let callCounter = 0;
 let error429Time = 0;
 
 export async function getFromGoogleCache(
-    url: string, retryCounter:number = 0): Promise<{$: any, links: any}> {
+    url: string, retryCounter = 0): Promise<{ $: any, links: any }> {
     try {
         while (callCounter > 4) {
             await new Promise((resolve => setTimeout(resolve, 200)));
         }
         if (Date.now() - error429Time < 20 * 60 * 1000) {
             //prevent call for 20min after getting 429 error
-            return {$: null, links: []};
+            return { $: null, links: [] };
         }
         callCounter++;
 
@@ -27,21 +27,21 @@ export async function getFromGoogleCache(
         }
 
         ServerAnalysisRepo.saveGoogleCacheCall(decodedLink);
-        const cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
+        const cacheUrl = 'http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A';
         const webCacheUrl = cacheUrl + decodedLink;
-        const response = await axios.get(webCacheUrl);
+        let response = await FetchUtils.myFetch(webCacheUrl);
         await new Promise((resolve => setTimeout(resolve, 200)));
         callCounter--;
-        response.data = removeScriptAndStyle(response.data);
-        const $ = cheerio.load(response.data);
+        response = removeScriptAndStyle(response);
+        const $ = cheerio.load(response);
         const links = $('a');
-        return {$, links};
+        return { $, links };
     } catch (error: any) {
         callCounter--;
-        if (error.message === 'Request failed with status code 429') {
+        if (FetchUtils.checkErrStatusRateLimit(error)) {
             error429Time = Date.now();
         }
-        if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+        if (FetchUtils.checkErrStatusCodeBadUrl(error)) {
             if (retryCounter === 0) {
                 const temp = url.replace(/\/$/, '').split('/').pop();
                 if (temp) {
@@ -55,9 +55,9 @@ export async function getFromGoogleCache(
             error.url = getDecodedLink(url);
             error.filePath = 'searchTools';
             await saveError(error);
-        } else if (!error.response || (error.response.status !== 404 && error.response.status !== 429)) {
+        } else if (![404, 429].includes(FetchUtils.getErrStatusCode(error))) {
             saveError(error);
         }
-        return {$: null, links: []};
+        return { $: null, links: [] };
     }
 }
