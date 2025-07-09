@@ -1,4 +1,3 @@
-import { ofetch } from 'ofetch';
 import * as cheerio from 'cheerio';
 import {
     type CrawlerExtraConfigs,
@@ -15,6 +14,7 @@ import save from '@services/crawler/save';
 import { saveLinksStatus } from '@services/crawler/searchTools';
 import { addPageLinkToCrawlerStatus } from '@/status/status';
 import { replaceSpecialCharacters } from '@utils/crawler';
+import * as FetchUtils from '@utils/fetchUtils';
 import { saveError } from '@utils/logger';
 import * as Torrent from '../torrent';
 
@@ -25,7 +25,7 @@ export default async function eztv(
 ): Promise<number[]> {
     try {
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_Start);
-        const res = await ofetch(sourceConfig.movie_url, {
+        const res = await FetchUtils.myFetch(sourceConfig.movie_url, {
             timeout: 10_000,
             retry: 3,
             retryDelay: 5000,
@@ -59,7 +59,7 @@ export default async function eztv(
 
         return [1, linksCount]; //pageNumber
     } catch (error: any) {
-        if (error.code === 'EAI_AGAIN' || error.message?.includes('EAI_AGAIN')) {
+        if (FetchUtils.checkErrStatusCodeEAI(error)) {
             if (extraConfigs.retryCounter < 2) {
                 await new Promise((resolve) => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
@@ -68,9 +68,7 @@ export default async function eztv(
             return [1, 0];
         }
 
-        if (![521, 522, 525].includes(
-            (error.status ?? error.statusCode ?? error.response?.status)
-        )) {
+        if (![521, 522, 525].includes(FetchUtils.getErrStatusCode(error))) {
             saveError(error);
         }
         return [1, 0];
@@ -88,7 +86,7 @@ export async function searchByTitle(
         const searchUrl = sourceUrl.split('/home')[0] + '/search/' + searchTitle;
 
         saveLinksStatus(searchUrl, PageType.MainPage, PageState.Fetching_Start);
-        const res = await ofetch(sourceConfig.movie_url, {
+        const res = await FetchUtils.myFetch(searchUrl, {
             timeout: 10_000,
             retry: 3,
             retryDelay: 5000,
@@ -131,9 +129,7 @@ export async function searchByTitle(
 
         return [1, linksCount]; //pageNumber
     } catch (error: any) {
-        if (![521, 522, 525].includes(
-            (error.status ?? error.statusCode ?? error.response?.status)
-        )) {
+        if (![521, 522, 525].includes(FetchUtils.getErrStatusCode(error))) {
             saveError(error);
         }
 

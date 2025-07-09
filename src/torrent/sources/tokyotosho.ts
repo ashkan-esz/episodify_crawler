@@ -1,4 +1,3 @@
-import { ofetch } from 'ofetch';
 import * as cheerio from 'cheerio';
 import { saveLinksStatus } from '@services/crawler/searchTools';
 import {
@@ -14,6 +13,7 @@ import {
 } from '@/types';
 import { replaceSpecialCharacters } from '@utils/crawler';
 import { releaseRegex, releaseRegex2 } from '@utils/linkInfo';
+import * as FetchUtils from '@utils/fetchUtils';
 import save from '@services/crawler/save';
 import { addPageLinkToCrawlerStatus } from '@/status/status';
 import * as Torrent from '@/torrent/torrent';
@@ -26,7 +26,7 @@ export default async function tokyotosho(
 ): Promise<number[]> {
     try {
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_Start);
-        const res = await ofetch(sourceConfig.movie_url, {
+        const res = await FetchUtils.myFetch(sourceConfig.movie_url, {
             timeout: 10_000,
             retry: 3,
             retryDelay: 5000,
@@ -57,7 +57,7 @@ export default async function tokyotosho(
 
         return [1, linksCount]; //pageNumber
     } catch (error: any) {
-        if (error.code === 'EAI_AGAIN' || error.message?.includes('EAI_AGAIN')) {
+        if (FetchUtils.checkErrStatusCodeEAI(error)) {
             if (extraConfigs.retryCounter < 2) {
                 await new Promise((resolve) => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
@@ -66,9 +66,7 @@ export default async function tokyotosho(
             return [1, 0];
         }
 
-        if (![521, 522, 525].includes(
-            (error.status ?? error.statusCode ?? error.response?.status)
-        )) {
+        if (![521, 522, 525].includes(FetchUtils.getErrStatusCode(error))) {
             saveError(error);
         }
         return [1, 0];
@@ -84,16 +82,15 @@ export async function searchByTitle(
     try {
         const searchTitle = title.replace(/\s+/g, '+');
         const searchUrl = `${sourceUrl.split('/?')[0]}/search.php?terms=${searchTitle}&type=1&searchName=true`;
-        saveLinksStatus(sourceUrl, PageType.MainPage, PageState.Fetching_Start);
 
-        const res = await ofetch(searchUrl, {
+        saveLinksStatus(searchUrl, PageType.MainPage, PageState.Fetching_Start);
+        const res = await FetchUtils.myFetch(searchUrl, {
             timeout: 10_000,
             retry: 3,
             retryDelay: 5000,
             retryStatusCodes: [...Torrent._retryStatusCodes],
         });
-
-        saveLinksStatus(sourceUrl, PageType.MainPage, PageState.Fetching_End);
+        saveLinksStatus(searchUrl, PageType.MainPage, PageState.Fetching_End);
 
         const $ = cheerio.load(res.data);
         let titles = extractLinks($, sourceUrl, sourceConfig);
@@ -127,9 +124,7 @@ export async function searchByTitle(
 
         return [1, linksCount]; //pageNumber
     } catch (error: any) {
-        if (![521, 522, 525].includes(
-            (error.status ?? error.statusCode ?? error.response?.status)
-        )) {
+        if (![521, 522, 525].includes(FetchUtils.getErrStatusCode(error))) {
             saveError(error);
         }
 

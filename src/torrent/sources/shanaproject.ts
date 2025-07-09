@@ -1,4 +1,3 @@
-import { ofetch } from 'ofetch';
 import * as cheerio from 'cheerio';
 import { saveLinksStatus } from '@services/crawler/searchTools';
 import {
@@ -12,6 +11,7 @@ import {
 } from '@/types';
 import { replaceSpecialCharacters } from '@utils/crawler';
 import { releaseRegex, releaseRegex2 } from '@utils/linkInfo';
+import * as FetchUtils from '@utils/fetchUtils';
 import save from '@services/crawler/save';
 import { addPageLinkToCrawlerStatus } from '@/status/status';
 import * as Torrent from '@/torrent/torrent';
@@ -25,7 +25,7 @@ export default async function shanaproject(
 ): Promise<number[]> {
     try {
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_Start);
-        const res = await ofetch(sourceConfig.movie_url, {
+        const res = await FetchUtils.myFetch(sourceConfig.movie_url, {
             timeout: 10_000,
             retry: 3,
             retryDelay: 5000,
@@ -56,7 +56,7 @@ export default async function shanaproject(
 
         return [1, linksCount]; //pageNumber
     } catch (error: any) {
-        if (error.code === 'EAI_AGAIN' || error.message?.includes('EAI_AGAIN')) {
+        if (FetchUtils.checkErrStatusCodeEAI(error)) {
             if (extraConfigs.retryCounter < 2) {
                 await new Promise((resolve) => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
@@ -65,9 +65,7 @@ export default async function shanaproject(
             return [1, 0];
         }
 
-        if (![521, 522, 525].includes(
-            (error.status ?? error.statusCode ?? error.response?.status)
-        )) {
+        if (![521, 522, 525].includes(FetchUtils.getErrStatusCode(error))) {
             saveError(error);
         }
         return [1, 0];
@@ -85,7 +83,7 @@ export async function searchByTitle(
         const searchUrl = `${sourceUrl.split('/?')[0].replace(/\/$/, '')}/search/?title=${searchTitle}&subber=`;
 
         saveLinksStatus(sourceUrl, PageType.MainPage, PageState.Fetching_Start);
-        const res = await ofetch(searchUrl, {
+        const res = await FetchUtils.myFetch(searchUrl, {
             timeout: 10_000,
             retry: 3,
             retryDelay: 5000,

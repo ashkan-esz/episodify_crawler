@@ -7,9 +7,8 @@ import {
     getEpisodeModel,
     type MovieType,
 } from '@/types';
-import { Crawler as CrawlerUtils } from '@/utils';
+import { Crawler as CrawlerUtils, FetchUtils } from '@/utils';
 import { saveError } from '@utils/logger';
-import { ofetch } from 'ofetch';
 import type { MediaProvider } from './index';
 
 export class TVMazeProvider implements MediaProvider {
@@ -40,10 +39,11 @@ export class TVMazeProvider implements MediaProvider {
         let waitCounter = 0;
         while (waitCounter < 12) {
             try {
-                const data = await ofetch(url, {
+                const data = await FetchUtils.myFetch(url, {
                     retry: 2,
                     retryDelay: 5000,
                 });
+
                 const titleMatch = this.checkTitle(
                     data,
                     title,
@@ -66,18 +66,17 @@ export class TVMazeProvider implements MediaProvider {
                 );
 
             } catch (error: any) {
-                if (error.status === 429 || error.statusCode === 429) {
+                if (FetchUtils.checkErrStatusCode(error, 429)) {
                     //too much request
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                     waitCounter++;
-                } else if (error.code === 'EAI_AGAIN' ||
-                    error.message?.includes(error.code === 'EAI_AGAIN')) {
+                } else if (FetchUtils.checkErrStatusCodeEAI(error)) {
                     if (waitCounter > 6) {
                         return null;
                     }
                     await new Promise((resolve) => setTimeout(resolve, 3000));
                     waitCounter += 3;
-                } else if (error.status === 404 || error.statusCode === 404) {
+                } else if (FetchUtils.checkErrStatusCode(error, 404)) {
                     if (type.includes('anime') && canRetry) {
                         const newTitle = this.getEditedTitle(title);
                         if (newTitle !== title) {
@@ -94,11 +93,7 @@ export class TVMazeProvider implements MediaProvider {
                     }
                     return null;
                 } else {
-                    if (
-                        error.code === 'ERR_UNESCAPED_CHARACTERS' ||
-                        error.message.includes('Invalid URL') ||
-                        error.message.includes('URI malformed')
-                    ) {
+                    if (FetchUtils.checkErrStatusCodeBadUrl(error)) {
                         error.isFetchError = true;
                         error.url = url;
                     }
@@ -241,32 +236,25 @@ export class TVMazeProvider implements MediaProvider {
         let waitCounter = 0;
         while (waitCounter < 12) {
             try {
-                return await ofetch(url, {
+                return await FetchUtils.myFetch(url, {
                     timeout: 20000,
                 });
             } catch (error: any) {
-                if (
-                    error.message?.includes('operation was aborted') ||
-                    error.message?.includes('timeout')
-                ) {
+                if (FetchUtils.checkErrStatusCodeTimeout(error)) {
                     return null;
                 }
 
-                if (error.status === 429 || error.statusCode === 429) {
+                if (FetchUtils.checkErrStatusCode(error, 429)) {
                     //too much request
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                     waitCounter++;
-                } else if (
-                    error.code === 'ERR_UNESCAPED_CHARACTERS' ||
-                    error.message.includes('Invalid URL') ||
-                    error.message.includes('URI malformed')
-                ) {
+                } else if (FetchUtils.checkErrStatusCodeBadUrl(error)) {
                     error.isFetchError = true;
                     error.url = url;
                     await saveError(error);
                     return null;
                 } else {
-                    if (error.status !== 404 && error.statusCode !== 404) {
+                    if (!FetchUtils.checkErrStatusCode(error, 404)) {
                         await saveError(error);
                     }
                     return null;

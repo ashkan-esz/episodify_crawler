@@ -1,12 +1,11 @@
 import { ServerAnalysisRepo } from '@/repo';
-import { MovieType } from '@/types';
-import { MovieStatus, TitleObj } from '@/types/movie';
+import type { MovieType } from '@/types';
+import type { MovieStatus, TitleObj } from '@/types/movie';
 import { getFixedSummary } from '@/extractors';
-import { MediaProvider } from '@/providers/index';
+import type { MediaProvider } from '@/providers/index';
 import { CrawlerErrors } from '@/status/warnings';
 import { saveError } from '@utils/logger';
-import axios from 'axios';
-import { Crawler as CrawlerUtils } from '@/utils';
+import { Crawler as CrawlerUtils, FetchUtils } from '@/utils';
 
 export class KITSUProvider implements MediaProvider {
     public readonly name = 'KITSU';
@@ -294,27 +293,31 @@ export class KITSUProvider implements MediaProvider {
         let waitCounter = 0;
         while (waitCounter < 12) {
             try {
-                const response = await axios.get(url, { timeout: 20000 });
+                const response = await FetchUtils.myFetch(url, {
+                    timeout: 20000,
+                });
                 return response.data;
             } catch (error: any) {
-                if (error.message === 'timeout of 20000ms exceeded') {
+                if (FetchUtils.checkErrStatusCodeTimeout(error)) {
                     return null;
                 }
-                if (error.response?.status === 429) {
+                if (FetchUtils.checkErrStatusCode(error, 429)) {
                     //too much request
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                     waitCounter++;
-                } else if ([500, 521].includes(error.response?.status) && waitCounter < 2) {
+                } else if (
+                    [500, 521].includes(FetchUtils.getErrStatusCode(error)) &&
+                    waitCounter < 2) {
                     // failure from kitsu server
                     await new Promise((resolve) => setTimeout(resolve, 3000));
                     waitCounter++;
-                } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                } else if (FetchUtils.checkErrStatusCodeBadUrl(error)) {
                     error.isFetchError = true;
                     error.url = url;
                     await saveError(error);
                     return null;
                 } else {
-                    if (![404, 503, 521].includes(error.response?.status)) {
+                    if (![404, 503, 521].includes(FetchUtils.getErrStatusCode(error))) {
                         await saveError(error);
                     }
                     return null;

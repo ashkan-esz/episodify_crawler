@@ -17,7 +17,7 @@ import {
     MovieStatus,
     type TitleObj,
 } from '@/types/movie';
-import { Crawler as CrawlerUtils } from '@/utils';
+import { Crawler as CrawlerUtils, FetchUtils } from '@/utils';
 import { isValidNumberString } from '@services/crawler/movieTitle';
 import {
     checkNeedTrailerUpload,
@@ -25,7 +25,6 @@ import {
     uploadTitleYoutubeTrailerAndAddToTitleModel,
 } from '@services/crawler/posterAndTrailer';
 import { saveError } from '@utils/logger';
-import { ofetch } from 'ofetch';
 // @ts-expect-error ...
 import isEqual from 'lodash.isequal';
 import { LRUCache } from 'lru-cache';
@@ -463,7 +462,7 @@ export class JikanProvider implements MediaProvider {
                         controller.abort();
                     }, hardTimeout);
 
-                    ofetch(url, {
+                    FetchUtils.myFetch(url, {
                         signal: signal,
                         timeout: timeoutSec * 1000,
                         retry: 0,
@@ -493,32 +492,26 @@ export class JikanProvider implements MediaProvider {
                 this.cache.set(url, { ...data });
                 return data;
             } catch (error: any) {
-                if (error.status === 429 || error.statusCode === 429) {
+                if (FetchUtils.checkErrStatusCode(error, 429)) {
                     //too much request
                     const waitTime = 2000;
                     waitCounter++;
                     await new Promise((resolve) => setTimeout(resolve, waitTime));
-                } else if (error.status === 504 || error.statusCode === 504) {
+                } else if (FetchUtils.checkErrStatusCode(error, 504)) {
                     const waitTime = 3000;
                     waitCounter += 3;
                     await new Promise((resolve) => setTimeout(resolve, waitTime));
                 } else {
-                    if (error.code === 'EAI_AGAIN' ||
-                        error.message?.includes(error.code === 'EAI_AGAIN')) {
+                    if (FetchUtils.checkErrStatusCodeEAI(error)) {
                         ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.api.jikan.eaiError);
                         return null;
                     }
 
-                    if (error.message === 'hard timeout' ||
-                        error.message?.includes('operation was aborted')) {
+                    if (FetchUtils.checkErrStatusCodeTimeout(error)) {
                         return null;
                     }
 
-                    if (
-                        error.code === 'ERR_UNESCAPED_CHARACTERS' ||
-                        error.message.includes('Invalid URL') ||
-                        error.message.includes('URI malformed')
-                    ) {
+                    if (FetchUtils.checkErrStatusCodeBadUrl(error)) {
                         error.isFetchError = true;
                         error.url = url;
                         await saveError(error);
