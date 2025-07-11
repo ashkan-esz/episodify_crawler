@@ -4,7 +4,8 @@ import { S3FilesRepo } from '@/repo';
 import { S3Client } from 'bun';
 import { type MovieType, VPNStatus } from '@/types';
 import type { MoviePosterS3 } from '@/types/movie';
-import { getArrayBufferResponse, getFileSize } from '@utils/axios';
+import { FetchUtils } from '@/utils';
+import { getArrayBufferResponse } from '@utils/axios';
 import { getDecodedLink } from '@utils/crawler';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
 import PQueue from 'p-queue';
@@ -98,12 +99,12 @@ export async function uploadSubtitleToS3ByURl(
         }
         const fileUrl = `https://${bucketNamesObject.downloadSubtitle}.${bucketsEndpointSuffix}/${fileName}`;
         if (retryCounter === 0) {
-            const s3Subtitle = await checkFileExist(bucketNamesObject.downloadSubtitle, fileName, fileUrl);
-            if (s3Subtitle) {
+            const exist = await checkFileExist(bucketNamesObject.downloadSubtitle, fileName);
+            if (exist) {
                 return {
-                    url: s3Subtitle,
+                    url: fileUrl,
                     originalUrl: '',
-                    size: await getFileSize(s3Subtitle),
+                    size: await FetchUtils.getFileSize(fileUrl),
                     vpnStatus: s3VpnStatus,
                 };
             }
@@ -186,13 +187,13 @@ export async function uploadImageToS3(
         }
 
         if (retryCounter === 0 && !forceUpload) {
-            const s3Image = await checkFileExist(bucketName, fileName, fileUrl);
-            if (s3Image) {
+            const exist = await checkFileExist(bucketName, fileName);
+            if (exist) {
                 return {
-                    url: s3Image,
+                    url: fileUrl,
                     originalUrl: '',
                     originalSize: 0,
-                    size: await getFileSize(s3Image),
+                    size: await FetchUtils.getFileSize(fileUrl),
                     vpnStatus: s3VpnStatus,
                     thumbnail: '',
                     blurHash: '',
@@ -266,16 +267,11 @@ export async function uploadImageToS3(
 export async function checkFileExist(
     bucketName: string,
     fileName: string,
-    fileUrl: string,
     retryCounter = 0,
     retryWithSleepCounter = 0,
-): Promise<string> {
+): Promise<boolean> {
     try {
-        const exists = await s3.exists(fileName, { bucket: bucketName });
-        if (exists) {
-            return fileUrl;
-        }
-        return '';
+        return await s3.exists(fileName, { bucket: bucketName });
     } catch (error: any) {
         if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
@@ -283,7 +279,6 @@ export async function checkFileExist(
             return await checkFileExist(
                 bucketName,
                 fileName,
-                fileUrl,
                 retryCounter,
                 retryWithSleepCounter,
             );
@@ -294,14 +289,13 @@ export async function checkFileExist(
             return await checkFileExist(
                 bucketName,
                 fileName,
-                fileUrl,
                 retryCounter,
                 retryWithSleepCounter,
             );
         }
         error.filePath = 'cloudStorage > checkFileExist';
         saveErrorIfNeeded(error);
-        return '';
+        return false;
     }
 }
 

@@ -35,7 +35,7 @@ import {
     specialWords,
 } from '@utils/linkInfo';
 import { getTitleAndYear } from '@services/crawler/movieTitle';
-import { Crawler as CrawlerUtils, Axios as AxiosUtils } from '@/utils';
+import { Crawler as CrawlerUtils, FetchUtils } from '@/utils';
 // import { search_in_title_page, wrapper_module } from '../searchTools.js';
 //@ts-expect-error ...
 import * as persianRex from 'persian-rex';
@@ -760,7 +760,7 @@ async function checkTrailers(
 
     const goodTrailers: MovieTrailer[] = [];
     for (let i = 0; i < trailers.length; i++) {
-        const fileSize = await AxiosUtils.getFileSize(trailers[i].url, {
+        const fileSize = await FetchUtils.getFileSize(trailers[i].url, {
             ignoreError: true,
             timeout: 20 * 1000,
             errorReturnValue: -1,
