@@ -1,7 +1,7 @@
 import config from '@/config';
 import { replaceSpecialCharacters } from '@utils/crawler';
 import { saveError } from '@utils/logger';
-import { youtube, youtube_v3 } from '@googleapis/youtube';
+import { youtube, type youtube_v3 } from '@googleapis/youtube';
 
 export async function getTrailer(title: string, year: string): Promise<string | null> {
     try {

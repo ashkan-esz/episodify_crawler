@@ -6,7 +6,6 @@ export type CrawlerExtraConfigs = {
     returnTitlesOnly: boolean;
     castUpdateState: ExtraConfigsSwitchState;
     apiUpdateState: ExtraConfigsSwitchState;
-    trailerUploadState: ExtraConfigsSwitchState;
     torrentState: ExtraConfigsSwitchState;
     fetchBlockThreshHold: number;
     remoteBrowserBlockThreshHold: number;
@@ -28,7 +27,6 @@ export const defaultCrawlerExtraConfigs: CrawlerExtraConfigs = Object.freeze({
     returnTitlesOnly: false,
     castUpdateState: ExtraConfigsSwitchState.NONE,
     apiUpdateState: ExtraConfigsSwitchState.NONE,
-    trailerUploadState: ExtraConfigsSwitchState.NONE,
     torrentState: ExtraConfigsSwitchState.NONE,
     fetchBlockThreshHold: 0,
     remoteBrowserBlockThreshHold: 0,

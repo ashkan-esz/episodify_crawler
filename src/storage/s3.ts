@@ -1,15 +1,12 @@
 import config from '@/config';
 import { updateCronJobsStatus } from '@/jobs/job.status';
-import { S3FilesRepo, ServerAnalysisRepo } from '@/repo';
-import { updateTrailerUploadLimit } from '@/status/status';
-import { CrawlerErrors } from '@/status/warnings';
+import { S3FilesRepo } from '@/repo';
 import { S3Client } from 'bun';
 import { type MovieType, VPNStatus } from '@/types';
-import type { MoviePosterS3, MovieTrailerS3 } from '@/types/movie';
+import type { MoviePosterS3 } from '@/types/movie';
 import { getArrayBufferResponse, getFileSize } from '@utils/axios';
 import { getDecodedLink } from '@utils/crawler';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
-import ytdl from '@distube/ytdl-core';
 import PQueue from 'p-queue';
 
 const s3 = new S3Client({
@@ -68,30 +65,6 @@ export function getS3Client(): S3Client {
 }
 
 export const s3VpnStatus = VPNStatus.ALL_OK;
-export const trailerUploadConcurrency = 6;
-export const saveWarningTimeout = 180 * 1000; //180s
-
-let uploadingTrailer = 0;
-
-//TODO : use p-queue
-async function waitForTrailerUpload(): Promise<void> {
-    let start = Date.now();
-    while (uploadingTrailer >= trailerUploadConcurrency) {
-        updateTrailerUploadLimit(uploadingTrailer, trailerUploadConcurrency);
-        if (Date.now() - start > saveWarningTimeout) {
-            start = Date.now();
-            ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.operations.trailerUploadHighWait(180));
-        }
-        await new Promise((resolve) => setTimeout(resolve, 500));
-    }
-    uploadingTrailer++;
-    updateTrailerUploadLimit(uploadingTrailer, trailerUploadConcurrency);
-}
-
-function decreaseUploadingTrailerNumber(): void {
-    uploadingTrailer--;
-    updateTrailerUploadLimit(uploadingTrailer, trailerUploadConcurrency);
-}
 
 //------------------------------------------
 //------------------------------------------
@@ -198,186 +171,6 @@ export async function uploadTitlePosterToS3(
 //------------------------------------------
 //------------------------------------------
 
-export async function uploadTitleTrailerFromYoutubeToS3(
-    pageLink: string,
-    title: string,
-    type: MovieType,
-    year: string,
-    originalUrl: string,
-    retryCounter = 0,
-    retryWithSleepCounter = 0,
-): Promise<MovieTrailerS3 | null> {
-    try {
-        if (!originalUrl) {
-            return null;
-        }
-
-        const fileName = getFileName(title, type, year, '', 'mp4');
-        const fileUrl = `https://${bucketNamesObject.downloadTrailer}.${bucketsEndpointSuffix}/${fileName}`;
-        if (retryCounter === 0) {
-            let s3Trailer = await checkFileExist(bucketNamesObject.downloadTrailer, fileName, fileUrl);
-            if (!s3Trailer && year) {
-                const fileName2 = getFileName(title, type, '', '', 'mp4');
-                s3Trailer = await checkFileExist(bucketNamesObject.downloadTrailer, fileName2, fileUrl);
-            }
-            if (s3Trailer) {
-                return {
-                    url: s3Trailer,
-                    originalUrl: '',
-                    size: await getFileSize(s3Trailer),
-                    vpnStatus: s3VpnStatus,
-                };
-            }
-        }
-
-        await waitForTrailerUpload();
-        // eslint-disable-next-line no-async-promise-executor
-        // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
-        return await new Promise(async (resolve, reject) => {
-            // AbortController is no longer directly used for S3 uploads with Bun's native client.
-            // Stream errors from ytdl will still be caught by the outer try-catch block.
-            // const abortController = new AbortController();
-            let videoReadStream: any = null;
-            try {
-                if (!ytdl.validateURL(originalUrl)) {
-                    return resolve(null);
-                }
-                videoReadStream = ytdl(originalUrl, {
-                    filter: 'audioandvideo',
-                    quality: 'highestvideo',
-                    highWaterMark: 1 << 25,
-                });
-
-                videoReadStream.on('error', (err: any) => {
-                    videoReadStream.destroy();
-                    videoReadStream.emit('close');
-                    // No abortController.abort() needed here as Bun's writer manages internally.
-                    // abortController.abort();
-                    reject(err);
-                });
-
-                const fileSize = await uploadFileToS3(bucketNamesObject.downloadTrailer, videoReadStream, fileName, fileUrl, true, pageLink);
-                decreaseUploadingTrailerNumber();
-                resolve({
-                    url: fileUrl,
-                    originalUrl: originalUrl,
-                    size: fileSize,
-                    vpnStatus: s3VpnStatus,
-                });
-            } catch (error2) {
-                if (videoReadStream) {
-                    videoReadStream.destroy();
-                }
-                reject(error2);
-            }
-        });
-
-    } catch (error: any) {
-        decreaseUploadingTrailerNumber();
-        if (
-            ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 4) ||
-            // Bun's S3 client errors might not have 'statusCode' or '$metadata.httpStatusCode' directly.
-            // Adapt the error handling based on Bun's error structure if specific S3 error codes are needed.
-            (error.statusCode === 410 && retryCounter < 1) // Keep this if statusCode is expected from non-S3 errors
-        ) {
-            retryCounter++;
-            await new Promise((resolve => setTimeout(resolve, 2000)));
-            return await uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
-        }
-        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
-            retryWithSleepCounter++;
-            await new Promise((resolve => setTimeout(resolve, 2000)));
-            return await uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
-        }
-        // Removed error.$metadata?.httpStatusCode === 408 check, as it's AWS SDK specific.
-        // If Bun's S3 client throws a similar timeout error, its 'code' property should be checked.
-        if (error.name !== 'AbortError' && error.message !== 'Video unavailable' && !error.message.includes('This is a private video')) {
-            saveError(error);
-        }
-        return null;
-    }
-}
-
-// export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(
-//     pageLink: string,
-//     title: string,
-//     type: MovieType,
-//     year: string,
-//     originalUrl: string,
-//     checkTrailerExist: boolean = true,
-//     retryCounter: number = 0,
-//     retryWithSleepCounter: number = 0,
-// ): Promise<MovieTrailerS3 | null> {
-//     try {
-//         if (!originalUrl) {
-//             return null;
-//         }
-//         const fileName = getFileName(title, type, year, '', 'mp4');
-//         const fileUrl = `https://${bucketNamesObject.downloadTrailer}.${bucketsEndpointSuffix}/${fileName}`;
-//         if (retryCounter === 0 && checkTrailerExist) {
-//             let s3Trailer = await checkFileExist(bucketNamesObject.downloadTrailer, fileName, fileUrl);
-//             if (!s3Trailer && year) {
-//                 const fileName2 = getFileName(title, type, '', '', 'mp4');
-//                 s3Trailer = await checkFileExist(bucketNamesObject.downloadTrailer, fileName2, fileUrl);
-//             }
-//             if (s3Trailer) {
-//                 return {
-//                     url: s3Trailer,
-//                     originalUrl: "",
-//                     size: await getFileSize(s3Trailer),
-//                     vpnStatus: s3VpnStatus,
-//                 };
-//             }
-//         }
-//
-//         await waitForTrailerUpload();
-//
-//         const remoteBrowserData = await getYoutubeDownloadLink(originalUrl);
-//         if (!remoteBrowserData) {
-//             decreaseUploadingTrailerNumber();
-//             return null;
-//         }
-//
-//         const response = await axios.get(remoteBrowserData.downloadUrl, {
-//             responseType: "arraybuffer",
-//             responseEncoding: "binary"
-//         });
-//
-//         const fileSize = await uploadFileToS3(bucketNamesObject.downloadTrailer, response.data, fileName, fileUrl, true, pageLink);
-//         decreaseUploadingTrailerNumber();
-//         return ({
-//             url: fileUrl,
-//             originalUrl: originalUrl,
-//             size: fileSize,
-//             vpnStatus: s3VpnStatus,
-//         });
-//     } catch (error: any) {
-//         decreaseUploadingTrailerNumber();
-//         if ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 2) {
-//             retryCounter++;
-//             await new Promise((resolve => setTimeout(resolve, 2000)));
-//             return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
-//         }
-//         if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
-//             retryWithSleepCounter++;
-//             await new Promise((resolve => setTimeout(resolve, 2000)));
-//             return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
-//         }
-//         if (error.$metadata?.httpStatusCode === 408 && retryWithSleepCounter < 5) {
-//             retryWithSleepCounter++;
-//             await new Promise((resolve => setTimeout(resolve, 15000)));
-//             return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
-//         }
-//         if (error.response.status !== 403) {
-//             saveError(error);
-//         }
-//         return null;
-//     }
-// }
-
-//------------------------------------------
-//------------------------------------------
-
 export async function uploadImageToS3(
     bucketName: string,
     fileName: string,
@@ -465,45 +258,6 @@ export async function uploadImageToS3(
         }
         return null;
     }
-}
-
-async function uploadFileToS3(
-    bucketName: string,
-    file: any,
-    fileName: string,
-    fileUrl: string,
-    extraCheckFileSize = true,
-    pageLink = ''): Promise<number> {
-
-    const s3File = s3.file(fileName, { bucket: bucketName });
-    const writer = s3File.writer({
-        // queueSize and partSize are configurable in writer options
-        queueSize: 4, // optional concurrency configuration
-        partSize: 1024 * 1024 * 5, // optional size of each part, in bytes, at least 5MB
-        // leavePartsOnError is not directly exposed as an option in Bun's writer, as it handles errors internally.
-        // leavePartsOnError: false, // optional manually handle dropped parts
-    });
-
-    let fileSize = 0;
-
-    // TODO : implement
-    // parallelUploads3.on("httpUploadProgress", (progress) => {
-    //     const uploaded = ((progress?.loaded ?? 0) / (1024 * 1024)).toFixed(1);
-    //     if (pageLink) {
-    //         changePageLinkStateFromCrawlerStatus(pageLink,
-    //             `  (Uploading ${uploaded}/??)`, true);
-    //     }
-    //     fileSize = progress.total ?? 0;
-    // });
-
-    writer.write(file); // Write the entire file at once
-    await writer.end(); // Finalize the upload
-
-    //TODO : check better way
-    if (!fileSize && extraCheckFileSize) {
-        fileSize = await getFileSize(fileUrl);
-    }
-    return fileSize;
 }
 
 //------------------------------------------

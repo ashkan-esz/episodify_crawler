@@ -19,11 +19,7 @@ import {
 } from '@/types/movie';
 import { Crawler as CrawlerUtils, FetchUtils } from '@/utils';
 import { isValidNumberString } from '@services/crawler/movieTitle';
-import {
-    checkNeedTrailerUpload,
-    uploadTitlePosterAndAddToTitleModel,
-    uploadTitleYoutubeTrailerAndAddToTitleModel,
-} from '@services/crawler/posterAndTrailer';
+import { uploadTitlePosterAndAddToTitleModel } from '@services/crawler/posterAndTrailer';
 import { saveError } from '@utils/logger';
 // @ts-expect-error ...
 import isEqual from 'lodash.isequal';
@@ -924,13 +920,8 @@ export class JikanProvider implements MediaProvider {
                 }
             }
 
-            if (checkNeedTrailerUpload(titleDataFromDB.trailer_s3, titleDataFromDB.trailers)) {
-                await uploadTitleYoutubeTrailerAndAddToTitleModel(
-                    '',
-                    titleDataFromDB,
-                    semiJikanData.trailer.url,
-                    updateFields,
-                );
+            if (semiJikanData.trailer?.url) {
+                //TODO : save youtube trailer url
             }
 
             if (titleDataFromDB.castUpdateDate === null) {
@@ -1017,11 +1008,10 @@ export class JikanProvider implements MediaProvider {
 
             const imageUrl = this.getImageUrl(jikanApiData);
             await uploadTitlePosterAndAddToTitleModel(titleModel, imageUrl);
-            await uploadTitleYoutubeTrailerAndAddToTitleModel(
-                '',
-                titleModel,
-                jikanApiData.trailer.url,
-            );
+
+            if (jikanApiData.trailer?.url) {
+                //TODO : save youtube trailer url
+            }
 
             titleModel.insert_date = new Date(0);
             titleModel.apiUpdateDate = new Date(0);

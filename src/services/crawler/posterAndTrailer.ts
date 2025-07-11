@@ -216,28 +216,6 @@ export async function uploadTitlePosterAndAddToTitleModel(
     return updateFields || titleModel;
 }
 
-export async function uploadTitleYoutubeTrailerAndAddToTitleModel(
-    pageLink: string,
-    titleModel: Movie,
-    trailerUrl: string,
-    updateFields: any = null,
-): Promise<any> {
-
-    if (trailerUrl) {
-        const s3Trailer = await S3Storage.uploadTitleTrailerFromYoutubeToS3(pageLink, titleModel.title, titleModel.type, titleModel.year, trailerUrl);
-        if (s3Trailer) {
-            if (updateFields) {
-                addS3TrailerToTitleModel(updateFields, s3Trailer, titleModel.trailers);
-                return updateFields;
-            }
-            addS3TrailerToTitleModel(titleModel, s3Trailer, []);
-            return titleModel;
-        }
-    }
-
-    return updateFields || titleModel;
-}
-
 export function addS3PosterToTitleModel(
     titleModel: Movie,
     s3Poster: MoviePosterS3,

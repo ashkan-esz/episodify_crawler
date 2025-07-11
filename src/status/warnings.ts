@@ -108,7 +108,6 @@ export const linkStateMessages = Object.freeze({
         callingOmdbTvMazeKitsuAmv: 'new title: calling omdb/tvmaze/kitsu/amv apis',
         handlingSeasonFields: 'new title: handling seasons fields',
         callingJikan: 'new title: calling jikan api',
-        uploadingYoutubeTrailerToS3: 'new title: uploading youtube trailer to s3',
         addingRelatedTitles: 'new title: adding related titles',
     }),
     updateTitle: Object.freeze({
@@ -130,7 +129,6 @@ export const linkStateMessages = Object.freeze({
         callingOmdbTvMazeKitsuAmv: 'update title: calling omdb/tvmaze/kitsu/amv apis',
         handlingSeasonFields: 'update title: handling seasons fields',
         callingJikan: 'update title: calling jikan api',
-        uploadingYoutubeTrailerToS3: 'update title: uploading youtube trailer to s3',
         addingRelatedTitles: 'update title: adding related titles',
         addingMoviePosterBlurHashQueue: 'update title: adding moviePoster to blurHashQueue',
         addingMoviePosterS3BlurHashQueue: 'update title: adding moviePosterS3 to blurHashQueue',

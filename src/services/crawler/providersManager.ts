@@ -1,13 +1,9 @@
-import {
-    checkNeedTrailerUpload,
-    sortPosters,
-    uploadTitleYoutubeTrailerAndAddToTitleModel,
-} from '@services/crawler/posterAndTrailer';
+import { sortPosters } from '@services/crawler/posterAndTrailer';
 import { Jikan, KITSU, OMDB, TVMaze } from '@/providers';
-import { JikanFields } from '@/providers/jikan.provider';
-import { KITSUFields } from '@/providers/kitsu.provider';
-import { OMDBFields } from '@/providers/omdb.provider';
-import { TVMazeFields } from '@/providers/tvmaze.provider';
+import type { JikanFields } from '@/providers/jikan.provider';
+import type { KITSUFields } from '@/providers/kitsu.provider';
+import type { OMDBFields } from '@/providers/omdb.provider';
+import type { TVMazeFields } from '@/providers/tvmaze.provider';
 import {
     changePageLinkStateFromCrawlerStatus, checkForceStopCrawler,
     partialChangePageLinkStateFromCrawlerStatus,
@@ -15,12 +11,12 @@ import {
 import { linkStateMessages } from '@/status/warnings';
 import { uploadTitlePosterToS3 } from '@/storage/s3';
 import {
-    CrawlerExtraConfigs,
-    DownloadLink,
+    type CrawlerExtraConfigs,
+    type DownloadLink,
     ExtraConfigsSwitchState,
-    MovieType,
+    type MovieType,
 } from '@/types';
-import {
+import type {
     Movie,
     MoviePoster,
     MoviePosterS3,
@@ -184,10 +180,9 @@ export async function addApiData(
                     await uploadPosterAndAddToData(titleModel, jikanApiFields.jikanPoster, false, false);
                 }
 
-                if (jikanApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
-                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingYoutubeTrailerToS3);
-                    let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(pageLink, titleModel, jikanApiFields.youtubeTrailer, {});
-                    titleModel = {...titleModel, ...trailerUploadFields};
+                if (jikanApiFields.youtubeTrailer) {
+                    // TODO : save youtube trailer url
+                    // titleModel = {...titleModel, ...TTTT};
                 }
 
                 titleModel = {...titleModel, ...jikanApiFields.updateFields};
@@ -217,10 +212,9 @@ export async function addApiData(
     if (kitsuApiData !== null) {
         kitsuApiFields = KITSU.getApiFields(kitsuApiData);
         if (kitsuApiFields) {
-            if (kitsuApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
-                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingYoutubeTrailerToS3);
-                const trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(pageLink, titleModel, kitsuApiFields.youtubeTrailer, {});
-                titleModel = {...titleModel, ...trailerUploadFields};
+            if (kitsuApiFields.youtubeTrailer) {
+                // TODO : save youtube trailer url
+                // titleModel = {...titleModel, ...TTTT};
             }
 
             titleModel.apiIds.kitsuID = kitsuApiFields.kitsuID;
@@ -267,10 +261,8 @@ export async function addApiData(
     // if (amvApiData !== null) {
     //     amvApiFields = getAmvApiFields(amvApiData);
     //     if (amvApiFields) {
-    //         if (amvApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
-    //             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingYoutubeTrailerToS3);
-    //             let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(pageLink, titleModel, amvApiFields.youtubeTrailer, {});
-    //             titleModel = {...titleModel, ...trailerUploadFields};
+    //         if (amvApiFields.youtubeTrailer) {
+    //             titleModel = {...titleModel, ...TTTT};
     //         }
     //
     //         titleModel.apiIds.amvID = amvApiFields.amvID;
@@ -487,11 +479,10 @@ export async function apiDataUpdate(
                     }
                 }
 
-                if (jikanApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== ExtraConfigsSwitchState.IGNORE && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
-                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingYoutubeTrailerToS3);
-                    const trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(pageLink, db_data, jikanApiFields.youtubeTrailer, {});
-                    db_data = {...db_data, ...trailerUploadFields};
-                    updateFields = {...updateFields, ...trailerUploadFields};
+                if (jikanApiFields.youtubeTrailer) {
+                    // TODO : save youtube trailer url
+                    // db_data = {...db_data, ...TTTT};
+                    // updateFields = {...updateFields, ...TTTT};
                 }
 
                 updateFields = {...updateFields, ...jikanApiFields.updateFields};
@@ -521,11 +512,10 @@ export async function apiDataUpdate(
     if (kitsuApiData !== null) {
         kitsuApiFields = KITSU.getApiFields(kitsuApiData);
         if (kitsuApiFields) {
-            if (kitsuApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
-                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingYoutubeTrailerToS3);
-                const trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(pageLink, db_data, kitsuApiFields.youtubeTrailer, {});
-                db_data = {...db_data, ...trailerUploadFields};
-                updateFields = {...updateFields, ...trailerUploadFields};
+            if (kitsuApiFields.youtubeTrailer) {
+                // TODO : save youtube trailer url
+                // db_data = {...db_data, ...TTTT};
+                // updateFields = {...updateFields, ...TTTT};
             }
 
             if (db_data.apiIds.kitsuID !== kitsuApiFields.kitsuID && kitsuApiFields.kitsuID) {
@@ -589,11 +579,9 @@ export async function apiDataUpdate(
     // if (amvApiData !== null) {
     //     amvApiFields = getAmvApiFields(amvApiData);
     //     if (amvApiFields) {
-    //         if (amvApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
-    //             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingYoutubeTrailerToS3);
-    //             let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(pageLink, db_data, amvApiFields.youtubeTrailer, {});
-    //             db_data = {...db_data, ...trailerUploadFields};
-    //             updateFields = {...updateFields, ...trailerUploadFields};
+    //         if (amvApiFields.youtubeTrailer) {
+    //             db_data = {...db_data, ...TTTT};
+    //             updateFields = {...updateFields, ...TTTT};
     //         }
     //
     //         if (db_data.apiIds.amvID !== amvApiFields.amvID && amvApiFields.amvID) {
