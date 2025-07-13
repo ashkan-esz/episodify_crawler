@@ -1,5 +1,5 @@
 import https from 'node:https';
-import { $fetch, createFetch, type FetchOptions } from 'ofetch';
+import { createFetch, type FetchOptions } from 'ofetch';
 import { saveErrorIfNeeded } from '@utils/logger';
 import { CookieJar } from 'tough-cookie';
 // import { LRUCache } from 'lru-cache';
@@ -16,11 +16,22 @@ import { CookieJar } from 'tough-cookie';
 
 const cookieJar = new CookieJar();
 
-//TODO : improve speed, optimize
-
-//TODO : add default retry and timeout
-
 export const myFetch = createFetch({
+    defaults: {
+        keepalive: true,
+        timeout: 3000,
+        retry: 2,
+        retryDelay: 5000,
+        headers: {
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+        },
+        redirect: 'follow',
+        // Bun-specific optimizations
+        // duplex: 'half',
+        // verbose: false,
+    },
+
     // async onRequest({ request }) {
     //     const url = new URL(request.url);
     //     const hostname = url.hostname;
@@ -53,7 +64,7 @@ export async function getResponseUrl(url: string, opt: any = {}): Promise<string
         opt.headers.cookie = await cookieJar.getCookieString(url);
     }
 
-    const response = await $fetch.raw(url, {
+    const response = await myFetch.raw(url, {
         timeout: opt.timeout,
         ignoreResponseError: true,
         redirect: 'follow',
@@ -116,7 +127,7 @@ export async function getResponseWithCookie(
             },
         };
 
-        const response = await $fetch(url, fetchOptions);
+        const response = await myFetch(url, fetchOptions);
 
         return {
             data: response,
@@ -164,7 +175,7 @@ export async function getFileSize(url: string, opt: any = {}): Promise<number> {
             headers.Cookie = cookieString;
         }
 
-        const response = await $fetch.raw(url, {
+        const response = await myFetch.raw(url, {
             method: 'HEAD',
             timeout: opt.timeout,
             ignoreResponseError: true,
@@ -241,7 +252,7 @@ export async function getArrayBufferResponse(url: string, cookie = ''): Promise<
 
         let responseHeaders: any = null;
 
-        const response = await $fetch(url, {
+        const response = await myFetch(url, {
             headers: {
                 Cookie: cookie,
             },

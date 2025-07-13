@@ -155,5 +155,3 @@
 
     //TODO : use headers saved in source config
 
-    //TODO : optimize ofetch requests
-
