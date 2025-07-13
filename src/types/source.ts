@@ -28,7 +28,7 @@ export type SourceConfigC = {
     //------------------
     isGeneric: boolean;
     checkTrailers: boolean;
-    headers: string | boolean;
+    headers: string;
     is_censored: boolean;
     is_half_network: boolean;
     dontRemoveDimensions: boolean;

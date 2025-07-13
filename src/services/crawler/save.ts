@@ -10,25 +10,36 @@ import {
 import { CrawlerErrors, linkStateMessages } from '@/status/warnings';
 import { S3Storage } from '@/storage';
 import {
-    CrawlerExtraConfigs,
-    DownloadLink,
-    MovieType,
-    SourceConfig,
-    SourceExtractedData,
-    SourceVpnStatus,
+    type CrawlerExtraConfigs,
+    type DownloadLink,
+    type MovieType,
+    type SourceConfig,
+    type SourceExtractedData,
+    type SourceVpnStatus,
     VPNStatus,
 } from '@/types';
-import { getMovieModel, Movie, MovieReleaseState, TitleObj } from '@/types/movie';
-import { GroupedSubtitle } from '@/types/subtitle';
-import { LinkUtils } from '@/utils';
+import {
+    getMovieModel,
+    type Movie,
+    MovieReleaseState,
+    type TitleObj,
+} from '@/types/movie';
+import type { GroupedSubtitle } from '@/types/subtitle';
+import {
+    LinkUtils, FetchUtils, TitlesList as TitlesListUtils,
+    Crawler as CrawlerUtils,
+} from '@/utils';
 import { saveError } from '@/utils/logger';
 import {
-    DefaultTorrentDownloaderConfig,
+    type DefaultTorrentDownloaderConfig,
     TorrentDownloaderStatus,
     TorrentDownloaderDisabledState,
 } from '@config/dynamicConfig';
 import { handleLatestDataUpdate } from '@services/crawler/latestData';
-import { checkNeedTrailerUpload, handleSubUpdates } from '@services/crawler/posterAndTrailer';
+import {
+    checkNeedTrailerUpload,
+    handleSubUpdates,
+} from '@services/crawler/posterAndTrailer';
 import { addApiData, apiDataUpdate } from '@services/crawler/providersManager';
 import {
     getSeasonEpisode,
@@ -36,14 +47,6 @@ import {
     handleSiteSeasonEpisodeUpdate,
 } from '@services/crawler/seasonAndEpisode';
 import { torrentSourcesNames } from '@services/crawler/sourcesArray';
-import { getFileSize } from '@utils/axios';
-import {
-    convertTypeToAnime,
-    getDatesBetween,
-    removeAnimeFromType,
-    removeDuplicateElements,
-} from '@utils/crawler';
-import { titlesAndYears } from '@utils/titlesList';
 import PQueue from 'p-queue';
 import { handleSubtitlesUpdate } from './subtitle';
 import { getLinksDoesntMatchLinkRegex } from '@/extractors/downloadLinks';
@@ -119,7 +122,7 @@ export default async function save(
             return removePageLinkToCrawlerStatus(pageLink);
         }
 
-        const findTitle = titlesAndYears.find((t) => t.title === title);
+        const findTitle = TitlesListUtils.titlesAndYears.find((t) => t.title === title);
         if (findTitle) {
             year = findTitle.year;
         }
@@ -189,8 +192,8 @@ export default async function save(
                         true,
                     );
                 result.titleModel.downloadTorrentLinks =
-                    removeDuplicateElements(downloadTorrentLinks);
-                result.titleModel.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
+                    CrawlerUtils.removeDuplicateElements(downloadTorrentLinks);
+                result.titleModel.removeTorrentLinks = CrawlerUtils.removeDuplicateElements(removeTorrentLinks);
 
                 const insertRes = await CrawlerRepo.insertMovieToDB(result.titleModel);
                 if (insertRes?.mongoID) {
@@ -413,9 +416,9 @@ async function searchOnCollection(
 
     const searchTypes = [type];
     if (type.includes('anime')) {
-        searchTypes.push(removeAnimeFromType(type));
+        searchTypes.push(CrawlerUtils.removeAnimeFromType(type));
     } else {
-        searchTypes.push(convertTypeToAnime(type));
+        searchTypes.push(CrawlerUtils.convertTypeToAnime(type));
     }
 
     let reSearch = false;
@@ -608,17 +611,17 @@ async function handleDbUpdate(
                 db_data.sources.length > 1 ||
                 db_data.sources[0]?.sourceName !== sourceName ||
                 db_data.latestData.updateReason !== 'quality' ||
-                getDatesBetween(new Date(), db_data.insert_date).days < 90
+                CrawlerUtils.getDatesBetween(new Date(), db_data.insert_date).days < 90
             ) {
                 if (db_data.type.includes('serial')) {
                     if (
                         db_data.latestData.updateReason !== 'quality' ||
                         (db_data.update_date !== null &&
-                            getDatesBetween(new Date(), db_data.update_date).days < 90)
+                            CrawlerUtils.getDatesBetween(new Date(), db_data.update_date).days < 90)
                     ) {
                         updateFields.update_date = new Date();
                     }
-                } else if (getDatesBetween(new Date(), db_data.insert_date).hours > 1) {
+                } else if (CrawlerUtils.getDatesBetween(new Date(), db_data.insert_date).hours > 1) {
                     updateFields.update_date = new Date();
                 }
             }
@@ -658,12 +661,12 @@ async function handleDbUpdate(
             } else if (
                 db_data.releaseState === MovieReleaseState.DONE &&
                 db_data.insert_date &&
-                getDatesBetween(new Date(), db_data.insert_date).days > 90
+                CrawlerUtils.getDatesBetween(new Date(), db_data.insert_date).days > 90
             ) {
                 const dLinksLength = db_data.type.includes('movie')
                     ? db_data.qualities.map((item) => item.links).flat(1).length
                     : db_data.seasons.map((s) => s.episodes.map((e) => e.links).flat(1)).flat(1)
-                          .length;
+                        .length;
                 if (dLinksLength === 0) {
                     // let torrentLinksLength = db_data.type.includes('movie') ?
                     //     db_data.qualities.map(item => item.torrentLinks).flat(1).length
@@ -671,8 +674,8 @@ async function handleDbUpdate(
                     const onlineLinksLength = db_data.type.includes('movie')
                         ? db_data.qualities.map((item) => item.watchOnlineLinks).flat(1).length
                         : db_data.seasons
-                              .map((s) => s.episodes.map((e) => e.watchOnlineLinks).flat(1))
-                              .flat(1).length;
+                            .map((s) => s.episodes.map((e) => e.watchOnlineLinks).flat(1))
+                            .flat(1).length;
                     if (onlineLinksLength === 0) {
                         changePageLinkStateFromCrawlerStatus(
                             pageLink,
@@ -687,8 +690,8 @@ async function handleDbUpdate(
         if (Object.keys(updateFields).length > 0) {
             const { downloadTorrentLinks, removeTorrentLinks } =
                 await checkTorrentAutoDownloaderMustRun(db_data, sourceName, false);
-            updateFields.downloadTorrentLinks = removeDuplicateElements(downloadTorrentLinks);
-            updateFields.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
+            updateFields.downloadTorrentLinks = CrawlerUtils.removeDuplicateElements(downloadTorrentLinks);
+            updateFields.removeTorrentLinks = CrawlerUtils.removeDuplicateElements(removeTorrentLinks);
 
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.updating);
             await CrawlerRepo.updateMovieByIdDB(db_data._id, updateFields);
@@ -798,7 +801,7 @@ async function addFileSizeToDownloadLinks(
                 }
 
                 promiseQueue.add(() =>
-                    getFileSize(url).then((size) => {
+                    FetchUtils.getFileSize(url).then((size) => {
                         if (size > 0) {
                             size = Math.ceil(size / 1024 / 1024);
                             const sizeStr =
@@ -845,7 +848,7 @@ async function addFileSizeToDownloadLinks(
                 }
 
                 promiseQueue.add(() =>
-                    getFileSize(url).then((size) => {
+                    FetchUtils.getFileSize(url).then((size) => {
                         if (size > 0) {
                             const g = gps[j];
                             size = Math.ceil(size / 1024 / 1024);
@@ -1102,7 +1105,7 @@ function checkTorrentAutoDownloaderMustRun_newTitle(
                                         !downloadTorrentLinks.includes(torrentLinks[k].link) &&
                                         (!torrentDownloadSizeLimit ||
                                             (torrentLinks[k]?.size ?? 0) <=
-                                                torrentDownloadSizeLimit)
+                                            torrentDownloadSizeLimit)
                                     ) {
                                         downloadTorrentLinks.push(torrentLinks[k].link);
                                     }

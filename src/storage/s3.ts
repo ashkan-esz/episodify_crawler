@@ -421,19 +421,24 @@ export async function deleteUnusedFiles(retryCounter = 0): Promise<string> {
                     bucket: checkBuckets[k],
                 });
 
-                lastKey = response.continuationToken || '';
+                lastKey = response.nextContinuationToken || '';
                 const files = response.contents;
                 if (!files || files.length === 0) {
                     break;
                 }
 
-                const promiseArray = [];
+                const promiseQueue = new PQueue({ concurrency: 100 });
                 for (let i = 0; i < files.length; i++) {
+                    if (dataBaseFiles.includes(files[i].key)) {
+                        continue;
+                    }
+
                     deleteCounter++;
-                    const deletePromise = deleteFileFromS3(checkBuckets[k], files[i].key ?? '');
-                    promiseArray.push(deletePromise);
+                    promiseQueue.add(() => deleteFileFromS3(checkBuckets[k], files[i].key ?? ''));
                 }
-                await Promise.allSettled(promiseArray);
+
+                await promiseQueue.onIdle();
+
                 updateCronJobsStatus(
                     'removeS3UnusedFiles',
                     `checking bucket ${checkBuckets[k]} deleted ${deleteCounter}`,

@@ -27,13 +27,7 @@ import {
     getEndYear, getSeasonEpisode, getTotalDuration,
     handleSeasonEpisodeUpdate,
 } from '@services/crawler/seasonAndEpisode';
-import { getFileSize } from '@utils/axios';
-import {
-    convertTypeToAnime,
-    getDatesBetween,
-    removeDuplicateElements,
-    replaceSpecialCharacters,
-} from '@utils/crawler';
+import { FetchUtils, Crawler as CrawlerUtils } from '@/utils';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
 
 export async function addApiData(
@@ -45,7 +39,7 @@ export async function addApiData(
     pageLink: string,
     siteRating: MovieRates | null,
     extraConfigs: CrawlerExtraConfigs,
-    ): Promise<any> {
+): Promise<any> {
 
     titleModel.apiUpdateDate = new Date();
 
@@ -79,20 +73,24 @@ export async function addApiData(
     }
     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.callingOmdbTvMazeKitsuAmv);
     // let {omdbApiData, tvmazeApiData, kitsuApiData, amvApiData} = await handleApiCalls(titleModel, pageLink);
-    const {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(titleModel, pageLink);
+    const {
+        omdbApiData,
+        tvmazeApiData,
+        kitsuApiData,
+    } = await handleApiCalls(titleModel, pageLink);
 
     let omdbApiFields: OMDBFields | null = null;
     let tvmazeApiFields: TVMazeFields | null = null;
     let jikanApiFields: JikanFields | null = null;
-    let kitsuApiFields: KITSUFields | null = null
+    let kitsuApiFields: KITSUFields | null = null;
     const amvApiFields = null;
 
     if (omdbApiData !== null) {
         omdbApiFields = OMDB.getApiFields(omdbApiData, titleModel.type);
         if (omdbApiFields) {
-            titleModel = {...titleModel, ...omdbApiFields.updateFields};
+            titleModel = { ...titleModel, ...omdbApiFields.updateFields };
             updateSpecificFields(titleModel, titleModel, omdbApiFields, 'omdb');
-            titleModel.rating = {...titleModel.rating, ...omdbApiFields.rating};
+            titleModel.rating = { ...titleModel.rating, ...omdbApiFields.rating };
             if (omdbApiFields.year) {
                 if (titleModel.type.includes('serial') || !titleModel.year) {
                     titleModel.year = omdbApiFields.year;
@@ -107,7 +105,7 @@ export async function addApiData(
     if (tvmazeApiData !== null) {
         tvmazeApiFields = TVMaze.getApiFields(tvmazeApiData);
         if (tvmazeApiFields) {
-            titleModel = {...titleModel, ...tvmazeApiFields.updateFields};
+            titleModel = { ...titleModel, ...tvmazeApiFields.updateFields };
             updateSpecificFields(titleModel, titleModel, tvmazeApiFields, 'tvmaze');
 
             // add poster, torrent first released
@@ -144,10 +142,9 @@ export async function addApiData(
         }
     }
 
-
     if (!titleModel.type.includes('anime') && (omdbApiFields?.isAnime || tvmazeApiFields?.isAnime)) {
         // titleModel.type = 'anime_' + titleModel.type;
-        titleModel.type = convertTypeToAnime(titleModel.type);
+        titleModel.type = CrawlerUtils.convertTypeToAnime(titleModel.type);
     }
 
     if (checkForceStopCrawler()) {
@@ -156,7 +153,7 @@ export async function addApiData(
     if (titleModel.type.includes('serial')) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.handlingSeasonFields);
         const seasonEpisodeFieldsUpdate = await updateSeasonsField(titleModel, sourceName, site_links, siteWatchOnlineLinks, torrentLinks, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
-        titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
+        titleModel = { ...titleModel, ...seasonEpisodeFieldsUpdate };
     }
 
     if (checkForceStopCrawler()) {
@@ -171,7 +168,7 @@ export async function addApiData(
             titleModel.apiIds.jikanID,
             titleModel.year,
             titleModel.type,
-            );
+        );
         if (jikanApiData) {
             jikanApiFields = Jikan.getApiFields(jikanApiData);
             if (jikanApiFields) {
@@ -185,7 +182,7 @@ export async function addApiData(
                     // titleModel = {...titleModel, ...TTTT};
                 }
 
-                titleModel = {...titleModel, ...jikanApiFields.updateFields};
+                titleModel = { ...titleModel, ...jikanApiFields.updateFields };
                 if (!titleModel.movieLang) {
                     titleModel.movieLang = 'japanese';
                 }
@@ -204,7 +201,6 @@ export async function addApiData(
             }
         }
     }
-
 
     if (checkForceStopCrawler()) {
         return;
@@ -316,7 +312,7 @@ export async function addApiData(
             omdbApiFields, tvmazeApiFields,
             jikanApiFields,
             kitsuApiFields, amvApiFields,
-        }
+        },
     };
 }
 
@@ -331,14 +327,14 @@ export async function apiDataUpdate(
     pageLink: string,
     siteRating: MovieRates | null,
     extraConfigs: CrawlerExtraConfigs,
-    ): Promise<any> {
-    
+): Promise<any> {
+
     const now = new Date();
     const apiUpdateDate = new Date(db_data.apiUpdateDate);
     if (extraConfigs?.apiUpdateState === ExtraConfigsSwitchState.IGNORE) {
         return null;
     }
-    if (getDatesBetween(now, apiUpdateDate).hours < 8 && extraConfigs?.apiUpdateState !== 'force') {
+    if (CrawlerUtils.getDatesBetween(now, apiUpdateDate).hours < 8 && extraConfigs?.apiUpdateState !== 'force') {
         return null;
     }
 
@@ -361,19 +357,23 @@ export async function apiDataUpdate(
     }
     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.callingOmdbTvMazeKitsuAmv);
     // const {omdbApiData, tvmazeApiData, kitsuApiData, amvApiData} = await handleApiCalls(db_data, pageLink);
-    const {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(db_data, pageLink);
+    const {
+        omdbApiData,
+        tvmazeApiData,
+        kitsuApiData,
+    } = await handleApiCalls(db_data, pageLink);
     let omdbApiFields: OMDBFields | null = null;
     let tvmazeApiFields: TVMazeFields | null = null;
-    let jikanApiFields: JikanFields | null = null
-    let kitsuApiFields: KITSUFields | null = null
-    const amvApiFields= null;
+    let jikanApiFields: JikanFields | null = null;
+    let kitsuApiFields: KITSUFields | null = null;
+    const amvApiFields = null;
 
     if (omdbApiData !== null) {
         omdbApiFields = OMDB.getApiFields(omdbApiData, db_data.type);
         if (omdbApiFields) {
-            updateFields = {...updateFields, ...omdbApiFields.updateFields};
+            updateFields = { ...updateFields, ...omdbApiFields.updateFields };
             updateSpecificFields(db_data, updateFields, omdbApiFields, 'omdb');
-            db_data.rating = {...db_data.rating, ...omdbApiFields.rating};
+            db_data.rating = { ...db_data.rating, ...omdbApiFields.rating };
             updateFields.rating = db_data.rating;
             if (omdbApiFields.year) {
                 if (db_data.type.includes('serial') || !db_data.year) {
@@ -391,7 +391,7 @@ export async function apiDataUpdate(
     if (tvmazeApiData !== null) {
         tvmazeApiFields = TVMaze.getApiFields(tvmazeApiData);
         if (tvmazeApiFields) {
-            updateFields = {...updateFields, ...tvmazeApiFields.updateFields};
+            updateFields = { ...updateFields, ...tvmazeApiFields.updateFields };
             updateSpecificFields(db_data, updateFields, tvmazeApiFields, 'tvmaze');
 
             // add poster, torrent first released
@@ -436,7 +436,7 @@ export async function apiDataUpdate(
 
     if (!db_data.type.includes('anime') && (omdbApiFields?.isAnime || tvmazeApiFields?.isAnime)) {
         // db_data.type = 'anime_' + db_data.type;
-        db_data.type = convertTypeToAnime(db_data.type);
+        db_data.type = CrawlerUtils.convertTypeToAnime(db_data.type);
         updateFields.type = db_data.type;
     }
 
@@ -448,7 +448,7 @@ export async function apiDataUpdate(
         const seasonEpisodeFieldsUpdate = await updateSeasonsField(
             db_data, sourceName, site_links, siteWatchOnlineLinks, torrentLinks,
             updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
-        updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
+        updateFields = { ...updateFields, ...seasonEpisodeFieldsUpdate };
     }
 
     if (checkForceStopCrawler()) {
@@ -463,11 +463,11 @@ export async function apiDataUpdate(
             db_data.apiIds.jikanID,
             db_data.year,
             db_data.type,
-            );
+        );
         if (jikanApiData) {
             const temp = handleTypeAndTitleUpdate(db_data, jikanApiData.titleObj, siteType);
-            db_data = {...db_data, ...temp};
-            updateFields = {...updateFields, ...temp};
+            db_data = { ...db_data, ...temp };
+            updateFields = { ...updateFields, ...temp };
             jikanApiFields = Jikan.getApiFields(jikanApiData);
             if (jikanApiFields) {
                 if (jikanApiFields.jikanPoster && db_data.posters.length === 0 && db_data.poster_s3 === null) {
@@ -485,7 +485,7 @@ export async function apiDataUpdate(
                     // updateFields = {...updateFields, ...TTTT};
                 }
 
-                updateFields = {...updateFields, ...jikanApiFields.updateFields};
+                updateFields = { ...updateFields, ...jikanApiFields.updateFields };
                 if (db_data.type.includes('movie') && updateFields.year) {
                     updateFields.endYear = updateFields.year;
                 }
@@ -662,18 +662,17 @@ export async function apiDataUpdate(
             omdbApiFields, tvmazeApiFields,
             jikanApiFields,
             kitsuApiFields, amvApiFields,
-        }
+        },
     };
 }
-
 
 async function checkBetterS3Poster(
     prevPosters: MoviePoster[],
     sourceName: string,
     newPosterUrl: string,
     prevS3Poster: MoviePosterS3,
-    retryCounter: number = 0,
-    ): Promise<boolean> {
+    retryCounter = 0,
+): Promise<boolean> {
     try {
         if (!newPosterUrl) {
             return false;
@@ -701,7 +700,7 @@ async function checkBetterS3Poster(
             }
         }
         if (newPosterSize === 0) {
-            newPosterSize = await getFileSize(newPosterUrl);
+            newPosterSize = await FetchUtils.getFileSize(newPosterUrl);
         }
         if (newPosterSize > 0) {
             const diff = ((newPosterSize - prevS3Poster.size) / prevS3Poster.size) * 100;
@@ -727,7 +726,7 @@ function handleTypeAndTitleUpdate(
     db_data: Movie,
     titleObj: TitleObj,
     siteType: MovieType,
-    ): TitleObj {
+): TitleObj {
     const temp = {
         //dont override serial on anime_serial, like 'vinland saga' tagged as serial on some sources
         type: db_data.type.includes('anime') ? db_data.type : siteType,
@@ -736,7 +735,7 @@ function handleTypeAndTitleUpdate(
     //if this anime detected as movie before , add alternate title if needed.
     if (db_data.title !== titleObj.title) {
         temp.alternateTitles.push(db_data.title);
-        temp.alternateTitles = removeDuplicateElements(temp.alternateTitles);
+        temp.alternateTitles = CrawlerUtils.removeDuplicateElements(temp.alternateTitles);
     }
     return temp;
 }
@@ -744,9 +743,12 @@ function handleTypeAndTitleUpdate(
 async function handleApiCalls(
     titleData: Movie,
     pageLink: string,
-    ): Promise<any> {
+): Promise<any> {
 
-    let omdbApiData, tvmazeApiData, kitsuApiData, amvApiData;
+    let omdbApiData: any;
+    let tvmazeApiData: any;
+    let kitsuApiData: any;
+    let amvApiData: any;
     if (titleData.type.includes('serial')) {
         const results = await Promise.allSettled([
             handle_OMDB_TvMaze_ApiCall(titleData, 'omdb', pageLink),
@@ -769,16 +771,16 @@ async function handleApiCalls(
         amvApiData = results[2].status === 'fulfilled' ? results[2].value : null;
         tvmazeApiData = null;
     }
-    return {omdbApiData, tvmazeApiData, kitsuApiData, amvApiData};
+    return { omdbApiData, tvmazeApiData, kitsuApiData, amvApiData };
 }
 
 async function handle_OMDB_TvMaze_ApiCall(
     titleData: Movie,
     apiName: string,
     pageLink: string,
-    ): Promise<any> {
+): Promise<any> {
     let searchTitle = (apiName === 'omdb') ? titleData.rawTitle || titleData.title : titleData.title;
-    let result;
+    let result: any;
     if (apiName === 'omdb') {
         result = await OMDB.getApiData(
             searchTitle,
@@ -805,48 +807,49 @@ async function handle_OMDB_TvMaze_ApiCall(
             titleData.apiIds.kitsuID,
             titleData.year,
             titleData.type,
-            );
+        );
     } else if (apiName === 'amv') {
         // result = await getAmvApiData(searchTitle, titleData.alternateTitles, titleData.year, titleData.type, titleData.apiIds.amvID);
-        result = null
+        result = null;
     }
 
     if (result || apiName === 'kitsu' || apiName === 'amv') {
         partialChangePageLinkStateFromCrawlerStatus(pageLink, apiName, apiName + ':done');
         return result;
-    } else {
-        const japaneseRegex = /[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0-\u30FF]|[\uFF00-\uFFEF]|[\u4E00-\u9FAF]|[\u2605-\u2606]|[\u2190-\u2195]|\u203B/gi;
-        searchTitle = replaceSpecialCharacters(searchTitle.toLowerCase());
-        let alternateTitles = titleData.alternateTitles
-            .map(item => replaceSpecialCharacters(item.toLowerCase()))
-            .filter(item => item !== searchTitle && !item.match(japaneseRegex));
-        alternateTitles = removeDuplicateElements(alternateTitles);
+    }
 
-        const newAlternateTitles = [...alternateTitles, titleData.rawTitle];
-        for (let i = 0; i < alternateTitles.length; i++) {
-            result = (apiName === 'omdb')
-                ? await OMDB.getApiData(
-                    alternateTitles[i],
-                    newAlternateTitles,
-                    titleData.titleSynonyms,
-                    '',
-                    titleData.premiered,
-                    titleData.type,
-                    true)
-                : await TVMaze.getApiData(
-                    alternateTitles[i],
-                    newAlternateTitles,
-                    titleData.titleSynonyms,
-                    titleData.apiIds.imdbID,
-                    titleData.premiered,
-                    titleData.type,
-                    true);
-            if (result) {
-                partialChangePageLinkStateFromCrawlerStatus(pageLink, apiName, apiName + ':done');
-                return result;
-            }
+    const japaneseRegex = /[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0-\u30FF]|[\uFF00-\uFFEF]|[\u4E00-\u9FAF]|[\u2605-\u2606]|[\u2190-\u2195]|\u203B/gi;
+    searchTitle = CrawlerUtils.replaceSpecialCharacters(searchTitle.toLowerCase());
+    let alternateTitles = titleData.alternateTitles
+        .map(item => CrawlerUtils.replaceSpecialCharacters(item.toLowerCase()))
+        .filter(item => item !== searchTitle && !item.match(japaneseRegex));
+    alternateTitles = CrawlerUtils.removeDuplicateElements(alternateTitles);
+
+    const newAlternateTitles = [...alternateTitles, titleData.rawTitle];
+    for (let i = 0; i < alternateTitles.length; i++) {
+        result = (apiName === 'omdb')
+            ? await OMDB.getApiData(
+                alternateTitles[i],
+                newAlternateTitles,
+                titleData.titleSynonyms,
+                '',
+                titleData.premiered,
+                titleData.type,
+                true)
+            : await TVMaze.getApiData(
+                alternateTitles[i],
+                newAlternateTitles,
+                titleData.titleSynonyms,
+                titleData.apiIds.imdbID,
+                titleData.premiered,
+                titleData.type,
+                true);
+        if (result) {
+            partialChangePageLinkStateFromCrawlerStatus(pageLink, apiName, apiName + ':done');
+            return result;
         }
     }
+
     partialChangePageLinkStateFromCrawlerStatus(pageLink, apiName, apiName + ':done');
     return null;
 }
@@ -856,7 +859,7 @@ function updateSpecificFields(
     updateFields: any,
     apiFields: any,
     apiName: string,
-    ): void {
+): void {
     if (
         (apiName === 'jikan' && apiFields.summary_en) ||
         ((!oldData.summary.english || oldData.summary.english.length < apiFields.summary_en.replace(/([.…])+$/, '')) && apiFields.summary_en)
@@ -888,23 +891,24 @@ function getNewGenres(
     apiGenres: string[],
     isAnime: boolean,
     isAnimation: boolean,
-    ): string[] | null {
+): string[] | null {
     let newGenres = [...data.genres, ...apiGenres];
     if (isAnimation && !isAnime) {
         newGenres.push('animation');
     }
-    newGenres = removeDuplicateElements(newGenres);
+    newGenres = CrawlerUtils.removeDuplicateElements(newGenres);
     if (newGenres.length !== data.genres.length) {
         return newGenres;
-    } else {
-        const oldGenres = data.genres;
-        for (let i = 0; i < newGenres.length; i++) {
-            if (newGenres[i] !== oldGenres[i]) {
-                return newGenres;
-            }
-        }
-        return null;
     }
+
+    const oldGenres = data.genres;
+    for (let i = 0; i < newGenres.length; i++) {
+        if (newGenres[i] !== oldGenres[i]) {
+            return newGenres;
+        }
+    }
+
+    return null;
 }
 
 async function updateSeasonsField(
@@ -917,12 +921,12 @@ async function updateSeasonsField(
     omdbApiFields: OMDBFields | null,
     tvmazeApiFields: TVMazeFields | null,
     titleExist: boolean,
-    ): Promise<any> {
+): Promise<any> {
 
     const fields: any = {};
     const {
         seasonsUpdateFlag,
-        nextEpisodeUpdateFlag
+        nextEpisodeUpdateFlag,
     } = await handleSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, torrentLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist);
 
     if (seasonsUpdateFlag) {
@@ -945,7 +949,7 @@ async function updateSeasonsField(
 function handleSiteRating(
     rating: MovieRates,
     siteRating: MovieRates | null,
-    ): boolean {
+): boolean {
     try {
         if (!siteRating) {
             return false;
@@ -978,9 +982,9 @@ function handleSiteRating(
 async function uploadPosterAndAddToData(
     data: Movie,
     imageUrl: string,
-    forceUpload: boolean = false,
-    isWide: boolean = false,
-    ): Promise<boolean> {
+    forceUpload = false,
+    isWide = false,
+): Promise<boolean> {
     const s3poster = await uploadTitlePosterToS3(data.title, data.type, data.year, imageUrl, forceUpload, isWide);
     if (s3poster) {
         data.poster_s3 = s3poster;

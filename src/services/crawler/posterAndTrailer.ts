@@ -10,8 +10,7 @@ import type {
     MovieTrailerS3,
 } from '@/types/movie';
 import { S3Storage } from '@/storage';
-import { getFileSize } from '@utils/axios';
-import { removeDuplicateLinks } from '@utils/crawler';
+import { FetchUtils, Crawler as CrawlerUtils } from '@/utils';
 import { saveError } from '@utils/logger';
 
 const posterSources = sortPostersOrder;
@@ -79,13 +78,13 @@ async function handlePosterUpdate(
 
         //add size
         if (db_data.posters[i].size === 0 && db_data.posters[i].info !== 's3Poster') {
-            db_data.posters[i].size = await getFileSize(db_data.posters[i].url);
+            db_data.posters[i].size = await FetchUtils.getFileSize(db_data.posters[i].url);
             posterUpdated = true;
         }
     }
 
     if (!posterExist) {  //new poster
-        const fileSize =  await getFileSize(poster);
+        const fileSize =  await FetchUtils.getFileSize(poster);
 
         db_data.posters.push({
             url: poster,
@@ -142,7 +141,7 @@ async function handlePosterUpdate(
             }
         }
     }
-    db_data.posters = removeDuplicateLinks(db_data.posters);
+    db_data.posters = CrawlerUtils.removeDuplicateLinks(db_data.posters);
     const prevSort = db_data.posters.map(item => item.url).join(',');
     db_data.posters = sortPosters(db_data.posters);
     const newSort = db_data.posters.map(item => item.url).join(',');
@@ -180,7 +179,7 @@ function handleTrailerUpdate(
         }
     }
 
-    db_data.trailers = removeDuplicateLinks(db_data.trailers);
+    db_data.trailers = CrawlerUtils.removeDuplicateLinks(db_data.trailers);
     const prevSort = db_data.trailers.map(item => item.url).join(',');
     if (site_trailers.length === 0) {
         //remove prev source trailers
