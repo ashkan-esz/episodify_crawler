@@ -9,8 +9,8 @@ import {
 } from '@/status/status';
 import { CrawlerErrors, linkStateMessages } from '@/status/warnings';
 import {
-    CrawlerExtraConfigs,
-    CrawlerStatusSource,
+    type CrawlerExtraConfigs,
+    type CrawlerStatusSource,
     defaultCrawlerExtraConfigs,
     ExtraConfigsSwitchState,
 } from '@/types';
@@ -18,15 +18,14 @@ import {
     getSourcesArray,
     torrentSourcesNames,
 } from '@services/crawler/sourcesArray';
-import { getResponseUrl } from '@utils/axios';
-import { getDatesBetween } from '@utils/crawler';
+import { FetchUtils, Crawler as CrawlerUtils } from '@/utils';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
 
 export async function domainChangeHandler(
     sourcesObj: any,
     fullyCrawledSources: string[],
     extraConfigs: CrawlerExtraConfigs,
-    ): Promise<any> {
+): Promise<any> {
     try {
         await updateCrawlerStatus_domainChangeHandlerStart();
         delete sourcesObj._id;
@@ -69,7 +68,7 @@ export async function domainChangeHandler(
 async function checkSourcesUrl(
     sourcesUrls: any[],
     // extraConfigs: CrawlerExtraConfigs,
-    ): Promise<CrawlerStatusSource[]> {
+): Promise<CrawlerStatusSource[]> {
 
     const changedSources: CrawlerStatusSource[] = [];
     try {
@@ -89,11 +88,11 @@ async function checkSourcesUrl(
                 //     responseUrl = pageData.responseUrl;
                 // } else {
                 //     changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.retryFetch + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
-                //     responseUrl = await getResponseUrl(homePageLink);
+                //     responseUrl = await FetchUtils.getResponseUrl(homePageLink);
                 // }
 
                 changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.retryFetch + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
-                responseUrl = await getResponseUrl(homePageLink);
+                responseUrl = await FetchUtils.getResponseUrl(homePageLink);
 
                 sourcesUrls[i].checked = true;
                 retryCounter = 0;
@@ -101,11 +100,11 @@ async function checkSourcesUrl(
                     continue;
                 }
             } catch (error: any) {
-                if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                if (FetchUtils.checkErrStatusCodeBadUrl(error)) {
                     const temp = homePageLink.replace(/\/$/, '').split('/').pop();
                     const url = homePageLink.replace(temp, encodeURIComponent(temp));
                     try {
-                        responseUrl = await getResponseUrl(url);
+                        responseUrl = await FetchUtils.getResponseUrl(url);
                         sourcesUrls[i].checked = true;
                     } catch (error2: any) {
                         error2.isFetchError = true;
@@ -117,14 +116,19 @@ async function checkSourcesUrl(
                         sourcesUrls[i].errorMessage = error2.message || '';
                         continue;
                     }
-                } else if ([502, 504, 525].includes(error.response?.status) && retryCounter < 2) {
+                } else if (
+                    [502, 504, 525].includes(FetchUtils.getErrStatusCode(error)) &&
+                    retryCounter < 2) {
                     await new Promise(resolve => setTimeout(resolve, 3000));
                     retryCounter++;
                     i--;
                     continue;
                 } else {
-                    if (error.code !== 'ETIMEDOUT' && error.code !== 'EAI_AGAIN' &&
-                        ![521, 522, 524].includes(error.response?.status)) {
+                    if (
+                        !FetchUtils.checkErrStatusNetworkError(error) &&
+                        !FetchUtils.checkErrStatusCodeEAI(error) &&
+                        ![521, 522, 524].includes(FetchUtils.getErrStatusCode(error))
+                    ) {
                         await saveErrorIfNeeded(error);
                     }
                     sourcesUrls[i].checked = true;
@@ -162,16 +166,15 @@ export async function checkUrlWork(
             // if (pageData && pageData.pageContent) {
             //     responseUrl = pageData.responseUrl;
             // } else {
-            //     responseUrl = await getResponseUrl(homePageLink);
+            //     responseUrl = await FetchUtils.getResponseUrl(homePageLink);
             // }
-            responseUrl = await getResponseUrl(homePageLink);
+            responseUrl = await FetchUtils.getResponseUrl(homePageLink);
         } catch (error: any) {
-            if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+            if (FetchUtils.checkErrStatusCodeBadUrl(error)) {
                 const temp = homePageLink.replace(/\/$/, '').split('/').pop() ?? '';
-                // const url = homePageLink.replace(temp, encodeURIComponent(temp));
-                const url = sourceUrl.replace(temp, encodeURIComponent(temp));
+                const url = homePageLink.replace(temp, encodeURIComponent(temp));
                 try {
-                    // responseUrl = await getResponseUrl(url);
+                    // responseUrl = await FetchUtils.getResponseUrl(url);
                     return await checkUrlWork(sourceName, url, allConfigs, retryCounter);
                 } catch (error2: any) {
                     error2.isFetchError = true;
@@ -180,9 +183,10 @@ export async function checkUrlWork(
                     error2.filePath = 'domainChangeHandler';
                     await saveErrorIfNeeded(error2);
                 }
-            } else if (
-                (error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.code === 'EAI_AGAIN' ||
-                    [502, 521, 522, 525].includes(error.response?.status)) && retryCounter < 3) {
+            } else if (retryCounter < 3 && (
+                FetchUtils.checkErrStatusNetworkError(error) ||
+                FetchUtils.checkErrStatusCodeEAI(error) ||
+                [502, 521, 522, 525].includes(FetchUtils.getErrStatusCode(error)))) {
                 retryCounter++;
                 await new Promise((resolve => setTimeout(resolve, 4000)));
                 return await checkUrlWork(sourceName, sourceUrl, allConfigs, retryCounter);
@@ -194,13 +198,13 @@ export async function checkUrlWork(
                 // }
                 await saveErrorIfNeeded(error);
             }
-            return "error";
+            return 'error';
         }
         responseUrl = responseUrl.replace(/(\/page\/)|(\/(movie-)*anime\?page=)|(\/$)/g, '');
-        return homePageLink === responseUrl ? "ok" : responseUrl;
+        return homePageLink === responseUrl ? 'ok' : responseUrl;
     } catch (error) {
         await saveErrorIfNeeded(error);
-        return "error";
+        return 'error';
     }
 }
 
@@ -222,7 +226,7 @@ async function updateDownloadLinks(
     sourcesObj: any,
     changedSources: CrawlerStatusSource[],
     fullyCrawledSources: string[],
-    ): Promise<void> {
+): Promise<void> {
 
     const sourcesArray = getSourcesArray(sourcesObj, 2, defaultCrawlerExtraConfigs);
     for (let i = 0; i < changedSources.length; i++) {
@@ -237,8 +241,8 @@ async function updateDownloadLinks(
                 findSource = {
                     starter: () => {
                         return generic.default(sourcesObj[sourceName], null, defaultCrawlerExtraConfigs);
-                    }
-                }
+                    },
+                };
             }
 
             if (findSource) {
@@ -271,7 +275,8 @@ async function updateDownloadLinks(
             }
             changedSources[i].crawled = true;
 
-            ServerAnalysisRepo.saveServerLog(`domain change handler: (${sourceName} reCrawl ended in ${getDatesBetween(new Date(), startTime).minutes} min)`);
+            ServerAnalysisRepo.saveServerLog(
+                `domain change handler: (${sourceName} reCrawl ended in ${CrawlerUtils.getDatesBetween(new Date(), startTime).minutes} min)`);
         } catch (error) {
             saveError(error);
         }

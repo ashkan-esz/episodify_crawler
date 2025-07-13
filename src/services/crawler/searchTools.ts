@@ -12,50 +12,23 @@ import {
 } from '@/status/status';
 import { CrawlerErrors, linkStateMessages } from '@/status/warnings';
 import {
-    CrawlerExtraConfigs,
+    type CrawlerExtraConfigs,
     CrawlerLinkType,
-    DownloadLink,
-    MovieType,
+    type DownloadLink,
+    type MovieType,
     PageType,
-    SourceConfig,
-    SourceConfigC,
+    type SourceConfig,
+    type SourceConfigC,
 } from '@/types';
-import { getResponseWithCookie } from '@utils/axios';
-import { getDecodedLink, getSeasonEpisode } from '@utils/crawler';
-import { checkFormat } from '@utils/link';
-import { filterLowResDownloadLinks, handleRedundantPartNumber } from '@utils/linkInfo';
+import {
+    FetchUtils,
+    LinkUtils,
+    LinkInfo as LinkInfoUtils,
+    Crawler as CrawlerUtils,
+} from '@/utils';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
-import axios from 'axios';
-import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
 import PQueue from 'p-queue';
-
-//TODO : remove this
-axiosRetry(axios, {
-    retries: 2, // number of retries
-    shouldResetTimeout: true,
-    retryDelay: (retryCount) => {
-        return retryCount * 1000; // time interval between retries
-    },
-    // onRetry: (retryCount, error, config) => {
-    //     // delete config.headers;
-    // },
-    // @ts-expect-error ...
-    retryCondition: (error) =>
-        error.code === 'ECONNRESET' ||
-        error.code === 'ENOTFOUND' ||
-        error.code === 'ECONNABORTED' ||
-        error.code === 'ETIMEDOUT' ||
-        error.code === 'SlowDown' ||
-        (error.response &&
-            error.response.status !== 500 &&
-            error.response.status !== 503 &&
-            error.response.status !== 521 &&
-            error.response.status !== 429 &&
-            error.response.status !== 404 &&
-            error.response.status !== 403 &&
-            error.response.status !== 400),
-});
 
 const scriptRegex = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
 const styleRegex = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi;
@@ -117,7 +90,13 @@ export async function wrapper_module(
                 if (!getLinksRes) {
                     continue;
                 }
-                const { $, links, checkGoogleCache, responseUrl, pageTitle } = getLinksRes;
+                const {
+                    $,
+                    links,
+                    checkGoogleCache,
+                    responseUrl,
+                    pageTitle,
+                } = getLinksRes;
                 changeSourcePageFromCrawlerStatus(
                     pageLink,
                     linkStateMessages.sourcePage.fetchingEnd,
@@ -239,8 +218,8 @@ export async function search_in_title_page(
             }
 
             if (
-                (extraChecker && extraChecker($, links[j], title, type)) ||
-                checkFormat(link, title)
+                extraChecker?.($, links[j], title, type) ||
+                LinkUtils.checkFormat(link, title)
             ) {
                 const link_info = getFileData(
                     $,
@@ -259,24 +238,40 @@ export async function search_in_title_page(
                     let isNormalCase = false;
                     if (type.includes('serial') || link_info.match(/^s\d+e\d+(-?e\d+)?\./i)) {
                         if (type.includes('anime') || getSeasonEpisodeFromInfo) {
-                            ({ season, episode, isNormalCase } = getSeasonEpisode(link_info));
+                            ({
+                                season,
+                                episode,
+                                isNormalCase,
+                            } = CrawlerUtils.getSeasonEpisode(link_info));
                             if (
                                 (season === 0 && episode === 0) ||
                                 link_info.match(/^\d\d\d\d?p(\.|$)/)
                             ) {
-                                ({ season, episode, isNormalCase } = getSeasonEpisode(link, true));
+                                ({
+                                    season,
+                                    episode,
+                                    isNormalCase,
+                                } = CrawlerUtils.getSeasonEpisode(link, true));
                             }
                         } else {
-                            ({ season, episode, isNormalCase } = getSeasonEpisode(link, true));
+                            ({
+                                season,
+                                episode,
+                                isNormalCase,
+                            } = CrawlerUtils.getSeasonEpisode(link, true));
                             if (season === 0 && !isNormalCase) {
-                                ({ season, episode, isNormalCase } = getSeasonEpisode(link_info));
+                                ({
+                                    season,
+                                    episode,
+                                    isNormalCase,
+                                } = CrawlerUtils.getSeasonEpisode(link_info));
                             }
                         }
                     }
                     downloadLinks.push({
                         link: link.trim(),
                         info: link_info.replace(/^s\d+e\d+(-?e\d+)?\./i, ''),
-                        qualitySample: getDecodedLink(qualitySample),
+                        qualitySample: CrawlerUtils.getDecodedLink(qualitySample),
                         sourceName: sourceConfig.config.sourceName,
                         season,
                         episode,
@@ -338,9 +333,15 @@ export async function search_in_title_page(
             }
         }
         await Promise.allSettled(promiseArray);
-        downloadLinks = filterLowResDownloadLinks(downloadLinks);
-        downloadLinks = handleRedundantPartNumber(downloadLinks);
-        return { downloadLinks: downloadLinks, $2: $, cookies, pageContent, responseUrl };
+        downloadLinks = LinkInfoUtils.filterLowResDownloadLinks(downloadLinks);
+        downloadLinks = LinkInfoUtils.handleRedundantPartNumber(downloadLinks);
+        return {
+            downloadLinks: downloadLinks,
+            $2: $,
+            cookies,
+            pageContent,
+            responseUrl,
+        };
     } catch (error) {
         saveError(error);
         removePageLinkToCrawlerStatus(page_link);
@@ -354,7 +355,7 @@ async function getLinks(
     pageType: PageType,
     extraConfigs: CrawlerExtraConfigs,
     sourceLinkData: any = null,
-    retryCounter: number = 0,
+    retryCounter = 0,
 ): Promise<{
     $: any;
     links: any[];
@@ -375,8 +376,8 @@ async function getLinks(
         if (url.includes('/page/') && !url.endsWith('/')) {
             url = url + '/';
         }
-        let $,
-            links: any = [];
+        let $: any;
+        let links: any = [];
 
         try {
             if (checkForceStopCrawler()) {
@@ -416,8 +417,7 @@ async function getLinks(
                 (item) => item.sourceName === config.sourceName,
             );
             if (
-                sourceData &&
-                sourceData.isBlocked &&
+                sourceData?.isBlocked &&
                 !sourceLinkData &&
                 pageType === PageType.MovieDataPage
             ) {
@@ -475,13 +475,14 @@ async function getLinks(
 
                 const responseTimeout: number =
                     pageType === PageType.MainPage ? 15 * 1000 : 10 * 1000;
-                const response = await getResponseWithCookie(
+                const response = await FetchUtils.getResponseWithCookie(
                     url,
                     cookie,
                     sourceHeaders,
                     responseTimeout,
                 );
-                responseUrl = response.request.res.responseUrl;
+
+                responseUrl = response.responseUrl;
                 if (
                     pageType === PageType.MovieDataPage &&
                     (response.data.includes('<title>Security Check ...</title>') ||
@@ -503,14 +504,18 @@ async function getLinks(
             }
             // }
         } catch (error: any) {
+            const notFoundText1 = 'مطلبی که به دنبال آن بودید یافت نشد';
+            const notFoundText2 = 'صفحه ای که به دنبال آن می گردید حذف یا' +
+                ' اصلا وجود نداشته باشد';
+
             if (
-                error.code === 'ERR_BAD_REQUEST' &&
-                !error.response.data.includes('مطلبی که به دنبال آن بودید یافت نشد') &&
-                !error.response.data.includes(
-                    'صفحه ای که به دنبال آن می گردید حذف یا اصلا وجود نداشته باشد',
-                ) &&
-                error.message !== 'certificate has expired' &&
-                error.code !== 'ERR_TLS_CERT_ALTNAME_INVALID' &&
+                FetchUtils.checkErrStatusCode(error, 400) &&
+                !error.response?.includes(notFoundText1) &&
+                !error.data?.includes(notFoundText1) &&
+                !error.response?.includes(notFoundText2) &&
+                !error.data?.includes(notFoundText2) &&
+                !FetchUtils.checkErrStatusCertExpired(error) &&
+                !FetchUtils.checkErrStatusAltNameInvalid(error) &&
                 retryCounter < 1
             ) {
                 url = url.replace(/(?<=(page\/\d+))\/$/, '');
@@ -525,7 +530,8 @@ async function getLinks(
                     retryCounter,
                 );
             }
-            if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+
+            if (FetchUtils.checkErrStatusCodeBadUrl(error)) {
                 if (decodeURIComponent(url) === url) {
                     let temp = url.replace(/\/$/, '').split('/').pop();
                     if (temp) {
@@ -558,9 +564,10 @@ async function getLinks(
                     checkGoogleCache = true;
                 }
 
-                if (error.message === 'timeout of 10000ms exceeded') {
+                if (FetchUtils.checkErrStatusCodeTimeout(error)) {
+                    const timeout = error.message.match(/\d+/)?.[0] || '10s|15s';
                     ServerAnalysisRepo.saveCrawlerWarning(
-                        CrawlerErrors.fetch.timeoutError('10s', config.sourceName),
+                        CrawlerErrors.fetch.timeoutError(timeout, config.sourceName),
                     );
                     if (pageType === PageType.MainPage && retryCounter < 2) {
                         retryCounter++;
@@ -573,22 +580,7 @@ async function getLinks(
                             retryCounter,
                         );
                     }
-                } else if (error.message === 'timeout of 15000ms exceeded') {
-                    ServerAnalysisRepo.saveCrawlerWarning(
-                        CrawlerErrors.fetch.timeoutError('15s', config.sourceName),
-                    );
-                    if (pageType === PageType.MainPage && retryCounter < 2) {
-                        retryCounter++;
-                        return await getLinks(
-                            url,
-                            config,
-                            pageType,
-                            extraConfigs,
-                            sourceLinkData,
-                            retryCounter,
-                        );
-                    }
-                } else if (error.message === 'aborted') {
+                } else if (FetchUtils.checkErrStatusCodeAborted(error)) {
                     ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.fetch.abortError(config.sourceName));
                     if (pageType === PageType.MainPage && retryCounter < 2) {
                         retryCounter++;
@@ -601,9 +593,9 @@ async function getLinks(
                             retryCounter,
                         );
                     }
-                } else if (error.code === 'EAI_AGAIN') {
+                } else if (FetchUtils.checkErrStatusCodeEAI(error)) {
                     ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.fetch.eaiError(config.sourceName));
-                } else if (error.message === 'Request failed with status code 403') {
+                } else if (FetchUtils.checkErrStatusCode(error, 403)) {
                     ServerAnalysisRepo.saveCrawlerWarning(
                         CrawlerErrors.source.fetch403(config.sourceName),
                     );
@@ -645,8 +637,8 @@ async function getLinks(
                     (!href.match(/\.(mp4)$/) || href.match(/[-_.\s]\d{3,4}p[-_.\s]/)) &&
                     !uniqueLinks.find(
                         (u) =>
-                            getDecodedLink($(u).attr('href')) ===
-                            getDecodedLink($(links[i]).attr('href')),
+                            CrawlerUtils.getDecodedLink($(u).attr('href')) ===
+                            CrawlerUtils.getDecodedLink($(links[i]).attr('href')),
                     )
                 ) {
                     uniqueLinks.push(links[i]);

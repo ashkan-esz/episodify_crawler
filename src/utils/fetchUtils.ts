@@ -37,6 +37,42 @@ export const myFetch = createFetch({
 
 export default myFetch;
 
+// Get the response url
+export async function getResponseUrl(url: string, opt: any = {}): Promise<string> {
+    opt = {
+        timeout: 5000,
+        headers: {
+            cookie: opt.cookie || '',
+        },
+        ...opt,
+    };
+
+    if (opt.headers.cookie) {
+        await cookieJar.setCookie(opt.headers.cookie, url);
+    } else {
+        opt.headers.cookie = await cookieJar.getCookieString(url);
+    }
+
+    const response = await $fetch.raw(url, {
+        timeout: opt.timeout,
+        ignoreResponseError: true,
+        redirect: 'follow',
+        headers: opt.headers,
+    });
+
+    // Store received cookies
+    const setCookies = response.headers.getAll('set-cookie');
+    if (setCookies) {
+        await Promise.all(
+            setCookies.map(cookie =>
+                cookieJar.setCookie(cookie, response.url),
+            ),
+        );
+    }
+
+    return response.url || url;
+}
+
 export async function getResponseWithCookie(
     url: string,
     cookie: any,
@@ -88,8 +124,9 @@ export async function getResponseWithCookie(
         };
     } catch (error: any) {
         if (!agent) {
-            if (error.message.includes('certificate has expired') ||
-                error.message.includes('ERR_TLS_CERT_ALTNAME_INVALID') ||
+            if (
+                checkErrStatusCertExpired(error) ||
+                checkErrStatusAltNameInvalid(error) ||
                 error.name === 'SSL_ERROR' ||
                 error.code === 'SSL_ERROR') {
                 const agent = new https.Agent({
@@ -191,6 +228,62 @@ export async function getFileSize(url: string, opt: any = {}): Promise<number> {
     }
 }
 
+export async function getArrayBufferResponse(url: string, cookie = ''): Promise<{
+    data: any;
+    headers: any;
+} | null> {
+    try {
+        if (cookie) {
+            await cookieJar.setCookie(cookie, url);
+        } else {
+            cookie = await cookieJar.getCookieString(url);
+        }
+
+        let responseHeaders: any = null;
+
+        const response = await $fetch(url, {
+            headers: {
+                Cookie: cookie,
+            },
+            retry: 2,
+            retryDelay: 5000,
+            ignoreResponseError: true,
+            redirect: 'follow',
+            responseType: 'arrayBuffer',
+            onResponse: async ({ response }) => {
+                // Update cookie jar from response headers
+                const setCookies = response.headers.getSetCookie();
+                if (setCookies?.length) {
+                    await Promise.all(setCookies.map(cookie =>
+                        cookieJar.setCookie(cookie, response.url),
+                    ));
+                }
+
+                responseHeaders = response.headers;
+            },
+        });
+
+        // Check content type
+        const contentType = responseHeaders?.get('content-type');
+        if (contentType?.includes('text/html')) {
+            return null;
+        }
+
+        return {
+            data: response,
+            headers: responseHeaders,
+        };
+    } catch (error: any) {
+        if (
+            checkErrStatusCertExpired(error) ||
+            checkErrStatusAltNameInvalid(error)
+        ) {
+            return null;
+        }
+        throw error;
+    }
+}
+
 //--------------------------------------------------------
 //--------------------------------------------------------
 
@@ -241,7 +334,26 @@ export function checkErrStatusCertExpired(error: any): boolean {
 export function checkErrStatusAltNameInvalid(error: any): boolean {
     return error.message?.includes('Hostname/IP') ||
         error.cause?.code === 'ERR_TLS_CERT_ALTNAME_INVALID' ||
+        error.code === 'ERR_TLS_CERT_ALTNAME_INVALID' ||
         error.message?.includes('altname');
+}
+
+export function checkErrStatusNetworkError(error: any): boolean {
+    const networkErrorCodes = [
+        'ENOTFOUND',    // DNS lookup failed
+        'ECONNRESET',   // Connection reset
+        'ECONNREFUSED', // Connection refused
+        'ETIMEDOUT',    // Connection timed out
+        'EAI_AGAIN',     // Temporary DNS failure
+        // 'UND_ERR_CONNECT_TIMEOUT',
+    ];
+
+    return error.name === 'FetchError' && (
+        networkErrorCodes.includes(error.cause?.code) ||
+        error.message.includes('getaddrinfo') ||
+        error.message.includes('connection reset') ||
+        error.message.includes('socket hang up')
+    );
 }
 
 function checkNeedRetryWithSleep(error: any, retryWithSleepCounter: number): boolean {

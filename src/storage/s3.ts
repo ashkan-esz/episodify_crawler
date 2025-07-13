@@ -4,9 +4,7 @@ import { S3FilesRepo } from '@/repo';
 import { S3Client } from 'bun';
 import { type MovieType, VPNStatus } from '@/types';
 import type { MoviePosterS3 } from '@/types/movie';
-import { FetchUtils } from '@/utils';
-import { getArrayBufferResponse } from '@utils/axios';
-import { getDecodedLink } from '@utils/crawler';
+import { FetchUtils, Crawler as CrawlerUtils } from '@/utils';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
 import PQueue from 'p-queue';
 
@@ -110,7 +108,7 @@ export async function uploadSubtitleToS3ByURl(
             }
         }
 
-        const response = await getArrayBufferResponse(originalUrl, cookie);
+        const response = await FetchUtils.getArrayBufferResponse(originalUrl, cookie);
         if (response === null) {
             return null;
         }
@@ -201,7 +199,7 @@ export async function uploadImageToS3(
             }
         }
 
-        const response = await getArrayBufferResponse(originalUrl);
+        const response = await FetchUtils.getArrayBufferResponse(originalUrl);
         if (response === null) {
             return null;
         }
@@ -306,7 +304,7 @@ export async function removeProfileImageFromS3(
     fileName: string,
     retryCounter = 0,
 ): Promise<string> {
-    fileName = getDecodedLink(fileName);
+    fileName = CrawlerUtils.getDecodedLink(fileName);
     const result = await deleteFileFromS3(bucketNamesObject.profileImage, fileName);
     if (result === 'error' && retryCounter < 2) {
         retryCounter++;
@@ -346,7 +344,7 @@ export async function removeAppFileFromS3(
     fileName: string,
     retryCounter = 0,
 ): Promise<string> {
-    fileName = getDecodedLink(fileName);
+    fileName = CrawlerUtils.getDecodedLink(fileName);
     const result = await deleteFileFromS3(bucketNamesObject.downloadApp, fileName);
     if (result === 'error' && retryCounter < 2) {
         retryCounter++;

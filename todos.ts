@@ -73,6 +73,7 @@
     //TODO : add source 'donyayeserial'
     //TODO : add source 'movielandz'
     //TODO : add source 'hexdl'
+    //TODO : add source 'https://bia2anime.us'
 
     //TODO : better youtube trailer crawler job
 
@@ -111,6 +112,7 @@
     //TODO : create blurHash in movie-api
     //TODO : create thumbnail in movie-api
     //TODO : compress images in movie-api
+    //TODO : download trailers from youtube and upload to s3 in movie-api
     //TODO : remove unused files from s3 in movie-api
     //TODO : remove usage of rabbitmq in crawler
 
@@ -119,6 +121,8 @@
     //TODO : refactor admin apis
     //TODO : option to choose between 'secure' or 'weak' authentication
     //TODO : add new simple method for authentication
+
+    //TODO : better rateLimit handling in jikan provider
 
     //TODO : check intervals
     //TODO : ask cursor about improvements
@@ -131,10 +135,17 @@
 
     //TODO : new README.md
 
+    //TODO : save youtube trailer url in movies collection
+
+    //TODO : show navigation to admin panel to activate these sources
+    //TODO : add generic sources on startup
+    //TODO : add a json file to save default generic sources
+
     //TODO : remove usage of console.log
     //TODO : crawler logger
     //TODO : logger
     //TODO : better error handling
+    //TODO : add filename and line number to logger
 
     //TODO : profile memory / cpu usage
     //TODO : reduce memory usage
@@ -142,4 +153,7 @@
     //TODO : remove dependencies
     //TODO : check dependencies
 
-    //TODO : 'axios' -> 'upFetch', 'kai', 'oFetch'
+    //TODO : use headers saved in source config
+
+    //TODO : optimize ofetch requests
+
