@@ -1,6 +1,6 @@
-import { DownloadLink } from '@/types/downloadLink';
-import { MovieRates, MovieTrailer } from '@/types/movie';
-import { Subtitle } from '@/types/subtitle';
+import type { DownloadLink } from '@/types/downloadLink';
+import type { MovieRates, MovieTrailer } from '@/types/movie';
+import type { Subtitle } from '@/types/subtitle';
 
 export type SourceConfig = {
     movie_url: string;

@@ -13,8 +13,6 @@ import { S3Storage } from '@/storage';
 import { FetchUtils, Crawler as CrawlerUtils } from '@/utils';
 import { saveError } from '@utils/logger';
 
-const posterSources = sortPostersOrder;
-const trailerSources = sortTrailersOrder;
 const trailerQualities = ['1080', '720', '360'];
 
 export async function handleSubUpdates(
@@ -281,9 +279,9 @@ export function checkNeedTrailerUpload(
 
 export function sortPosters(posters: MoviePoster[]): MoviePoster[] {
     const sortedPosters = [];
-    for (let i = 0; i < posterSources.length; i++) {
+    for (let i = 0; i < sortPostersOrder.length; i++) {
         for (let j = 0; j < posters.length; j++) {
-            if (posters[j].info.includes(posterSources[i])) {
+            if (posters[j].info.includes(sortPostersOrder[i])) {
                 sortedPosters.push(posters[j]);
             }
         }
@@ -304,10 +302,10 @@ export function sortPosters(posters: MoviePoster[]): MoviePoster[] {
 export function sortTrailers(trailers: MovieTrailer[]): MovieTrailer[] {
     const sortedTrailers = [];
 
-    for (let i = 0; i < trailerSources.length; i++) {
+    for (let i = 0; i < sortTrailersOrder.length; i++) {
         for (let j = 0; j < trailerQualities.length; j++) {
             for (let k = 0; k < trailers.length; k++) {
-                if (trailers[k].info.includes(trailerSources[i]) &&
+                if (trailers[k].info.includes(sortTrailersOrder[i]) &&
                     trailers[k].info.includes(trailerQualities[j])) {
                     sortedTrailers.push(trailers[k]);
                 }

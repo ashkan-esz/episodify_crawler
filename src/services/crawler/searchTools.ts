@@ -462,15 +462,14 @@ async function getLinks(
                 // let sourceCookies = sourcesObject
                 //     ? sourcesObject[config.sourceName]?.cookies || []
                 //     : [];
-                // let sourceHeaders = sourcesObject
-                //     ? sourcesObject[config.sourceName]?.headers || ''
-                //     : '';
                 // sourceHeaders = sourceHeaders ? JSON.parse(sourceHeaders) : {};
                 // const cookie = sourceCookies
                 //     .map((item) => item.name + '=' + item.value + ';')
                 //     .join(' ');
 
-                const sourceHeaders: [] = [];
+                const sourceHeaders: Record<string, string> = config.headers
+                    ? JSON.parse(config.headers) || {}
+                    : {};
                 const cookie = '';
 
                 const responseTimeout: number =

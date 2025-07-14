@@ -87,7 +87,7 @@ export async function getResponseUrl(url: string, opt: any = {}): Promise<string
 export async function getResponseWithCookie(
     url: string,
     cookie: any,
-    sourceHeaders: [],
+    sourceHeaders: Record<string, string> = {},
     timeout?: number,
     agent?: https.Agent,
 ): Promise<{

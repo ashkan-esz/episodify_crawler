@@ -153,5 +153,3 @@
     //TODO : remove dependencies
     //TODO : check dependencies
 
-    //TODO : use headers saved in source config
-
