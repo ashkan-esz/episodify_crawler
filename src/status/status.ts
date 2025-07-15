@@ -8,18 +8,17 @@ import { ServerAnalysisRepo } from '@/repo';
 import { fetchBlackListSources } from '@services/crawler/searchTools';
 import { linkStateMessages } from '@/status/warnings';
 import {
-    CrawlerExtraConfigs,
-    CrawlerLog,
+    type CrawlerExtraConfigs,
+    type CrawlerLog,
     CrawlerPauseReason,
     CrawlerState,
-    CrawlerStatus,
-    CrawlerStatusSource,
+    type CrawlerStatus,
+    type CrawlerStatusSource,
     defaultCrawlerExtraConfigs,
 } from '@/types';
 import { logger } from '@/utils';
 import { getDatesBetween, getDecodedLink } from '@utils/crawler';
 import { averageCpu, getMemoryStatus } from '@utils/serverStatus';
-import { v4 as uuidv4 } from 'uuid';
 
 export function getCrawlerMemoryLimit(): number {
     return config.CRAWLER_MEMORY_LIMIT || config.CRAWLER_TOTAL_MEMORY * 0.85;
@@ -400,7 +399,7 @@ export async function updateCrawlerStatus_crawlerStart(
     }
 
     crawlerStatus = getDefaultCrawlerStatus();
-    crawlerStatus.crawlId = uuidv4();
+    crawlerStatus.crawlId = crypto.randomUUID();
     crawlerStatus.startTime = startTime;
     crawlerStatus.crawlMode = crawlMode;
     crawlerStatus.isCrawling = true;

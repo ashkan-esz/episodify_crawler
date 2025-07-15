@@ -6,6 +6,7 @@ export * as LinkUtils from "./link";
 export * as ServerStatus from "./serverStatus";
 export * as TitlesList from "./titlesList";
 export * as FetchUtils from "./fetchUtils";
+export * as TerminalUtils from "./termialUtils";
 // export * from './date';
 // export * from './string';
 // export * from './rate-limiter';

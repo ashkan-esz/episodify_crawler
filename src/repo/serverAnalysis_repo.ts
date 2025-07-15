@@ -1,9 +1,8 @@
-import { CrawlerLog, DownloadLink } from '@/types';
+import type { CrawlerLog, DownloadLink } from '@/types';
 import { mongoDB } from '@services/database';
 import { getDecodedLink } from '@utils/crawler';
 import { saveError } from '@utils/logger';
 import { ObjectId } from 'mongodb';
-import {v4 as uuidv4} from "uuid";
 import {AdminService} from '@/services/api';
 
 const _maxSaveLogDurationMonth = 3;
@@ -88,7 +87,7 @@ export async function saveServerLog(logMessage: string): Promise<string> {
         const newServerLog = {
             message: logMessage,
             date: now,
-            id: uuidv4(),
+            id: crypto.randomUUID(),
         };
 
         if (bucket.length > 0) {
@@ -125,7 +124,7 @@ export async function saveGoogleCacheCall(url: string): Promise<string> {
             url: url,
             date: now,
             count: 1,
-            id: uuidv4(),
+            id: crypto.randomUUID(),
         };
 
         if (bucket.length > 0) {
@@ -178,7 +177,7 @@ export async function saveCrawlerBadLink(
             links: links,
             date: now,
             count: 1,
-            id: uuidv4(),
+            id: crypto.randomUUID(),
         };
 
         if (bucket.length > 0) {
@@ -235,7 +234,7 @@ export async function saveCrawlerWarning(message: string): Promise<string> {
             resolved: false,
             resolvedDate: 0,
             count: 1,
-            id: uuidv4(),
+            id: crypto.randomUUID(),
         };
 
         if (bucket.length > 0) {

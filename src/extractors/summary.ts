@@ -1,10 +1,10 @@
+/** biome-ignore-all lint/style/noUnusedTemplateLiteral: <explanation> */
 import * as cheerio from 'cheerio';
-import * as Diff from 'diff';
+import fastDiff from 'fast-diff';
 import chalk from 'chalk';
 import { sourcesNames } from '@services/crawler/sourcesArray';
+import { TerminalUtils } from '@/utils';
 import { saveError } from '@utils/logger';
-// @ts-expect-error ...
-import inquirer from 'inquirer';
 import {
     updateSourcePageData,
     getSourcePagesSamples,
@@ -188,19 +188,19 @@ function purgePersianSummary(persianSummary: string, title: string, year: string
 
         const titleRegex2 = new RegExp(
             `^(\\s)?` +
-                `(خلاصه( داستان)? (انیمیشن|فیلم|فيلم|سریال|انییمشن) )?` +
-                `${escapedTitle}` +
-                `[!?]?` + // Optional ! or ?
-                `[!?]?` + // Optional ! or ?
-                `( ${year})?` +
-                `[!]?`, // Optional final !
+            `(خلاصه( داستان)? (انیمیشن|فیلم|فيلم|سریال|انییمشن) )?` +
+            `${escapedTitle}` +
+            `[!?]?` + // Optional ! or ?
+            `[!?]?` + // Optional ! or ?
+            `( ${year})?` +
+            `[!]?`, // Optional final !
             'i',
         );
 
         const titleRegex3 = new RegExp(
             '^(\\s)?(خلاصه( داستان)? (انیمیشن|فیلم|فيلم|سریال|انییمشن) )?' +
-                title3.replace(/\*/g, '\\*') +
-                `(!)?(\\?)?( ${year})?(!)?`,
+            title3.replace(/\*/g, '\\*') +
+            `(!)?(\\?)?( ${year})?(!)?`,
             'i',
         );
         persianSummary = persianSummary.replace(titleRegex, '');
@@ -246,8 +246,8 @@ function purgePersianSummary(persianSummary: string, title: string, year: string
 
 export async function comparePrevSummaryWithNewMethod(
     sourceName: string[] | null = null,
-    updateMode: boolean = true,
-    autoUpdateIfNeed: boolean = false,
+    updateMode = true,
+    autoUpdateIfNeed = false,
 ): Promise<{
     total: number;
     checked: number;
@@ -260,6 +260,7 @@ export async function comparePrevSummaryWithNewMethod(
         diffs: 0,
         updated: 0,
     };
+
     try {
         console.log('------------- START OF (comparePrevSummaryWithNewMethod) -----------');
         const sources = sourceName || sourcesNames;
@@ -349,17 +350,18 @@ export async function comparePrevSummaryWithNewMethod(
                         let diffs: any[] = [];
                         let t = '';
                         if (persianSummary.length < 1600 && newPersianSummary.length < 1600) {
-                            diff = Diff.diffChars(persianSummary, newPersianSummary);
+                            diff = fastDiff(persianSummary, newPersianSummary);
                             diffs = [];
                             t = persianSummary;
-                            diff.forEach((part) => {
-                                if (part.added) {
-                                    let p = chalk.green(part.value);
-                                    t = t.replace(part.value, p);
+                            diff.forEach((part: fastDiff.Diff) => {
+                                const value = part[1]?.toString() ?? '';
+                                if (part[0] === 1) {
+                                    const p = chalk.green(value);
+                                    t = t.replace(value, p);
                                     diffs.push(p);
-                                } else if (part.removed) {
-                                    let p = chalk.red(part.value);
-                                    t = t.replace(part.value, p);
+                                } else if (part[0] === -1) {
+                                    const p = chalk.red(value);
+                                    t = t.replace(value, p);
                                     diffs.push(p);
                                 }
                             });
@@ -388,17 +390,11 @@ export async function comparePrevSummaryWithNewMethod(
                                 continue;
                             }
 
-                            const questions = [
-                                {
-                                    type: 'list',
-                                    name: 'ans',
-                                    message: `update this movie data? [checkUpdateIsNeeded=${checkUpdateIsNeededResult}]`,
-                                    choices: ['Yes', 'No'],
-                                },
-                            ];
+                            const answer = await TerminalUtils.question(
+                                `update this movie data? [checkUpdateIsNeeded=${checkUpdateIsNeededResult}]`,
+                            );
                             console.log();
-                            const answers = await inquirer.prompt(questions);
-                            if (answers.ans.toLowerCase() === 'yes') {
+                            if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes') {
                                 stats.updated++;
                                 sourcePages[j].persianSummary = newPersianSummary;
                                 await updateSourcePageData(sourcePages[j], ['persianSummary']);
@@ -422,41 +418,41 @@ export async function comparePrevSummaryWithNewMethod(
 }
 
 function checkUpdateIsNeeded(diffs: any[], diff: any[], title: string, year: string): boolean {
-    const changes = diff.filter((item) => item.removed || item.added);
+    const changes: fastDiff.Diff[] = diff.filter((item) => item[0] !== 0);
     const changesJoinedValues = changes
-        .map((item) => item.value)
+        .map((item) => item[1])
         .join('')
         .trim()
         .replace(/\s/g, '');
     console.log(changes);
     return (
-        (diffs.length <= 3 && changes.every((item) => item.added === true && item.value === ':')) ||
+        (diffs.length <= 3 && changes.every((item) => item[0] === 1 && item[1] === ':')) ||
         (diffs.length <= 4 &&
             changes.every(
-                (item) => item.removed === true && (item.value === ' ' || item.value === '  '),
+                (item) => item[0] === -1 && (item[1] === ' ' || item[1] === '  '),
             )) ||
         (diffs.length <= 11 &&
             changes.every(
                 (item) =>
-                    (item.removed === true && item.value === ' ') ||
-                    (item.added === true && item.value === ' '),
+                    (item[0] === -1 && item[1] === ' ') ||
+                    (item[0] === 1 && item[1] === ' '),
             )) ||
         (diffs.length <= 2 &&
             changes.every(
-                (item) => item.removed === true && (item.value === '\n' || item.value === '\n\n'),
+                (item) => item[0] === -1 && (item[1] === '\n' || item[1] === '\n\n'),
             )) ||
         (diffs.length === 2 &&
-            changes[0].added === true &&
-            changes[0].value === ':' &&
-            changes[1].removed === true &&
-            changes[1].value === ' ') ||
+            changes[0][0] === 1 &&
+            changes[0][1] === ':' &&
+            changes[1][0] === -1 &&
+            changes[1][1] === ' ') ||
         (diffs.length === 2 &&
-            changes[0].removed === true &&
-            (changes[0].value === '\n' || changes[0].value === '\n\n') &&
-            changes[1].added === true &&
-            changes[1].value === ' ') ||
+            changes[0][0] === -1 &&
+            (changes[0][1] === '\n' || changes[0][1] === '\n\n') &&
+            changes[1][0] === 1 &&
+            changes[1][1] === ' ') ||
         (diffs.length <= 7 &&
-            changes.every((item) => item.removed === true) &&
+            changes.every((item) => item[0] === -1) &&
             (changesJoinedValues === 'درانفیلمآمدهاست،ی' ||
                 changesJoinedValues === 'دراینفیلمترسناکآمدهاست،' ||
                 changesJoinedValues === 'درایسریاآمدهاست،نل' ||
@@ -466,20 +462,20 @@ function checkUpdateIsNeeded(diffs: any[], diff: any[], title: string, year: str
                 changesJoinedValues === 'درانفیلمترسناورازآلودآمدهاست،یک')) ||
         (diffs.length <= 7 &&
             changes.every(
-                (item) => item.added === true || (item.removed === true && item.value === ' '),
+                (item) => item[0] === 1 || (item[0] === -1 && item[1] === ' '),
             ) &&
             (changesJoinedValues === 'خلاصهدستانا' || changesJoinedValues === 'خلاصهداستان')) ||
         (diffs.length <= 7 &&
-            changes[0].removed === true &&
-            (changes[0].value
-                .toLowerCase()
-                .replace(/[\s!,:.-]/g, '')
-                .trim() === title.toLowerCase().replace(/\s/g, '') ||
-                changes[0].value
+            changes[0][0] === -1 &&
+            (changes[0][1]
+                    .toLowerCase()
+                    .replace(/[\s!,:.-]/g, '')
+                    .trim() === title.toLowerCase().replace(/\s/g, '') ||
+                changes[0][1]
                     .toLowerCase()
                     .replace(/[\s!,:.-]/g, '')
                     .trim() === year ||
-                changes[0].value
+                changes[0][1]
                     .toLowerCase()
                     .replace(/[\s!,:.-]/g, '')
                     .trim() === (title.toLowerCase() + ' ' + year).replace(/\s/g, '')) &&
@@ -487,11 +483,11 @@ function checkUpdateIsNeeded(diffs: any[], diff: any[], title: string, year: str
                 .slice(1)
                 .every(
                     (item) =>
-                        (item.added === true && item.value === ':') ||
-                        (item.added === true && item.value === ' ') ||
-                        (item.removed === true && item.value === ' ') ||
-                        (item.removed === true && item.value === '\n') ||
-                        (item.removed === true && item.value === '\n\n'),
+                        (item[0] === 1 && item[1] === ':') ||
+                        (item[0] === 1 && item[1] === ' ') ||
+                        (item[0] === -1 && item[1] === ' ') ||
+                        (item[0] === -1 && item[1] === '\n') ||
+                        (item[0] === -1 && item[1] === '\n\n'),
                 ))
     );
 }

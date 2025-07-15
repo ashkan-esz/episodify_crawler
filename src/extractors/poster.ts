@@ -1,12 +1,10 @@
 import { hasSidebarClass } from '@/sources/generic';
 import { sourcesNames } from '@services/crawler/sourcesArray';
-import { getDecodedLink } from '@utils/crawler';
+import { Crawler as CrawlerUtils, TerminalUtils } from '@/utils';
 import { saveError } from '@utils/logger';
 import * as cheerio from 'cheerio';
-import * as Diff from 'diff';
+import fastDiff from 'fast-diff';
 import chalk from 'chalk';
-// @ts-expect-error ...
-import inquirer from 'inquirer';
 import {
     updateSourcePageData,
     getSourcePagesSamples,
@@ -18,7 +16,7 @@ export function getPoster(
     $: any,
     pageLink: string,
     sourceName: string,
-    dontRemoveDimensions: boolean = false,
+    dontRemoveDimensions = false,
 ): string {
     try {
         const $img = $('img');
@@ -90,7 +88,7 @@ export function getWidePoster(
     $: any,
     pageLink: string,
     sourceName: string,
-    dontRemoveDimensions: boolean = false,
+    dontRemoveDimensions = false,
 ): string {
     try {
         const $div = $('div[style*="background-image"]');
@@ -150,7 +148,7 @@ function purgePoster(
     img: any,
     src: string,
     pageLink: string,
-    dontRemoveDimensions: boolean = false,
+    dontRemoveDimensions = false,
 ): string {
     if (
         src === '' ||
@@ -192,10 +190,10 @@ function purgePoster(
 
         if (
             parentHref &&
-            getDecodedLink(parentHref).replace(/\/$/, '') !==
-                getDecodedLink(pageLink).replace(/\/$/, '') &&
-            getDecodedLink(parentHref).replace(/\/$/, '').split('-')[0] !==
-                getDecodedLink(src).replace(/\/$/, '').split('-')[0]
+            CrawlerUtils.getDecodedLink(parentHref).replace(/\/$/, '') !==
+            CrawlerUtils.getDecodedLink(pageLink).replace(/\/$/, '') &&
+            CrawlerUtils.getDecodedLink(parentHref).replace(/\/$/, '').split('-')[0] !==
+            CrawlerUtils.getDecodedLink(src).replace(/\/$/, '').split('-')[0]
         ) {
             return '';
         }
@@ -230,8 +228,8 @@ function purgePoster(
 
 export async function comparePrevPosterWithNewMethod(
     sourceName: string[] | null = null,
-    updateMode: boolean = true,
-    autoUpdateIfNeed: boolean = false,
+    updateMode = true,
+    autoUpdateIfNeed = false,
 ): Promise<any> {
     const stats = {
         total: 0,
@@ -239,6 +237,7 @@ export async function comparePrevPosterWithNewMethod(
         diffs: 0,
         updated: 0,
     };
+
     try {
         console.log('------------- START OF (comparePrevPosterWithNewMethod) -----------');
         const sources = sourceName || sourcesNames;
@@ -310,17 +309,18 @@ export async function comparePrevPosterWithNewMethod(
                             '|',
                             pageLink,
                         );
-                        const diff = Diff.diffChars(poster, newPoster);
+                        const diff = fastDiff(poster, newPoster);
                         const diffs: string[] = [];
                         let t = poster;
-                        diff.forEach((part: any) => {
-                            if (part.added) {
-                                let p = chalk.green(part.value);
-                                t = t.replace(part.value, p);
+                        diff.forEach((part: fastDiff.Diff) => {
+                            const value = part[1]?.toString() ?? '';
+                            if (part[0] === 1) {
+                                const p = chalk.green(value);
+                                t = t.replace(value, p);
                                 diffs.push(p);
-                            } else if (part.removed) {
-                                let p = chalk.red(part.value);
-                                t = t.replace(part.value, p);
+                            } else if (part[0] === -1) {
+                                const p = chalk.red(value);
+                                t = t.replace(value, p);
                                 diffs.push(p);
                             }
                         });
@@ -342,17 +342,11 @@ export async function comparePrevPosterWithNewMethod(
                                 continue;
                             }
 
-                            const questions = [
-                                {
-                                    type: 'list',
-                                    name: 'ans',
-                                    message: `update this movie data? [checkUpdateIsNeeded=${checkUpdateIsNeededResult}]`,
-                                    choices: ['Yes', 'No'],
-                                },
-                            ];
+                            const answer = await TerminalUtils.question(
+                                `update this movie data? [checkUpdateIsNeeded=${checkUpdateIsNeededResult}]`,
+                            );
                             console.log();
-                            const answers = await inquirer.prompt(questions);
-                            if (answers.ans.toLowerCase() === 'yes') {
+                            if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes') {
                                 stats.updated++;
                                 sourcePages[j].poster = newPoster;
                                 await updateSourcePageData(sourcePages[j], ['poster']);
@@ -376,15 +370,15 @@ export async function comparePrevPosterWithNewMethod(
 }
 
 function checkUpdateIsNeeded(diffs: string[], diff: any[]): boolean {
-    const changes = diff.filter((item) => item.removed || item.added);
+    const changes = diff.filter((item) => item[0] !== 0);
     console.log(changes);
 
     return (
         (diffs.length === 1 &&
-            changes[0].removed === true &&
-            changes[0].value.match(/^-\d\d\dx\d\d\d$/i)) ||
+            changes[0][0] === -1 &&
+            changes[0][1].match(/^-\d\d\dx\d\d\d$/i)) ||
         (diffs.length === 1 &&
-            changes[0].removed === true &&
-            changes[0].value.match(badPosterRegex))
+            changes[0][0] === -1 &&
+            changes[0][1].match(badPosterRegex))
     );
 }

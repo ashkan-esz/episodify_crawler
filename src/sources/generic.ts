@@ -19,7 +19,6 @@ import {
     convertTypeSerialToMovie, convertTypeToAnime,
 } from '@utils/crawler';
 import { saveError } from '@utils/logger';
-// import {Jikan} from '@/crawler/providers';
 import {
     PosterExtractor,
     SummaryExtractor,
@@ -36,7 +35,6 @@ import {
 } from '@utils/linkInfo';
 import { getTitleAndYear } from '@services/crawler/movieTitle';
 import { Crawler as CrawlerUtils, FetchUtils } from '@/utils';
-// import { search_in_title_page, wrapper_module } from '../searchTools.js';
 //@ts-expect-error ...
 import * as persianRex from 'persian-rex';
 

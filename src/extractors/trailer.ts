@@ -6,13 +6,9 @@ import {
 } from '@/samples/sourcePages/sourcePageSample';
 import { hasSidebarClass } from '@/sources/generic';
 import { sourcesNames } from '@services/crawler/sourcesArray';
-import { removeDuplicateLinks } from '@utils/crawler';
+import { Crawler as CrawlerUtils, TerminalUtils } from '@/utils';
 import { saveError } from '@utils/logger';
 import * as cheerio from 'cheerio';
-// @ts-expect-error ...
-import inquirer from 'inquirer';
-// @ts-expect-error ...
-import isEqual from 'lodash.isequal';
 
 export function getTrailers(
     $: any,
@@ -96,7 +92,7 @@ export function getTrailers(
             }
         }
 
-        result = removeDuplicateLinks<MovieTrailer>(result.filter((item) => item !== null));
+        result = CrawlerUtils.removeDuplicateLinks<MovieTrailer>(result.filter((item) => item !== null));
         return result;
     } catch (error) {
         saveError(error);
@@ -185,6 +181,7 @@ export async function comparePrevTrailerWithNewMethod(
         diffs: 0,
         updated: 0,
     };
+
     try {
         console.log('------------- START OF (comparePrevTrailerWithNewMethod) -----------');
         const sources = sourceName || sourcesNames;
@@ -219,7 +216,7 @@ export async function comparePrevTrailerWithNewMethod(
                     const $ = cheerio.load(pageContent);
                     const newTrailers = getTrailers($, '', sName, VPNStatus.NO_VPN);
 
-                    if (!isEqual(trailers, newTrailers)) {
+                    if (!Bun.deepEquals(trailers, newTrailers)) {
                         const {
                             sourceName: sName,
                             fileIndex,
@@ -259,17 +256,9 @@ export async function comparePrevTrailerWithNewMethod(
                                 continue;
                             }
 
-                            const questions = [
-                                {
-                                    type: 'list',
-                                    name: 'ans',
-                                    message: `update this movie data? [checkUpdateIsNeeded=${checkUpdateIsNeededResult}]`,
-                                    choices: ['Yes', 'No'],
-                                },
-                            ];
+                            const answer = await TerminalUtils.question(`update this movie data? [checkUpdateIsNeeded=${checkUpdateIsNeededResult}]`)
                             console.log();
-                            const answers = await inquirer.prompt(questions);
-                            if (answers.ans.toLowerCase() === 'yes') {
+                            if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes') {
                                 stats.updated++;
                                 sourcePages[j].trailers = newTrailers;
                                 await updateSourcePageData(sourcePages[j], ['trailers']);

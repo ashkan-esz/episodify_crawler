@@ -22,11 +22,9 @@
     "@googleapis/youtube": "^25.1.0",
     "@sentry/bun": "^9.29.0",
     "cheerio": "^1.1.0",
-    "diff": "^8.0.2",
     "elysia-helmet": "^3.0.0",
-    "inquirer": "^9.3.7",
+    "fast-diff": "^1.3.0",
     "kysely": "^0.28.2",
-    "lodash.isequal": "^4.5.0",
     "lru-cache": "^11.1.0",
     "node-os-utils": "^1.3.7",
     "ofetch": "^1.4.1",
@@ -34,9 +32,8 @@
     "persian-rex": "^2.3.3",
     "pg": "^8.16.3",
     "tough-cookie": "^5.1.2",
-    "uuid": "^11.1.0",
     "words-to-numbers": "^1.5.1",
-    "zod": "^3.25.64"
+    "zod": "^4.0.5"
   },
   "files": [
     "./bin/*",

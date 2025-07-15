@@ -21,8 +21,6 @@ import { Crawler as CrawlerUtils, FetchUtils } from '@/utils';
 import { isValidNumberString } from '@services/crawler/movieTitle';
 import { uploadTitlePosterAndAddToTitleModel } from '@services/crawler/posterAndTrailer';
 import { saveError } from '@utils/logger';
-// @ts-expect-error ...
-import isEqual from 'lodash.isequal';
 import { LRUCache } from 'lru-cache';
 import type { ObjectId } from 'mongodb';
 import PQueue from 'p-queue';
@@ -831,7 +829,7 @@ export class JikanProvider implements MediaProvider {
                 for (let i = 0; i < keys1.length; i++) {
                     if (
                         // @ts-expect-error ...
-                        !isEqual(titleDataFromDB[keys1[i]], jikanApiFields.updateFields[keys1[i]])
+                        !Bun.deepEquals(titleDataFromDB[keys1[i]], jikanApiFields.updateFields[keys1[i]])
                     ) {
                         // @ts-expect-error ...
                         updateFields[keys1[i]] = jikanApiFields.updateFields[keys1[i]];
@@ -841,7 +839,7 @@ export class JikanProvider implements MediaProvider {
                 const keys2 = ['genres', 'status', 'endYear'];
                 for (let i = 0; i < keys2.length; i++) {
                     // @ts-expect-error ...
-                    if (!isEqual(titleDataFromDB[keys2[i]], jikanApiFields[keys2[i]])) {
+                    if (!Bun.deepEquals(titleDataFromDB[keys2[i]], jikanApiFields[keys2[i]])) {
                         // @ts-expect-error ...
                         updateFields[keys2[i]] = jikanApiFields[keys2[i]];
                     }

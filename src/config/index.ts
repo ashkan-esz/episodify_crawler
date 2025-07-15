@@ -63,6 +63,7 @@ const configSchema = z.object({
     CRAWLER_PAUSE_DURATION_LIMIT: z.coerce.number().default(10),
     CRAWLER_MANUAL_GC_ON_HIGH_LOAD: z.coerce.boolean().default(false),
     IGNORE_HENTAI: z.coerce.boolean().default(false),
+    CORS_ALLOWED_ORIGINS: z.string().default('').transform(s => s.split('---').map(item => item.trim())),
 });
 
 // Parse and validate configuration
@@ -73,8 +74,6 @@ const isDevelopment = config.NODE_ENV === 'development';
 const isProduction = config.NODE_ENV === 'production';
 const isTest = config.NODE_ENV === 'test';
 const SERVER_START_TIME = Date.now();
-
-const CORS_ALLOWED_ORIGINS: string[] = (process.env.CORS_ALLOWED_ORIGINS || "").split('---').map(item => item.trim())
 
 const API_KEYS = Object.freeze({
     omdbApiKeys: getOmdbApiKeys(),
@@ -97,7 +96,6 @@ function getOmdbApiKeys(): string[] {
 
 export default {
     ...config,
-    CORS_ALLOWED_ORIGINS,
     isDevelopment,
     isProduction,
     isTest,

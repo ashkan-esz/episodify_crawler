@@ -26,7 +26,6 @@
 
     //TODO : add the new crawler to docker-compose in 'episodify_api' project
     //TODO : upload docker image
-    //TODO : reduce docker image size
     //TODO : make docker image
 
     //TODO : reduce docker image size

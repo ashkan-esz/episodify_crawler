@@ -1,7 +1,6 @@
 // import config from "@/config";
 // import axios from "axios";
 // import * as cheerio from "cheerio";
-// import {v4 as uuidv4} from "uuid";
 // import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 // import {getDecodedLink} from "./utils/utils.js"
 // import {getResponseWithCookie} from "./utils/axiosUtils.js";
@@ -34,7 +33,7 @@ export const remoteBrowsers: RemoteBrowser[] = [];
 //     item.disabled = false;
 //     item.manualDisabledTime = 0;
 //     item.manualDisabled = false;
-//     item.bid = uuidv4();
+//     item.bid = crypto.randomUUID();
 //     return item;
 // });
 

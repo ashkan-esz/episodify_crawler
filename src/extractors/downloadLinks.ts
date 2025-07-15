@@ -1,13 +1,10 @@
 import { CrawlerLinkType, type DownloadLink, type MovieType } from '@/types';
 import {
-    countriesRegex,
-    encodersRegex,
-    filterLowResDownloadLinks,
-    fixLinkInfoOrder,
-    handleRedundantPartNumber,
-    linkInfoRegex,
-    specialRegex,
-} from '@utils/linkInfo';
+    LinkInfo as LinkInfoUtils,
+    LinkUtils,
+    Crawler as CrawlerUtils,
+    TerminalUtils,
+} from '@/utils';
 import {
     getSourcePagesSamples,
     updateSourcePageData,
@@ -17,15 +14,8 @@ import {
     getSourcesMethods,
     sourcesNames,
 } from '@services/crawler/sourcesArray';
-import { getSeasonEpisode, removeDuplicateLinks } from '@utils/crawler';
-import { checkFormat } from '@utils/link';
 import { saveError } from '@utils/logger';
 import * as cheerio from 'cheerio';
-
-// @ts-expect-error ...
-import inquirer from 'inquirer';
-// @ts-expect-error ...
-import isEqual from 'lodash.isequal';
 
 const sourcesMethods = getSourcesMethods();
 
@@ -48,9 +38,8 @@ export function getDownloadLinksFromPageContent(
             }
 
             if (
-                (sourceMethods.extraChecker &&
-                    sourceMethods.extraChecker($, links[j], title, type)) ||
-                checkFormat(link, title)
+                sourceMethods.extraChecker?.($, links[j], title, type) ||
+                LinkUtils.checkFormat(link, title)
             ) {
                 const link_info = sourceMethods.getFileData($, links[j], type, null, title);
                 const qualitySample = sourceMethods.getQualitySample
@@ -66,7 +55,7 @@ export function getDownloadLinksFromPageContent(
                                 season,
                                 episode,
                                 isNormalCase,
-                            } = getSeasonEpisode(link_info));
+                            } = CrawlerUtils.getSeasonEpisode(link_info));
                             if (
                                 (season === 0 && episode === 0) ||
                                 link_info.match(/^\d\d\d\d?p(\.|$)/)
@@ -75,20 +64,20 @@ export function getDownloadLinksFromPageContent(
                                     season,
                                     episode,
                                     isNormalCase,
-                                } = getSeasonEpisode(link, true));
+                                } = CrawlerUtils.getSeasonEpisode(link, true));
                             }
                         } else {
                             ({
                                 season,
                                 episode,
                                 isNormalCase,
-                            } = getSeasonEpisode(link, true));
+                            } = CrawlerUtils.getSeasonEpisode(link, true));
                             if (season === 0 && !isNormalCase) {
                                 ({
                                     season,
                                     episode,
                                     isNormalCase,
-                                } = getSeasonEpisode(link_info));
+                                } = CrawlerUtils.getSeasonEpisode(link_info));
                             }
                         }
                     }
@@ -105,8 +94,8 @@ export function getDownloadLinksFromPageContent(
             }
         }
 
-        downloadLinks = filterLowResDownloadLinks(downloadLinks);
-        downloadLinks = handleRedundantPartNumber(downloadLinks);
+        downloadLinks = LinkInfoUtils.filterLowResDownloadLinks(downloadLinks);
+        downloadLinks = LinkInfoUtils.handleRedundantPartNumber(downloadLinks);
 
         if (sourceMethods.addTitleNameToInfo && !type.includes('serial')) {
             downloadLinks = sourceMethods.addTitleNameToInfo(downloadLinks, title, year);
@@ -115,7 +104,7 @@ export function getDownloadLinksFromPageContent(
             downloadLinks = sourceMethods.handleLinksExtraStuff(downloadLinks);
         }
 
-        return removeDuplicateLinks(downloadLinks, true);
+        return CrawlerUtils.removeDuplicateLinks(downloadLinks, true);
     } catch (error) {
         saveError(error);
         return [];
@@ -129,7 +118,7 @@ export function getDownloadLinksFromLinkInfo(downloadLinks: DownloadLink[]): Dow
         for (let i = 0, len = downloadLinks.length; i < len; i++) {
             const downloadLink = { ...downloadLinks[i] };
             const temp = downloadLink.info.split(' - ');
-            downloadLink.info = fixLinkInfoOrder(temp[0]);
+            downloadLink.info = LinkInfoUtils.fixLinkInfoOrder(temp[0]);
             if (temp[1]) {
                 downloadLink.info += ' - ' + temp[1];
             }
@@ -148,11 +137,11 @@ export function getLinksDoesntMatchLinkRegex(
 ): any[] {
     const badLinks = downloadLinks.filter(
         (item) =>
-            (!item.info.match(linkInfoRegex) &&
+            (!item.info.match(LinkInfoUtils.linkInfoRegex) &&
                 !item.info
-                    .replace(new RegExp(`\\.(${encodersRegex.source})(?=(\\.|$))`, 'gi'), '')
-                    .match(linkInfoRegex) &&
-                !item.info.match(countriesRegex)) ||
+                    .replace(new RegExp(`\\.(${LinkInfoUtils.encodersRegex.source})(?=(\\.|$))`, 'gi'), '')
+                    .match(LinkInfoUtils.linkInfoRegex) &&
+                !item.info.match(LinkInfoUtils.countriesRegex)) ||
             item.info.match(/[\u0600-\u06FF]/),
     );
 
@@ -172,7 +161,7 @@ export function getLinksDoesntMatchLinkRegex(
                 !link.match(/s0+\.?e\d{1,2}/i) &&
                 !info.match(/\. \([a-zA-Z\s]+ \d{1,2}\)/) &&
                 !info.match(/\. \([a-zA-Z\s]+\)$/) &&
-                !info.match(specialRegex)
+                !info.match(LinkInfoUtils.specialRegex)
             ) {
                 return true;
             }
@@ -181,7 +170,7 @@ export function getLinksDoesntMatchLinkRegex(
                 episode === 0 &&
                 !link.match(/s\d{1,2}-?e0+/i) &&
                 !link.match(/\.e0+\./i) &&
-                !info.match(specialRegex)
+                !info.match(LinkInfoUtils.specialRegex)
             ) {
                 return true;
             }
@@ -217,6 +206,7 @@ export async function comparePrevDownloadLinksWithNewMethod(
         diffs: 0,
         updated: 0,
     };
+
     try {
         console.log('------------- START OF (comparePrevDownloadLinksWithNewMethod) -----------');
         const sources = sourceName || sourcesNames;
@@ -300,17 +290,18 @@ export async function comparePrevDownloadLinksWithNewMethod(
                             console.log(newDownloadLinks[k]);
                             console.log('-----------');
                         }
-                        const questions = [
-                            {
-                                type: 'list',
-                                name: 'ans',
-                                message: "press enter to continue",
-                                choices: ['Yes'],
-                            },
-                        ];
+
+                        let answer = await TerminalUtils.question(
+                            'press \'y/yes\' to continue',
+                        );
                         console.log();
-                        await inquirer.prompt(questions);
-                        console.log();
+                        while (answer !== 'y' && answer !== 'yes') {
+                            answer = await TerminalUtils.question(
+                                'press \'y/yes\' to continue',
+                            );
+                            console.log();
+                        }
+
                         console.log('-------------------------');
                         console.log('-------------------------');
                         newDownloadLinks = getDownloadLinksFromPageContent(
@@ -322,7 +313,7 @@ export async function comparePrevDownloadLinksWithNewMethod(
                         );
                     }
 
-                    if (!isEqual(downloadLinks, newDownloadLinks)) {
+                    if (!Bun.deepEquals(downloadLinks, newDownloadLinks)) {
                         console.log(
                             sName,
                             '|',
@@ -389,7 +380,7 @@ export async function comparePrevDownloadLinksWithNewMethod(
 
 function printDiffLinks(downloadLinks: DownloadLink[], newDownloadLinks: DownloadLink[]): void {
     for (let k = 0; k < Math.max(downloadLinks.length, newDownloadLinks.length); k++) {
-        if (!isEqual(downloadLinks[k], newDownloadLinks[k])) {
+        if (!Bun.deepEquals(downloadLinks[k], newDownloadLinks[k])) {
             if (!downloadLinks[k] || !newDownloadLinks[k]) {
                 console.log({
                     link1: downloadLinks[k],
@@ -430,32 +421,27 @@ async function handleUpdatePrompt(
     batchUpdate: boolean,
     batchUpdateCount: number,
 ): Promise<{ answer: string; resetFlag: boolean }> {
-    const questions = [
-        {
-            type: 'list',
-            name: 'ans',
-            message: "update this movie data?",
-            choices: ['Yes', 'No'],
-        },
-    ];
+    const answer = await TerminalUtils.question(
+        'update this movie data?',
+    );
     console.log();
-    const answers = await inquirer.prompt(questions);
-    if (answers.ans.toLowerCase() === 'yes') {
+
+    if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes') {
         stats.updated++;
         pageData.downloadLinks = newDownloadLinks;
         if (batchUpdate) {
             pageDataUpdateArray.push(pageData);
             if (pageDataUpdateArray.length >= batchUpdateCount) {
                 await updateSourcePageData_batch(pageDataUpdateArray, ['downloadLinks']);
-                return { answer: answers.ans.toLowerCase(), resetFlag: true };
+                return { answer: answer.toLowerCase(), resetFlag: true };
             }
         } else {
             await updateSourcePageData(pageData, ['downloadLinks']);
         }
     } else if (batchUpdate) {
         await updateSourcePageData_batch(pageDataUpdateArray, ['downloadLinks']);
-        return { answer: answers.ans.toLowerCase(), resetFlag: true };
+        return { answer: answer.toLowerCase(), resetFlag: true };
     }
     console.log();
-    return { answer: answers.ans.toLowerCase(), resetFlag: false };
+    return { answer: answer.toLowerCase(), resetFlag: false };
 }
