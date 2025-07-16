@@ -148,7 +148,4 @@
 
     //TODO : profile memory / cpu usage
     //TODO : reduce memory usage
-    //TODO : update dependencies
-    //TODO : remove dependencies
-    //TODO : check dependencies
 

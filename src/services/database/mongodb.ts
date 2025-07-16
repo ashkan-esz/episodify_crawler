@@ -33,10 +33,7 @@ class MongoDBManager {
     };
 
     private log(level: string, message: string, metadata?: object) {
-        logger.warn(`[MongoDB] ${message}`, {
-            level,
-            metadata,
-        });
+        logger.warn(`[MongoDB] ${message}`, metadata);
     }
 
     private constructor() {
