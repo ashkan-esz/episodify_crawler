@@ -7,6 +7,7 @@ export * as ServerStatus from "./serverStatus";
 export * as TitlesList from "./titlesList";
 export * as FetchUtils from "./fetchUtils";
 export * as TerminalUtils from "./termialUtils";
+export * as CookieUtils from "./cookie";
 // export * from './date';
 // export * from './string';
 // export * from './rate-limiter';

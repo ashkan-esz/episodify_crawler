@@ -1,20 +1,9 @@
 import https from 'node:https';
 import { createFetch, type FetchOptions } from 'ofetch';
 import { saveErrorIfNeeded } from '@utils/logger';
-import { CookieJar } from 'tough-cookie';
-// import { LRUCache } from 'lru-cache';
+import { InMemoryCookieManager } from '@utils/cookie';
 
-// const dnsCache =  new LRUCache({
-//     max: 100,
-//     maxSize: 100,
-//     sizeCalculation: () => {
-//         return 1;
-//     },
-//     ttl: 300000,
-//     // ttlResolution: 5 * 1000,
-// });
-
-const cookieJar = new CookieJar();
+const cookieManager = new InMemoryCookieManager();
 
 export const myFetch = createFetch({
     defaults: {
@@ -59,9 +48,9 @@ export async function getResponseUrl(url: string, opt: any = {}): Promise<string
     };
 
     if (opt.headers.cookie) {
-        await cookieJar.setCookie(opt.headers.cookie, url);
+        await cookieManager.setCookie(`Cookie=${opt.headers.cookie}`, url);
     } else {
-        opt.headers.cookie = await cookieJar.getCookieString(url);
+        opt.headers.cookie = await cookieManager.getCookieString(url);
     }
 
     const response = await myFetch.raw(url, {
@@ -76,7 +65,7 @@ export async function getResponseUrl(url: string, opt: any = {}): Promise<string
     if (setCookies) {
         await Promise.all(
             setCookies.map(cookie =>
-                cookieJar.setCookie(cookie, response.url),
+                cookieManager.setCookie(cookie, response.url),
             ),
         );
     }
@@ -96,9 +85,9 @@ export async function getResponseWithCookie(
 }> {
     try {
         if (cookie) {
-            await cookieJar.setCookie(cookie, url);
+            await cookieManager.setCookie(`Cookie=${cookie}`, url);
         } else {
-            cookie = await cookieJar.getCookieString(url);
+            cookie = await cookieManager.getCookieString(url);
         }
 
         let responseUrl = '';
@@ -115,12 +104,12 @@ export async function getResponseWithCookie(
             ignoreResponseError: true,
             agent: agent || undefined,
             responseType: 'text',
-            onResponse: async ({ response }) => { // Adjusted to access response
-                // Update cookie jar with response cookies
+            onResponse: async ({ response }) => {
+                // Update cookie manager with response cookies
                 const setCookies = response.headers.getSetCookie?.() || [];
                 if (setCookies.length) {
                     const cookies = Array.isArray(setCookies) ? setCookies : [setCookies];
-                    await Promise.all(cookies.map(c => cookieJar.setCookie(c, response.url)));
+                    await Promise.all(cookies.map(c => cookieManager.setCookie(c, response.url))); // Use cookieManager
                 }
 
                 responseUrl = response.url;
@@ -169,8 +158,8 @@ export async function getFileSize(url: string, opt: any = {}): Promise<number> {
         }
 
         const headers: Record<string, string> = {};
-        // Get cookies for current URL
-        const cookieString = await cookieJar.getCookieString(url);
+        // Get cookies for current URL using cookieManager
+        const cookieString = await cookieManager.getCookieString(url);
         if (cookieString) {
             headers.Cookie = cookieString;
         }
@@ -183,12 +172,12 @@ export async function getFileSize(url: string, opt: any = {}): Promise<number> {
             headers,
         });
 
-        // Store received cookies
+        // Store received cookies using cookieManager
         const setCookies = response.headers.getAll('set-cookie');
         if (setCookies) {
             await Promise.all(
                 setCookies.map(cookie =>
-                    cookieJar.setCookie(cookie, response.url),
+                    cookieManager.setCookie(cookie, response.url),
                 ),
             );
         }
@@ -245,9 +234,9 @@ export async function getArrayBufferResponse(url: string, cookie = ''): Promise<
 } | null> {
     try {
         if (cookie) {
-            await cookieJar.setCookie(cookie, url);
+            await cookieManager.setCookie(`Cookie=${cookie}`, url);
         } else {
-            cookie = await cookieJar.getCookieString(url);
+            cookie = await cookieManager.getCookieString(url);
         }
 
         let responseHeaders: any = null;
@@ -262,11 +251,11 @@ export async function getArrayBufferResponse(url: string, cookie = ''): Promise<
             redirect: 'follow',
             responseType: 'arrayBuffer',
             onResponse: async ({ response }) => {
-                // Update cookie jar from response headers
+                // Update cookie manager from response headers
                 const setCookies = response.headers.getSetCookie();
                 if (setCookies?.length) {
                     await Promise.all(setCookies.map(cookie =>
-                        cookieJar.setCookie(cookie, response.url),
+                        cookieManager.setCookie(cookie, response.url), // Use cookieManager
                     ));
                 }
 
