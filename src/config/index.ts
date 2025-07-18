@@ -47,10 +47,12 @@ const configSchema = z.object({
     // Logging
     LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
     PRINT_ERRORS: z.coerce.boolean().default(false),
+    LOG_FILE_PATH: z.string().default(''),
 
     // Flags
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     DEBUG_MODE: z.coerce.boolean().default(false),
+    EXTRA_DEBUG_MODE: z.coerce.boolean().default(false),
 
     // Crawler
     DISABLE_CRAWLER: z.coerce.boolean().default(false),

@@ -1,7 +1,12 @@
 import config from '@/config';
 import * as Sentry from '@sentry/bun';
+import { mkdirSync } from 'node:fs';
 
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+
+export type LoggerOptions = {
+    filePath?: string;
+};
 
 class BunLogger {
     private level: number;
@@ -23,13 +28,42 @@ class BunLogger {
         fatal: '\x1b[35m',  // magenta
         reset: '\x1b[0m',
     };
+    private readonly filePath: string | undefined;
 
-    constructor(level: LogLevel = 'info') {
+    constructor(level: LogLevel = 'info', opts: LoggerOptions = {}) {
         this.level = this.levels[level];
+        // if (opts.filePath) {
+        //     this.filePath = opts.filePath;
+        //     this.createLogFile();
+        // }
     }
+
+    // private async createLogFile() {
+    //     if (!this.filePath) {
+    //         return;
+    //     }
+    //
+    //     if (!await Bun.file(this.filePath).exists()) {
+    //         const dir = this.filePath.split(/[\\/]/).slice(0, -1).join('/');
+    //         mkdirSync(dir, { recursive: true });
+    //         await Bun.write(this.filePath, '');
+    //     }
+    // }
 
     setLevel(level: LogLevel) {
         this.level = this.levels[level];
+    }
+
+    private serializeError(err: any) {
+        if (err instanceof Error) {
+            return {
+                ...err,
+                message: err.message,
+                stack: err.stack,
+                name: err.name,
+            };
+        }
+        return err;
     }
 
     private log(level: LogLevel, message: string, data?: object) {
@@ -41,28 +75,43 @@ class BunLogger {
         // const timestamp = new Date().toISOString();
         const color = this.colors[level];
 
-        // if (Bun.env.NODE_ENV === 'production') {
-        //     // JSON output for production
-        //     const entry = JSON.stringify({
-        //         time: timestamp,
-        //         level,
-        //         msg: message,
-        //         ...data
-        //     });
-        //
-        //     level === 'error' || level === 'fatal'
-        //         ? console.error(entry)
-        //         : console.log(entry);
+        const entry: any = {
+            time: timestamp,
+            level,
+            msg: message,
+            data: data,
+        };
+
+        // Error serialization
+        if (data && (data as any).err) {
+            entry.data.err = this.serializeError((data as any).err);
+        }
+
+        // Output
+        let output: string;
+        // if (config.NODE_ENV === 'production') {
+        //     output = JSON.stringify(entry);
         // } else {
-        // Colorized output for development
         const prefix = `${color}[${timestamp}] ${level.toUpperCase()}:${this.colors.reset}`;
         const dataStr = data ? ` ${JSON.stringify(data, null, 2)}` : '';
+        output = `${prefix} ${message}${dataStr}`;
+        // }
 
         if (level === 'error' || level === 'fatal') {
-            console.error(`${prefix} ${message}${dataStr}`);
+            console.error(output);
         } else {
-            console.log(`${prefix} ${message}${dataStr}`);
+            console.log(output);
         }
+
+        // File logging
+        // if (this.filePath && this.levels[level] >= this.levels.warn) {
+        //     try {
+        //         const writer = Bun.file(this.filePath).writer();
+        //         writer.write(JSON.stringify(entry) + '\n');
+        //         writer.end();
+        //     } catch (error) {
+        //         console.log(error);
+        //     }
         // }
     }
 
@@ -72,7 +121,7 @@ class BunLogger {
         // Adjust to Iran time
         const iranTime = new Date(
             now.getTime() -
-            now.getTimezoneOffset() * 60 * 1000
+            now.getTimezoneOffset() * 60 * 1000,
         );
 
         return iranTime.toISOString()
@@ -91,9 +140,12 @@ class BunLogger {
 
 const logger = new BunLogger(
     (config.LOG_LEVEL as LogLevel) || 'info',
+    {
+        // filePath: config.LOG_FILE_PATH || './logs/logs.txt',
+        filePath: config.LOG_FILE_PATH || undefined,
+    },
 );
 
-// Export the logger instance if needed elsewhere
 export default logger;
 
 //-------------------------------------------------
@@ -107,6 +159,7 @@ export function initSentry(): void {
             tracesSampleRate: 0.5, // Capture 50% of transactions for performance monitoring
             // profilesSampleRate: 1.0, // Capture 100% of transactions for profiling
             sampleRate: 0.5,
+            maxBreadcrumbs: 5,
             integrations: [
                 Sentry.httpIntegration(),
                 Sentry.mongoIntegration(),
@@ -138,11 +191,13 @@ export function initSentry(): void {
  */
 export function saveError(error: any, context?: Record<string, any>): void {
     if (error instanceof Error) {
+        console.trace();
         logger.error(`Error occurred: ${error.message}`, {
             err: error,
             context,
         });
     } else {
+        console.trace();
         logger.error('An unknown error occurred', { error, context });
     }
 

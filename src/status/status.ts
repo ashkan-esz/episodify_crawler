@@ -287,7 +287,7 @@ export async function addPageLinkToCrawlerStatus(
     pageLink: string,
     pageNumber: number | null,
 ): Promise<void> {
-    if (config.DEBUG_MODE) {
+    if (config.EXTRA_DEBUG_MODE) {
         logger.info(`[PAGE_LINK]: [${pageNumber}]: ${pageLink}`);
     }
 
@@ -311,7 +311,7 @@ export function changePageLinkStateFromCrawlerStatus(
     state: string,
     appendMode = false,
 ): void {
-    if (config.DEBUG_MODE) {
+    if (config.EXTRA_DEBUG_MODE) {
         logger.info(`[PAGE_LINK]: ${pageLink}: ${state}`);
     }
 
@@ -332,7 +332,7 @@ export function partialChangePageLinkStateFromCrawlerStatus(
     findValue: string,
     changeValue: string,
 ): void {
-    if (config.DEBUG_MODE) {
+    if (config.EXTRA_DEBUG_MODE) {
         logger.info(`[PAGE_LINK]: ${pageLink}: ${changeValue}`);
     }
 
@@ -427,7 +427,7 @@ export async function updateCrawlerStatus_crawlerEnd(
 
 export async function updateCrawlerStatus_crawlerCrashed(errorMessage: string): Promise<void> {
     if (config.DEBUG_MODE) {
-        logger.info(`Crawler: crashed! ${errorMessage}`);
+        logger.warn(`Crawler: crashed! ${errorMessage}`);
     }
 
     crawlerStatus.endTime = new Date();

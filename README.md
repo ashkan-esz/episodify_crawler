@@ -76,10 +76,12 @@ bun run dev
 | **`CRAWLER_SENTRY_DNS`**               | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
 | **`SENTRY_AUTH_TOKEN`**                | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
 | **`SENTRY_PROJECT`**                   | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
-| **`PRINT_ERRORS`**                     |                                                                                                                                | `false`  | false         |
+| **`PRINT_ERRORS`**                     |                                                                                                                                | `false`  |               |
+| **`LOG_FILE_PATH`**                    |                                                                                                                                | `false`  | false         |
 | **`LOG_LEVEL`**                        |                                                                                                                                | `false`  | info          |
 | **`NODE_ENV`**                         |                                                                                                                                | `false`  | development   |
 | **`DEBUG_MODE`**                       |                                                                                                                                | `false`  | false         |
+| **`EXTRA_DEBUG_MODE`**                 |                                                                                                                                | `false`  | false         |
 | **`DISABLE_CRAWLER`**                  | crawler doesn't run                                                                                                            | `false`  | false         |
 | **`DISABLE_TORRENT_CRAWLER`**          | torrent crawler doesn't run                                                                                                    | `false`  | false         |
 | **`CRAWLER_CONCURRENCY`**              |                                                                                                                                | `false`  |               |
