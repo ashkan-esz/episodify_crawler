@@ -31,8 +31,6 @@
     //TODO : reduce docker image size
     //TODO : build image
     //TODO : use 'dive' to check docker image
-    //TODO : use https://elysiajs.com/patterns/deploy
-    //TODO : use bun compile
 
     //TODO : update bun
     //TODO : update dependencies
@@ -145,7 +143,4 @@
     //TODO : logger
     //TODO : better error handling
     //TODO : add filename and line number to logger
-
-    //TODO : profile memory / cpu usage
-    //TODO : reduce memory usage
 

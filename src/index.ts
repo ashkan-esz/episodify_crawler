@@ -12,9 +12,7 @@ import logger, { initSentry, saveError } from '@/utils/logger';
 
 async function preStart(): Promise<void> {
     // Initialize status logger
-    const statusLogger = new UltimateStatusLogger('Crawler', {
-        enablePerformanceAnalysis: false,
-    });
+    const statusLogger = new UltimateStatusLogger('Crawler');
 
     statusLogger.addStep('Sentry', [], { critical: false });
     statusLogger.addStep('Redis', [], { critical: false });
@@ -102,6 +100,9 @@ export async function bootstrap(): Promise<void> {
                             version: '1.0.0',
                         },
                     },
+                    // Disable unused features
+                    excludeStaticFile: true,
+                    autoDarkMode: false
                     // components: {
                     //     securitySchemes: {
                     //         bearerAuth: {
