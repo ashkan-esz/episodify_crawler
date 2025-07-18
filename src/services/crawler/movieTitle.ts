@@ -1,7 +1,7 @@
-import { MovieType } from '@/types';
+import type { MovieType } from '@/types';
 import { replacePersianNumbers, replaceSpecialCharacters } from '@utils/crawler';
 import { saveError } from '@utils/logger';
-import { wordsToNumbers } from 'words-to-numbers';
+import NumberFromWords from 'numbers-from-words';
 //@ts-expect-error ...
 import * as persianRex from 'persian-rex';
 
@@ -107,7 +107,7 @@ export function getTitleAndYear(
 export function purgeTitle(
     title: string,
     type: MovieType,
-    keepLastNumber: boolean = true,
+    keepLastNumber = true,
 ): string[] {
     const currentYear = new Date().getFullYear();
     const titleIncludesSeason = title.includes('فصل');
@@ -241,11 +241,13 @@ export function purgeTitle_handleBasCases(title_array: string[]): string[] {
             const number = title_array.pop();
             title_array.unshift(number ?? '');
             return title_array;
-        } else if (firstPart === 'to' && isValidNumberString(last1) && checkValidYear(last2)) {
+        }
+        if (firstPart === 'to' && isValidNumberString(last1) && checkValidYear(last2)) {
             const number = title_array.pop();
             title_array.unshift(number ?? '');
             return title_array;
-        } else if (
+        }
+        if (
             firstPart === 'to' &&
             isValidNumberString(last1) &&
             isValidNumberString(last2) &&
@@ -447,7 +449,7 @@ function handleSpecialCases(title_array: string[]): string[] {
         const last1 = title_array[title_array.length - 1];
         const last2 = title_array[title_array.length - 2];
         const last3 = title_array[title_array.length - 3];
-        const last3_wordNumber = wordsToNumbers(last3)?.toString() ?? '';
+        const last3_wordNumber = convertWordNumberToNumber(last3);
 
         if (
             firstPart.match(/^\d+ th$/) &&
@@ -476,14 +478,14 @@ function handleSpecialCases(title_array: string[]): string[] {
             title_array.pop(); //31
             title_array.push(last1); //2011
         } else if (
-            isValidNumberString(last3_wordNumber) &&
-            last3_wordNumber === last1 &&
+            last3_wordNumber &&
+            last3_wordNumber.toString() === last1 &&
             checkValidYear(last2)
         ) {
             title_array.pop();
         } else if (
-            isValidNumberString(last3_wordNumber) &&
-            last3_wordNumber === last2 &&
+            last3_wordNumber &&
+            last3_wordNumber.toString() === last2 &&
             checkValidYear(last1)
         ) {
             const year = title_array.pop();
@@ -544,4 +546,44 @@ function checkValidYear(input: string): boolean {
 
 export function isValidNumberString(str: string): boolean {
     return !isNaN(Number(str)) && str.trim() !== '';
+}
+
+export function convertWordNumberToNumber(str: string): number {
+    try {
+        return NumberFromWords.parse(str);
+    } catch (error: any) {
+        saveError(error);
+        return 0;
+    }
+}
+
+export function extractAndParseNumber(text: string): string {
+    // 1. Normalize hyphens to spaces, strip out any "and"
+    const cleaned = text
+        .toLowerCase()
+        .replace(/-/g, ' ')
+        .replace(/\band\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    // 2. Match a run of known number words (zero–nineteen, tens, hundred, thousand, etc.)
+    //    You can expand this list if you need larger scales.
+    const wordPattern = [
+        'zero','one','two','three','four','five','six','seven','eight','nine',
+        'ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen',
+        'twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety',
+        'hundred','thousand','million','billion'
+    ].join('|');
+
+    const re = new RegExp(`\\b(?:${wordPattern})(?:\\s+(?:${wordPattern}))*\\b`, 'i');
+    const match = cleaned.match(re);
+    if (!match) return text;
+
+    // 3. Parse the matched phrase
+   const number = convertWordNumberToNumber(match[0]);
+   if (number) {
+       return text.replace(match[0], number.toString());
+   }
+
+   return text;
 }

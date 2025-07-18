@@ -1,9 +1,8 @@
 import config from '@/config';
 import { saveError } from '@utils/logger';
-import { RedisClient } from 'bun';
 
 // Create a Redis client instance
-const client = new RedisClient(config.REDIS_URL, {
+const client = new Bun.RedisClient(config.REDIS_URL, {
     autoReconnect: true,
 });
 

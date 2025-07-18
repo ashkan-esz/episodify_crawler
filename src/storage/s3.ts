@@ -1,14 +1,13 @@
 import config from '@/config';
 import { updateCronJobsStatus } from '@/jobs/job.status';
 import { S3FilesRepo } from '@/repo';
-import { S3Client } from 'bun';
 import { type MovieType, VPNStatus } from '@/types';
 import type { MoviePosterS3 } from '@/types/movie';
 import { FetchUtils, Crawler as CrawlerUtils } from '@/utils';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
 import PQueue from 'p-queue';
 
-const s3 = new S3Client({
+const s3 = new Bun.S3Client({
     region: 'default',
     // forcePathStyle: false,
     endpoint: config.CLOUAD_STORAGE_ENDPOINT,
@@ -59,7 +58,7 @@ export const bucketNamesObject = Object.freeze({
     mediaFile: `${config.BUCKET_NAME_PREFIX}media-file`,
 });
 
-export function getS3Client(): S3Client {
+export function getS3Client(): Bun.S3Client {
     return s3;
 }
 

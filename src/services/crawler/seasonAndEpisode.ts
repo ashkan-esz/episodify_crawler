@@ -1,19 +1,18 @@
 import { OMDB } from '@/providers';
-import { OMDBFields } from '@/providers/omdb.provider';
-import { TVMazeFields } from '@/providers/tvmaze.provider';
+import type { OMDBFields } from '@/providers/omdb.provider';
+import type { TVMazeFields } from '@/providers/tvmaze.provider';
 import {
-    DownloadLink,
-    Episode,
+    type DownloadLink,
+    type Episode,
     getEpisodeModelPlaceholder,
     MovieType,
-    Season,
-    SeasonWithEpisodesCount,
+    type Season,
+    type SeasonWithEpisodesCount,
 } from '@/types';
-import { Movie, MoviesLatestData, MovieStatus } from '@/types/movie';
-import { replaceSpecialCharacters } from '@utils/crawler';
-import { groupSerialLinks, updateSerialLinks } from '@utils/link';
+import { type Movie, type MoviesLatestData, MovieStatus } from '@/types/movie';
+import { Crawler as CrawlerUtils, LinkUtils } from '@/utils';
+import { extractAndParseNumber } from '@services/crawler/movieTitle';
 import { saveError } from '@utils/logger';
-import { wordsToNumbers } from 'words-to-numbers';
 
 export async function handleSeasonEpisodeUpdate(
     db_data: Movie,
@@ -24,13 +23,13 @@ export async function handleSeasonEpisodeUpdate(
     totalSeasons: number,
     omdbApiFields: OMDBFields | null,
     tvmazeApiFields: TVMazeFields | null,
-    titleExist: boolean = true,
-    ): Promise<{
+    titleExist = true,
+): Promise<{
     seasonsUpdateFlag: boolean;
     nextEpisodeUpdateFlag: boolean;
 }> {
 
-    const links_seasons = groupSerialLinks(site_links, siteWatchOnlineLinks, torrentLinks);
+    const links_seasons = LinkUtils.groupSerialLinks(site_links, siteWatchOnlineLinks, torrentLinks);
     let seasonsUpdateFlag = handleLinksSeasonUpdate(db_data.seasons, links_seasons, sourceName);
     let nextEpisodeUpdateFlag = false;
 
@@ -75,8 +74,8 @@ export function handleSiteSeasonEpisodeUpdate(
     site_links: DownloadLink[],
     siteWatchOnlineLinks: DownloadLink[],
     siteTorrentLinks: DownloadLink[],
-    ): boolean {
-    const links_seasons = groupSerialLinks(site_links, siteWatchOnlineLinks, siteTorrentLinks);
+): boolean {
+    const links_seasons = LinkUtils.groupSerialLinks(site_links, siteWatchOnlineLinks, siteTorrentLinks);
     const seasonsUpdateFlag = handleLinksSeasonUpdate(db_data.seasons, links_seasons, sourceName);
 
     const missedEpisodeResult = handleMissedSeasonEpisode(db_data.seasons);
@@ -97,7 +96,7 @@ function updateSeasonEpisodeData(
     db_seasons: Season[],
     currentEpisodes: Episode[],
     apiName: string,
-    ): boolean {
+): boolean {
     let updateFlag = false;
 
     for (let i = 0; i < currentEpisodes.length; i++) {
@@ -148,7 +147,7 @@ function handleEpisodeDataUpdate(
     prevEpisode: Episode,
     currentEpisode: Episode,
     apiName: string,
-    ): boolean {
+): boolean {
     try {
         let episodeUpdated = false;
 
@@ -167,11 +166,11 @@ function handleEpisodeDataUpdate(
                 const t1 = getNormalizedEpisodeTitle(prevTitle);
                 const t2 = getNormalizedEpisodeTitle(currentTitle);
                 const t3 = prevEpisode[key].replace(/\*/g, '\\*').replace(/\?/g, '\\?');
-                const t4 = replaceSpecialCharacters(t3);
+                const t4 = CrawlerUtils.replaceSpecialCharacters(t3);
 
                 if (!prevTitle || (
                     t1 !== t2 &&
-                    !wordsToNumbers(currentTitle)?.toString().match(/^(Episode|Part) #?\d+(\.\d+)?$/i) &&
+                    !extractAndParseNumber(currentTitle).match(/^(Episode|Part) #?\d+(\.\d+)?$/i) &&
                     !currentTitle.match(new RegExp(`chapter .+ \'?${t3}\'?`, 'i')) &&
                     !currentTitle.match(new RegExp(`chapter .+ \'?${t4}\'?`, 'i')) &&
                     !currentTitle.match(new RegExp(`.*trail: \'?${t3}\'?`, 'i'))
@@ -208,7 +207,7 @@ function handleLinksSeasonUpdate(
     db_seasons: Season[],
     currentSeasons: Season[],
     sourceName: string,
-    ): boolean {
+): boolean {
     let updateFlag = false;
     for (let i = 0; i < currentSeasons.length; i++) {
         const checkSeason = db_seasons.find(item => item.seasonNumber === currentSeasons[i].seasonNumber);
@@ -228,7 +227,7 @@ function handleLinksSeasonUpdate(
                     const currentLinks = currentEpisodes[j].links;
                     const currentOnlineLinks = currentEpisodes[j].watchOnlineLinks;
                     const currentTorrentLinks = currentEpisodes[j].torrentLinks;
-                    const linkUpdateResult = updateSerialLinks(checkEpisode, prevLinks, prevOnlineLinks, prevTorrentLinks, currentLinks, currentOnlineLinks, currentTorrentLinks);
+                    const linkUpdateResult = LinkUtils.updateSerialLinks(checkEpisode, prevLinks, prevOnlineLinks, prevTorrentLinks, currentLinks, currentOnlineLinks, currentTorrentLinks);
                     updateFlag = linkUpdateResult || updateFlag;
                 } else {
                     //new episode
@@ -271,7 +270,7 @@ function handleLinksSeasonUpdate(
 
 function handleMissedSeasonEpisode(
     db_seasons: Season[],
-    ): boolean {
+): boolean {
     let missedSeasonEpisodeFlag = false;
     for (let i = 0; i < db_seasons.length; i++) {
         const seasonNumber = db_seasons[i].seasonNumber;
@@ -330,7 +329,7 @@ function fixEpisodesZeroDuration(
     seasons: Season[],
     duration: string,
     type: MovieType,
-    ): void {
+): void {
     const badCases = [null, 'null min', '', 'N/A', 'N/A min', '0 min'];
     duration = (!duration || badCases.includes(duration)) ? '0 min' : duration;
     if (duration === '0 min' && type === 'anime_serial') {
@@ -436,13 +435,12 @@ export function getEndYear(seasons: Season[], status: MovieStatus, year: string)
             const lastSeason = seasons[seasons.length - 1];
             const lastEpisode = lastSeason.episodes[lastSeason.episodes.length - 1];
             return lastEpisode.released.split('-')[0];
-        } else {
-            return year;
         }
-    } else {
-        // running
-        return '';
+
+        return year;
     }
+    // running
+    return '';
 }
 
 export function getSeasonEpisode(seasons: Season[]): SeasonWithEpisodesCount[] {
@@ -465,7 +463,7 @@ function getNormalizedEpisodeTitle(title: string): string {
         .toLowerCase()
         .replace(/ \(\d+\)$/, (r: string) => ' part ' + (r.match(/\d+/)?.[0] ?? ''))
         .replace(/&quot;/g, '');
-    return replaceSpecialCharacters(title)
+    return CrawlerUtils.replaceSpecialCharacters(title)
         .replace(' n ', ' and ')
         .replace('the ', '')
         .replace(' one', ' 1')
