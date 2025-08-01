@@ -66,7 +66,7 @@ class BunLogger {
         return err;
     }
 
-    private log(level: LogLevel, message: string, data?: object) {
+    private log(level: LogLevel, message: string, data?: object | unknown) {
         if (this.levels[level] < this.level) {
             return;
         }
@@ -134,7 +134,7 @@ class BunLogger {
     debug = (msg: string, data?: object) => this.log('debug', msg, data);
     info = (msg: string, data?: object) => this.log('info', msg, data);
     warn = (msg: string, data?: object) => this.log('warn', msg, data);
-    error = (msg: string, data?: object) => this.log('error', msg, data);
+    error = (msg: string, data?: object | unknown) => this.log('error', msg, data);
     fatal = (msg: string, data?: object) => this.log('fatal', msg, data);
 }
 

@@ -4,6 +4,7 @@ import {
     LinkUtils,
     Crawler as CrawlerUtils,
     TerminalUtils,
+    logger,
 } from '@/utils';
 import {
     getSourcePagesSamples,
@@ -208,11 +209,11 @@ export async function comparePrevDownloadLinksWithNewMethod(
     };
 
     try {
-        console.log('------------- START OF (comparePrevDownloadLinksWithNewMethod) -----------');
+        logger.warn('------------- START OF (comparePrevDownloadLinksWithNewMethod) -----------');
         const sources = sourceName || sourcesNames;
         console.time('comparePrevDownloadLinksWithNewMethod');
         for (let i = 0; i < sources.length; i++) {
-            console.log(
+            logger.warn(
                 `------------- START OF (comparePrevDownloadLinksWithNewMethod [${sources[i]}]) -----------`,
             );
             let sourcePages: any[] | string = [];
@@ -223,7 +224,7 @@ export async function comparePrevDownloadLinksWithNewMethod(
                 sourcePages = await getSourcePagesSamples(sources[i], start, start);
                 start++;
                 if (sourcePages.length === 0) {
-                    console.log(
+                    logger.warn(
                         `------------- END OF (comparePrevDownloadLinksWithNewMethod [${sources[i]}]) -----------`,
                     );
                     break;
@@ -240,7 +241,7 @@ export async function comparePrevDownloadLinksWithNewMethod(
                             pageDataUpdateArray = [];
                         }
                         lastFileIndex = sourcePages[j].fileIndex;
-                        console.log(
+                        logger.warn(
                             `------------- START OF [${sources[i]}] -fileIndex:${lastFileIndex} -----------`,
                         );
                     }
@@ -268,42 +269,36 @@ export async function comparePrevDownloadLinksWithNewMethod(
                             continue;
                         }
                         stats.diffs++;
-                        console.log(
-                            sName,
-                            '|',
-                            fileIndex,
-                            '|',
-                            stats.checked + '/' + stats.total,
-                            '|',
-                            `${pageDataUpdateArray.length}/${batchUpdateCount}`,
-                            '|',
-                            title,
-                            '|',
-                            type,
-                            '|',
-                            pageLink,
+                        logger.warn(`
+                            ${sName} |
+                            ${fileIndex} | 
+                            ${stats.checked} / ${stats.total} | 
+                            ${pageDataUpdateArray.length}/${batchUpdateCount} | 
+                            ${title} |
+                            ${type} | 
+                            ${pageLink}`,
                         );
-                        console.log(
+                        logger.warn(
                             `prev vs new: ${downloadLinks.length} vs ${newDownloadLinks.length}`,
                         );
                         for (let k = 0; k < newDownloadLinks.length; k++) {
-                            console.log(newDownloadLinks[k]);
-                            console.log('-----------');
+                            logger.warn(newDownloadLinks[k]);
+                            logger.info('-----------');
                         }
 
                         let answer = await TerminalUtils.question(
                             'press \'y/yes\' to continue',
                         );
-                        console.log();
+                        logger.info('');
                         while (answer !== 'y' && answer !== 'yes') {
                             answer = await TerminalUtils.question(
                                 'press \'y/yes\' to continue',
                             );
-                            console.log();
+                            logger.info('');
                         }
 
-                        console.log('-------------------------');
-                        console.log('-------------------------');
+                        logger.info('-------------------------');
+                        logger.info('-------------------------');
                         newDownloadLinks = getDownloadLinksFromPageContent(
                             $,
                             title,
@@ -314,22 +309,16 @@ export async function comparePrevDownloadLinksWithNewMethod(
                     }
 
                     if (!Bun.deepEquals(downloadLinks, newDownloadLinks)) {
-                        console.log(
-                            sName,
-                            '|',
-                            fileIndex,
-                            '|',
-                            stats.checked + '/' + stats.total,
-                            '|',
-                            `${pageDataUpdateArray.length}/${batchUpdateCount}`,
-                            '|',
-                            title,
-                            '|',
-                            type,
-                            '|',
-                            pageLink,
+                        logger.warn(`
+                            ${sName}
+                            ${fileIndex}
+                            ${stats.checked} / ${stats.total} | 
+                            ${pageDataUpdateArray.length}/${batchUpdateCount} | 
+                            ${title} |
+                            ${type} |
+                            ${pageLink}`,
                         );
-                        console.log(
+                        logger.warn(
                             `prev vs new: ${downloadLinks.length} vs ${newDownloadLinks.length}`,
                         );
                         printDiffLinks(downloadLinks, newDownloadLinks);
@@ -353,10 +342,10 @@ export async function comparePrevDownloadLinksWithNewMethod(
                                 j--;
                             }
                         }
-                        console.log('-------------------------');
-                        console.log('-------------------------');
+                        logger.info('-------------------------');
+                        logger.info('-------------------------');
                     } else if (mode === 'checkRegex') {
-                        console.log(
+                        logger.warn(
                             '************ No diff in new extracted links, check linkInfoRegex or linksExtractorFunctions',
                         );
                     }
@@ -369,8 +358,8 @@ export async function comparePrevDownloadLinksWithNewMethod(
             }
         }
         console.timeEnd('comparePrevDownloadLinksWithNewMethod');
-        console.log(JSON.stringify(stats));
-        console.log('------------- END OF (comparePrevDownloadLinksWithNewMethod) -----------');
+        logger.info(JSON.stringify(stats));
+        logger.warn('------------- END OF (comparePrevDownloadLinksWithNewMethod) -----------');
         return stats;
     } catch (error) {
         saveError(error);
@@ -382,7 +371,7 @@ function printDiffLinks(downloadLinks: DownloadLink[], newDownloadLinks: Downloa
     for (let k = 0; k < Math.max(downloadLinks.length, newDownloadLinks.length); k++) {
         if (!Bun.deepEquals(downloadLinks[k], newDownloadLinks[k])) {
             if (!downloadLinks[k] || !newDownloadLinks[k]) {
-                console.log({
+                logger.warn('', {
                     link1: downloadLinks[k],
                     link2: newDownloadLinks[k],
                 });
@@ -404,11 +393,11 @@ function printDiffLinks(downloadLinks: DownloadLink[], newDownloadLinks: Downloa
                     link2[keys[i]] = newDownloadLinks[k][keys[i]];
                 }
             }
-            console.log({
+            logger.warn('', {
                 link1: link1,
                 link2: link2,
             });
-            console.log('------------------');
+            logger.info('------------------');
         }
     }
 }
@@ -424,7 +413,7 @@ async function handleUpdatePrompt(
     const answer = await TerminalUtils.question(
         'update this movie data?',
     );
-    console.log();
+    logger.info('');
 
     if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes') {
         stats.updated++;
@@ -442,6 +431,6 @@ async function handleUpdatePrompt(
         await updateSourcePageData_batch(pageDataUpdateArray, ['downloadLinks']);
         return { answer: answer.toLowerCase(), resetFlag: true };
     }
-    console.log();
+    logger.info('');
     return { answer: answer.toLowerCase(), resetFlag: false };
 }

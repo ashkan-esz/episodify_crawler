@@ -12,7 +12,7 @@ export async function connect(): Promise<void> {
     // } catch (err) {
     //     console.error('[Redis] Failed to connect:', err);
     // }
-    // console.log('[Redis] Bun client initialized. Connection will be established on first use.');
+    // logger.info('[Redis] Bun client initialized. Connection will be established on first use.');
 }
 
 export async function close(): Promise<void> {

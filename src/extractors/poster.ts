@@ -1,6 +1,6 @@
 import { hasSidebarClass } from '@/sources/generic';
 import { sourcesNames } from '@services/crawler/sourcesArray';
-import { Crawler as CrawlerUtils, TerminalUtils } from '@/utils';
+import { Crawler as CrawlerUtils, logger, TerminalUtils } from '@/utils';
 import { saveError } from '@utils/logger';
 import * as cheerio from 'cheerio';
 import fastDiff from 'fast-diff';
@@ -164,7 +164,7 @@ function purgePoster(
         hasSidebarClass($(img))
     ) {
         // if (config.nodeEnv === 'dev') {
-        //     console.log('************************************ BAD POSTER: ', src);
+        //     logger.warn('************************************ BAD POSTER: ', src);
         // }
         return '';
     }
@@ -172,7 +172,7 @@ function purgePoster(
     const width = Number($(img).attr('width') || 120);
     if (width < 120) {
         // if (config.nodeEnv === 'dev') {
-        //     console.log('************************************ BAD POSTER: ', src);
+        //     logger.warn('************************************ BAD POSTER: ', src);
         // }
         return '';
     }
@@ -239,11 +239,11 @@ export async function comparePrevPosterWithNewMethod(
     };
 
     try {
-        console.log('------------- START OF (comparePrevPosterWithNewMethod) -----------');
+        logger.warn('------------- START OF (comparePrevPosterWithNewMethod) -----------');
         const sources = sourceName || sourcesNames;
         console.time('comparePrevPosterWithNewMethod');
         for (let i = 0; i < sources.length; i++) {
-            console.log(
+            logger.warn(
                 `------------- START OF (comparePrevPosterWithNewMethod [${sources[i]}]) -----------`,
             );
             let sourcePages: any[] | string = [];
@@ -253,7 +253,7 @@ export async function comparePrevPosterWithNewMethod(
                 sourcePages = await getSourcePagesSamples(sources[i], start, start);
                 start++;
                 if (sourcePages.length === 0) {
-                    console.log(
+                    logger.warn(
                         `------------- END OF (comparePrevPosterWithNewMethod [${sources[i]}]) -----------`,
                     );
                     break;
@@ -263,7 +263,7 @@ export async function comparePrevPosterWithNewMethod(
                 for (let j = 0; j < sourcePages.length; j++) {
                     if (lastFileIndex !== sourcePages[j].fileIndex) {
                         lastFileIndex = sourcePages[j].fileIndex;
-                        console.log(
+                        logger.warn(
                             `------------- START OF [${sources[i]}] -fileIndex:${lastFileIndex} -----------`,
                         );
                     }
@@ -281,33 +281,24 @@ export async function comparePrevPosterWithNewMethod(
                     let $ = cheerio.load(pageContent);
                     const newPoster = getPoster($, pageLink, sName);
                     if (!newPoster) {
-                        console.log(
-                            `--- empty poster (${title}) (year:${year}): `,
-                            fileIndex,
-                            '|',
-                            stats.checked + '/' + stats.total,
-                            '|',
-                            title,
-                            '|',
-                            type,
-                            '|',
-                            pageLink,
+                        logger.warn(
+                            `--- empty poster (${title}) (year:${year}): \n,
+                            ${fileIndex} |
+                            ${stats.checked} / ${stats.total} |
+                            ${title} |
+                            ${type} |
+                            ${pageLink}`,
                         );
                     }
 
                     if (poster !== newPoster) {
-                        console.log(
-                            sName,
-                            '|',
-                            fileIndex,
-                            '|',
-                            stats.checked + '/' + stats.total,
-                            '|',
-                            title,
-                            '|',
-                            type,
-                            '|',
-                            pageLink,
+                        logger.warn(`
+                            ${sName} |
+                            ${fileIndex} |
+                            ${stats.checked} / ${stats.total} |
+                            ${title} |
+                            ${type} |
+                            ${pageLink}`,
                         );
                         const diff = fastDiff(poster, newPoster);
                         const diffs: string[] = [];
@@ -324,18 +315,18 @@ export async function comparePrevPosterWithNewMethod(
                                 diffs.push(p);
                             }
                         });
-                        console.log({
+                        logger.info('', {
                             ps1: poster,
                             ps2: newPoster,
                         });
-                        console.log(`${chalk.blue('RES')}: ${t}\n${chalk.blue('DIFFS')}: ${diffs}`);
+                        logger.warn(`${chalk.blue('RES')}: ${t}\n${chalk.blue('DIFFS')}: ${diffs}`);
 
                         stats.diffs++;
 
                         if (updateMode) {
                             const checkUpdateIsNeededResult = checkUpdateIsNeeded(diffs, diff);
                             if (checkUpdateIsNeededResult && autoUpdateIfNeed) {
-                                console.log('------ semi manual update');
+                                logger.info('------ semi manual update');
                                 sourcePages[j].poster = newPoster;
                                 await updateSourcePageData(sourcePages[j], ['poster']);
                                 stats.updated++;
@@ -345,23 +336,23 @@ export async function comparePrevPosterWithNewMethod(
                             const answer = await TerminalUtils.question(
                                 `update this movie data? [checkUpdateIsNeeded=${checkUpdateIsNeededResult}]`,
                             );
-                            console.log();
+                            logger.info('');
                             if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes') {
                                 stats.updated++;
                                 sourcePages[j].poster = newPoster;
                                 await updateSourcePageData(sourcePages[j], ['poster']);
                             }
-                            console.log();
+                            logger.info('');
                         }
-                        console.log('-------------------------');
-                        console.log('-------------------------');
+                        logger.info('-------------------------');
+                        logger.info('-------------------------');
                     }
                 }
             }
         }
         console.timeEnd('comparePrevPosterWithNewMethod');
-        console.log(JSON.stringify(stats));
-        console.log('------------- END OF (comparePrevPosterWithNewMethod) -----------');
+        logger.info(JSON.stringify(stats));
+        logger.warn('------------- END OF (comparePrevPosterWithNewMethod) -----------');
         return stats;
     } catch (error) {
         saveError(error);
@@ -371,7 +362,7 @@ export async function comparePrevPosterWithNewMethod(
 
 function checkUpdateIsNeeded(diffs: string[], diff: any[]): boolean {
     const changes = diff.filter((item) => item[0] !== 0);
-    console.log(changes);
+    logger.warn(JSON.stringify(changes));
 
     return (
         (diffs.length === 1 &&

@@ -39,7 +39,7 @@ export default async function tokyotosho(
 
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
-        // console.log(JSON.stringify(titles, null, 4));
+        // logger.info(JSON.stringify(titles, null, 4));
         // return [1, linksCount];
 
         if (extraConfigs.returnAfterExtraction) {
@@ -103,7 +103,7 @@ export async function searchByTitle(
 
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
-        // console.log(JSON.stringify(titles, null, 4))
+        // logger.info(JSON.stringify(titles, null, 4))
         // return [1, linksCount];
 
         if (extraConfigs.returnTitlesOnly) {
@@ -328,7 +328,7 @@ function getTitle(text: string): string {
     text = text.split(new RegExp(`(\\s\|\\.)\\d{4}(\\s\|\\.)(480\|720p\|1080\|2160p)p`))[0];
 
     const splitArr = text.split(/\s|\./g);
-    // console.log(splitArr);
+    // logger.warn(splitArr);
     const index = splitArr.findIndex((item: string) => item.match(/s\d+e\d+/));
     if (index !== -1) {
         let temp = splitArr.slice(0, index).join(' ').split('(')[0];

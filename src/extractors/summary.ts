@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio';
 import fastDiff from 'fast-diff';
 import chalk from 'chalk';
 import { sourcesNames } from '@services/crawler/sourcesArray';
-import { TerminalUtils } from '@/utils';
+import { logger, TerminalUtils } from '@/utils';
 import { saveError } from '@utils/logger';
 import {
     updateSourcePageData,
@@ -262,11 +262,11 @@ export async function comparePrevSummaryWithNewMethod(
     };
 
     try {
-        console.log('------------- START OF (comparePrevSummaryWithNewMethod) -----------');
+        logger.warn('------------- START OF (comparePrevSummaryWithNewMethod) -----------');
         const sources = sourceName || sourcesNames;
         console.time('comparePrevSummaryWithNewMethod');
         for (let i = 0; i < sources.length; i++) {
-            console.log(
+            logger.warn(
                 `------------- START OF (comparePrevSummaryWithNewMethod [${sources[i]}]) -----------`,
             );
             let sourcePages: any[] | string = [];
@@ -276,7 +276,7 @@ export async function comparePrevSummaryWithNewMethod(
                 sourcePages = await getSourcePagesSamples(sources[i], start, start);
                 start++;
                 if (sourcePages.length === 0) {
-                    console.log(
+                    logger.warn(
                         `------------- END OF (comparePrevSummaryWithNewMethod [${sources[i]}]) -----------`,
                     );
                     break;
@@ -286,7 +286,7 @@ export async function comparePrevSummaryWithNewMethod(
                 for (let j = 0; j < sourcePages.length; j++) {
                     if (lastFileIndex !== sourcePages[j].fileIndex) {
                         lastFileIndex = sourcePages[j].fileIndex;
-                        console.log(
+                        logger.warn(
                             `------------- START OF [${sources[i]}] -fileIndex:${lastFileIndex} -----------`,
                         );
                     }
@@ -304,47 +304,34 @@ export async function comparePrevSummaryWithNewMethod(
                     const $ = cheerio.load(pageContent);
                     const newPersianSummary = getPersianSummary($, title, year);
                     if (newPersianSummary.length === 0) {
-                        console.log(
-                            `--- empty summary (${title}) (year:${year}): `,
-                            fileIndex,
-                            '|',
-                            stats.checked + '/' + stats.total,
-                            '|',
-                            title,
-                            '|',
-                            type,
-                            '|',
-                            pageLink,
+                        logger.warn(`
+                            --- empty summary (${title}) (year:${year}): 
+                            ${fileIndex} |
+                            ${stats.checked} / ${stats.total} |
+                            ${title} | 
+                            ${type} |
+                            ${pageLink}`,
                         );
                     } else if (newPersianSummary.length > 1600) {
-                        console.log(
-                            `--- suspicious summary (${title}) (year:${year}): `,
-                            fileIndex,
-                            '|',
-                            stats.checked + '/' + stats.total,
-                            '|',
-                            title,
-                            '|',
-                            type,
-                            '|',
-                            pageLink,
+                        logger.warn(`
+                            --- suspicious summary (${title}) (year:${year}): 
+                            ${fileIndex} |
+                            ${stats.checked} / ${stats.total} |
+                            ${title} | 
+                            ${type} | 
+                            ${pageLink}`,
                         );
-                        console.log(newPersianSummary);
+                        logger.warn(newPersianSummary);
                     }
 
                     if (persianSummary !== newPersianSummary) {
-                        console.log(
-                            sName,
-                            '|',
-                            fileIndex,
-                            '|',
-                            stats.checked + '/' + stats.total,
-                            '|',
-                            title,
-                            '|',
-                            type,
-                            '|',
-                            pageLink,
+                        logger.warn(`
+                            ${sName} |
+                            ${fileIndex} |
+                            ${stats.checked} / ${stats.total} |
+                            ${title} |
+                            ${type} |
+                            ${pageLink}`,
                         );
                         let diff: any[] = [];
                         let diffs: any[] = [];
@@ -367,11 +354,11 @@ export async function comparePrevSummaryWithNewMethod(
                             });
                         }
 
-                        console.log({
+                        logger.warn('', {
                             ps1: persianSummary,
                             ps2: newPersianSummary,
                         });
-                        console.log(`${chalk.blue('RES')}: ${t}\n${chalk.blue('DIFFS')}: ${diffs}`);
+                        logger.warn(`${chalk.blue('RES')}: ${t}\n${chalk.blue('DIFFS')}: ${diffs}`);
 
                         stats.diffs++;
 
@@ -383,7 +370,7 @@ export async function comparePrevSummaryWithNewMethod(
                                 year,
                             );
                             if (checkUpdateIsNeededResult && autoUpdateIfNeed) {
-                                console.log('------ semi manual update');
+                                logger.warn('------ semi manual update');
                                 sourcePages[j].persianSummary = newPersianSummary;
                                 await updateSourcePageData(sourcePages[j], ['persianSummary']);
                                 stats.updated++;
@@ -393,23 +380,23 @@ export async function comparePrevSummaryWithNewMethod(
                             const answer = await TerminalUtils.question(
                                 `update this movie data? [checkUpdateIsNeeded=${checkUpdateIsNeededResult}]`,
                             );
-                            console.log();
+                            logger.info('');
                             if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes') {
                                 stats.updated++;
                                 sourcePages[j].persianSummary = newPersianSummary;
                                 await updateSourcePageData(sourcePages[j], ['persianSummary']);
                             }
-                            console.log();
+                            logger.info('');
                         }
-                        console.log('-------------------------');
-                        console.log('-------------------------');
+                        logger.info('-------------------------');
+                        logger.info('-------------------------');
                     }
                 }
             }
         }
         console.timeEnd('comparePrevSummaryWithNewMethod');
-        console.log(JSON.stringify(stats));
-        console.log('------------- END OF (comparePrevSummaryWithNewMethod) -----------');
+        logger.warn(JSON.stringify(stats));
+        logger.warn('------------- END OF (comparePrevSummaryWithNewMethod) -----------');
         return stats;
     } catch (error) {
         saveError(error);
@@ -424,7 +411,7 @@ function checkUpdateIsNeeded(diffs: any[], diff: any[], title: string, year: str
         .join('')
         .trim()
         .replace(/\s/g, '');
-    console.log(changes);
+    logger.warn(JSON.stringify(changes));
     return (
         (diffs.length <= 3 && changes.every((item) => item[0] === 1 && item[1] === ':')) ||
         (diffs.length <= 4 &&

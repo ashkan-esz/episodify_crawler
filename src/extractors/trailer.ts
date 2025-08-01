@@ -6,7 +6,7 @@ import {
 } from '@/samples/sourcePages/sourcePageSample';
 import { hasSidebarClass } from '@/sources/generic';
 import { sourcesNames } from '@services/crawler/sourcesArray';
-import { Crawler as CrawlerUtils, TerminalUtils } from '@/utils';
+import { Crawler as CrawlerUtils, logger, TerminalUtils } from '@/utils';
 import { saveError } from '@utils/logger';
 import * as cheerio from 'cheerio';
 
@@ -106,7 +106,7 @@ function purgeTrailer(
     sourceName: string,
     quality: string,
     vpnStatus: VPNStatus,
-    ): MovieTrailer | null {
+): MovieTrailer | null {
     if (
         url.includes('media-imdb.com') ||
         url.includes('aparat.com') ||
@@ -183,11 +183,11 @@ export async function comparePrevTrailerWithNewMethod(
     };
 
     try {
-        console.log('------------- START OF (comparePrevTrailerWithNewMethod) -----------');
+        logger.warn('------------- START OF (comparePrevTrailerWithNewMethod) -----------');
         const sources = sourceName || sourcesNames;
         console.time('comparePrevTrailerWithNewMethod');
         for (let i = 0; i < sources.length; i++) {
-            console.log(
+            logger.warn(
                 `------------- START OF (comparePrevTrailerWithNewMethod [${sources[i]}]) -----------`,
             );
             let sourcePages: any[] | string = [];
@@ -197,7 +197,7 @@ export async function comparePrevTrailerWithNewMethod(
                 sourcePages = await getSourcePagesSamples(sources[i], start, start);
                 start++;
                 if (sourcePages.length === 0) {
-                    console.log(
+                    logger.warn(
                         `------------- END OF (comparePrevTrailerWithNewMethod [${sources[i]}]) -----------`,
                     );
                     break;
@@ -207,12 +207,16 @@ export async function comparePrevTrailerWithNewMethod(
                 for (let j = 0; j < sourcePages.length; j++) {
                     if (lastFileIndex !== sourcePages[j].fileIndex) {
                         lastFileIndex = sourcePages[j].fileIndex;
-                        console.log(
+                        logger.warn(
                             `------------- START OF [${sources[i]}] -fileIndex:${lastFileIndex} -----------`,
                         );
                     }
                     stats.checked++;
-                    const { sourceName: sName, trailers, pageContent } = sourcePages[j];
+                    const {
+                        sourceName: sName,
+                        trailers,
+                        pageContent,
+                    } = sourcePages[j];
                     const $ = cheerio.load(pageContent);
                     const newTrailers = getTrailers($, '', sName, VPNStatus.NO_VPN);
 
@@ -224,20 +228,15 @@ export async function comparePrevTrailerWithNewMethod(
                             type,
                             pageLink,
                         } = sourcePages[j];
-                        console.log(
-                            sName,
-                            '|',
-                            fileIndex,
-                            '|',
-                            stats.checked + '/' + stats.total,
-                            '|',
-                            title,
-                            '|',
-                            type,
-                            '|',
-                            pageLink,
+                        logger.warn(`
+                            ${sName} |
+                            ${fileIndex} |
+                            ${stats.checked} / ${stats.total} |
+                            ${title} |
+                            ${type} |
+                            ${pageLink}`,
                         );
-                        console.log({
+                        logger.warn('', {
                             ps1: trailers,
                             ps2: newTrailers,
                         });
@@ -249,31 +248,31 @@ export async function comparePrevTrailerWithNewMethod(
                                 newTrailers,
                             );
                             if (checkUpdateIsNeededResult && autoUpdateIfNeed) {
-                                console.log('------ semi manual update');
+                                logger.warn('------ semi manual update');
                                 sourcePages[j].trailers = newTrailers;
                                 await updateSourcePageData(sourcePages[j], ['trailers']);
                                 stats.updated++;
                                 continue;
                             }
 
-                            const answer = await TerminalUtils.question(`update this movie data? [checkUpdateIsNeeded=${checkUpdateIsNeededResult}]`)
-                            console.log();
+                            const answer = await TerminalUtils.question(`update this movie data? [checkUpdateIsNeeded=${checkUpdateIsNeededResult}]`);
+                            logger.info('');
                             if (answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes') {
                                 stats.updated++;
                                 sourcePages[j].trailers = newTrailers;
                                 await updateSourcePageData(sourcePages[j], ['trailers']);
                             }
-                            console.log();
+                            logger.info('');
                         }
-                        console.log('-------------------------');
-                        console.log('-------------------------');
+                        logger.info('-------------------------');
+                        logger.info('-------------------------');
                     }
                 }
             }
         }
         console.timeEnd('comparePrevTrailerWithNewMethod');
-        console.log(JSON.stringify(stats));
-        console.log('------------- END OF (comparePrevTrailerWithNewMethod) -----------');
+        logger.warn(JSON.stringify(stats));
+        logger.warn('------------- END OF (comparePrevTrailerWithNewMethod) -----------');
         return stats;
     } catch (error) {
         saveError(error);

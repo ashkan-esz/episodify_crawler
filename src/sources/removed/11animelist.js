@@ -14,6 +14,7 @@ import save from "../../save_changes_db.js";
 import {getSubtitleModel} from "../../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../../services/crawler/subtitle.ts";
 import {saveError} from "../../../error/saveError.js";
+// import { logger } from '../../utils/index.js';
 
 const sourceName = "animelist";
 const needHeadlessBrowser = true;
@@ -39,7 +40,7 @@ async function search_title(link, i, $, url, extraConfigs) {
             let isEmpty = infoNodeText.includes('هنوز آپلود نشده است');
 
             if (config.nodeEnv === 'dev') {
-                console.log(`animelist/${type}/${i}/${title}/empty:${isEmpty}  ========>  `);
+                logger.info(`animelist/${type}/${i}/${title}/empty:${isEmpty}  ========>  `);
             }
             ({title, year} = getTitleAndYear(title, year, type));
 

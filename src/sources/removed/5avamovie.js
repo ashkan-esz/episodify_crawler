@@ -12,6 +12,7 @@ import {
 import {posterExtractor, summaryExtractor, trailerExtractor} from "../../extractors/index.js";
 import save from "../../save_changes_db.js";
 import {saveError} from "../../../error/saveError.js";
+// import { logger } from '../../utils/index.js';
 
 export const sourceConfig = Object.freeze({
     sourceName: "avamovie",
@@ -46,7 +47,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                 type = type.replace('serial', 'movie');
             }
             if (config.nodeEnv === 'dev') {
-                console.log(`avamovie/${type}/${pageNumber}/${title}  ========>  `);
+                logger.info(`avamovie/${type}/${pageNumber}/${title}  ========>  `);
             }
             ({title, year} = getTitleAndYear(title, year, type));
 

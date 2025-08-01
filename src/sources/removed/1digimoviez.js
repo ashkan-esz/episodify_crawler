@@ -19,6 +19,7 @@ import {posterExtractor, summaryExtractor, trailerExtractor} from "../../extract
 import save from "../../save_changes_db.js";
 import {getWatchOnlineLinksModel} from "../../../models/watchOnlineLinks.js";
 import {saveError} from "../../../error/saveError.js";
+// import { logger } from '../../utils/index.js';
 
 export const sourceConfig = Object.freeze({
     sourceName: "digimoviez",
@@ -67,7 +68,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
             }
             let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
-                console.log(`digimoviez/${type}/${pageNumber}/${title}  ========>  `);
+                logger.info(`digimoviez/${type}/${pageNumber}/${title}  ========>  `);
             }
             if (title.includes('ایران')) {
                 return 0;

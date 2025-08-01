@@ -41,7 +41,7 @@ export default async function eztv(
 
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
-        // console.log(JSON.stringify(titles, null, 4));
+        // logger.info(JSON.stringify(titles, null, 4));
         // return [1, linksCount];
 
         if (extraConfigs.returnAfterExtraction) {
@@ -108,7 +108,7 @@ export async function searchByTitle(
 
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
-        // console.log(JSON.stringify(titles, null, 4))
+        // logger.info(JSON.stringify(titles, null, 4))
         // return [1, linksCount];
 
         if (extraConfigs.returnTitlesOnly) {

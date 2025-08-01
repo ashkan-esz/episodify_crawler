@@ -92,7 +92,7 @@ class MongoDBManager {
             await Promise.race([connectPromise, timeout]);
 
             this.db = this.client.db();
-            // console.log('MongoDB connection established');
+            // logger.info('MongoDB connection established');
 
             // Verify connection
             await this.db.command({ ping: 1 });
@@ -142,7 +142,7 @@ class MongoDBManager {
         this.shutdownSignalReceived = true;
 
         try {
-            console.log('Closing MongoDB connection...');
+            logger.info('Closing MongoDB connection...');
 
             // Stop monitoring first
             this.stopHealthMonitor();
@@ -155,9 +155,9 @@ class MongoDBManager {
 
             await Promise.race([closePromise, timeout]);
 
-            console.log('MongoDB connection closed gracefully');
+            logger.info('MongoDB connection closed gracefully');
         } catch (error) {
-            console.error('Error closing connection:', error);
+            logger.error('Error closing connection:', error);
         } finally {
             this.resetState();
         }

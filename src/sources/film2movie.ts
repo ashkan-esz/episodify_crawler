@@ -21,7 +21,7 @@ import {
 } from '@/types';
 import type { MovieTrailer } from '@/types/movie';
 import { getSubtitleModel, type Subtitle } from '@/types/subtitle';
-import { LinkInfo, FetchUtils, Crawler as CrawlerUtils } from '@/utils';
+import { LinkInfo, FetchUtils, Crawler as CrawlerUtils, logger } from '@/utils';
 import { saveError } from '@utils/logger';
 
 let prevTitles: { title: string; year: string; type: MovieType }[] = [];
@@ -58,7 +58,7 @@ async function search_title(
         let type = CrawlerUtils.getType(title);
         const pageLink = link.attr('href');
         if (config.DEBUG_MODE) {
-            console.log(`film2movie/${type}/${pageNumber}/${title}  ========>  `);
+            logger.info(`film2movie/${type}/${pageNumber}/${title}  ========>  `);
         }
         if (
             title.includes('تلویزیونی ماه عسل') ||

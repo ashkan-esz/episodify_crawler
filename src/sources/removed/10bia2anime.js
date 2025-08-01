@@ -15,6 +15,7 @@ import save from "../../save_changes_db.js";
 import {getSubtitleModel} from "../../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../../services/crawler/subtitle.ts";
 import {saveError} from "../../../error/saveError.js";
+// import { logger } from '../../utils/index.js';
 
 export const sourceConfig = Object.freeze({
     sourceName: "bia2anime",
@@ -44,7 +45,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
             let pageLink = link.attr('href');
             let type = title.includes('movie') ? 'anime_movie' : 'anime_serial';
             if (config.nodeEnv === 'dev') {
-                console.log(`bia2anime/${type}/${pageNumber}/${title}  ========>  `);
+                logger.info(`bia2anime/${type}/${pageNumber}/${title}  ========>  `);
             }
             ({title, year} = getTitleAndYear(title, year, type));
             if (title === 'dota dragons blood' && type === 'anime_serial') {

@@ -6,6 +6,7 @@ import {purgeSizeText, fixLinkInfoOrder, fixLinkInfo, addDubAndSub} from "../../
 import {posterExtractor, summaryExtractor, trailerExtractor} from "../../extractors/index.js";
 import save from "../../save_changes_db.js";
 import {saveError} from "../../../error/saveError.js";
+// import { logger } from '../../utils/index.js';
 
 export const sourceConfig = Object.freeze({
     sourceName: "anime20",
@@ -40,7 +41,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                 type = "anime_" + type;
             }
             if (config.nodeEnv === 'dev') {
-                console.log(`anime20/${type}/${pageNumber}/${title}  ========>  `);
+                logger.info(`anime20/${type}/${pageNumber}/${title}  ========>  `);
             }
             ({title, year} = getTitleAndYear(title, year, type));
 

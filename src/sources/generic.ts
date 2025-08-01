@@ -34,7 +34,7 @@ import {
     specialWords,
 } from '@utils/linkInfo';
 import { getTitleAndYear } from '@services/crawler/movieTitle';
-import { Crawler as CrawlerUtils, FetchUtils } from '@/utils';
+import { Crawler as CrawlerUtils, FetchUtils, logger } from '@/utils';
 //@ts-expect-error ...
 import * as persianRex from 'persian-rex';
 
@@ -183,7 +183,7 @@ async function search_title(
         }
 
         if (config.DEBUG_MODE) {
-            console.log(
+            logger.info(
                 `${sourceConfig.config.sourceName}/${type}/${pageNumber}/${title || text}  ========>  `,
             );
         }

@@ -3,7 +3,7 @@ import { updateCronJobsStatus } from '@/jobs/job.status';
 import { S3FilesRepo } from '@/repo';
 import { type MovieType, VPNStatus } from '@/types';
 import type { MoviePosterS3 } from '@/types/movie';
-import { FetchUtils, Crawler as CrawlerUtils } from '@/utils';
+import { FetchUtils, Crawler as CrawlerUtils, logger } from '@/utils';
 import { saveError, saveErrorIfNeeded } from '@utils/logger';
 import PQueue from 'p-queue';
 
@@ -531,7 +531,7 @@ export async function deleteMultipleFilesFromS3(
 
 export async function resetBucket(bucketName: string): Promise<boolean> {
     try {
-        console.log(`[S3] Resetting bucket: ${bucketName}`);
+        logger.warn(`[S3] Resetting bucket: ${bucketName}`);
 
         while (true) {
             const listedObjects = await s3.list({}, {
@@ -545,11 +545,11 @@ export async function resetBucket(bucketName: string): Promise<boolean> {
             const keysToDelete = listedObjects.contents.map((content) => content.key).filter(Boolean) as string[];
             if (keysToDelete.length > 0) {
                 await batchDeleteFiles(keysToDelete, bucketName);
-                console.log(`[S3] Successfully deleted ${keysToDelete.length} objects from ${bucketName}`);
+                logger.info(`[S3] Successfully deleted ${keysToDelete.length} objects from ${bucketName}`);
             }
         }
 
-        console.log(`[S3] Bucket ${bucketName} is already empty.`);
+        logger.warn(`[S3] Bucket ${bucketName} is already empty.`);
         return true;
     } catch (error: any) {
         // if (error.code === 'ENOTFOUND' && retryCounter < 2) {
@@ -582,15 +582,15 @@ async function batchDeleteFiles(fileKeys: string[], bucketName: string): Promise
 
 // export async function createBuckets() {
 //     try {
-//         console.log(`creating s3 buckets (${bucketNames.join(', ')})`);
+//         logger.warn(`creating s3 buckets (${bucketNames.join(', ')})`);
 //         const promiseArray = [];
 //         for (let i = 0; i < bucketNames.length; i++) {
 //             const prom = createBucket(bucketNames[i]);
 //             promiseArray.push(prom);
 //         }
 //         await Promise.allSettled(promiseArray);
-//         console.log('creating s3 buckets --done!');
-//         console.log();
+//         logger.info('creating s3 buckets --done!');
+//         logger.info('');
 //     } catch (error) {
 //         saveError(error);
 //     }

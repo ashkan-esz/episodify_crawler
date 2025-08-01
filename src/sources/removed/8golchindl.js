@@ -16,6 +16,7 @@ import {posterExtractor, summaryExtractor, trailerExtractor} from "../../extract
 import * as persianRex from "persian-rex";
 import save from "../../save_changes_db.js";
 import {saveError} from "../../../error/saveError.js";
+// import { logger } from '../../utils/index.js';
 
 export const sourceConfig = Object.freeze({
     sourceName: "golchindl",
@@ -44,7 +45,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
             let pageLink = link.attr('href');
             let type = getType(title);
             if (config.nodeEnv === 'dev') {
-                console.log(`golchindl/${type}/${pageNumber}/${title}  ========>  `);
+                logger.info(`golchindl/${type}/${pageNumber}/${title}  ========>  `);
             }
             if (
                 title.includes('انتخابات') ||

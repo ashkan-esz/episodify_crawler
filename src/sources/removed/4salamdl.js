@@ -16,6 +16,7 @@ import * as persianRex from "persian-rex";
 import {getSubtitleModel} from "../../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../../services/crawler/subtitle.ts";
 import {saveError} from "../../../error/saveError.js";
+// import { logger } from '../../utils/index.js';
 
 export const sourceConfig = Object.freeze({
     sourceName: "salamdl",
@@ -45,7 +46,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
             let type = getType(title);
             let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
-                console.log(`salamdl/${type}/${pageNumber}/${title}  ========>  `);
+                logger.info(`salamdl/${type}/${pageNumber}/${title}  ========>  `);
             }
             if (
                 title.includes('ایران') ||

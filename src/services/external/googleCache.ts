@@ -2,7 +2,7 @@ import config from '@/config';
 import { ServerAnalysisRepo } from '@/repo';
 import { removeScriptAndStyle } from '@services/crawler/searchTools';
 import { getDecodedLink } from '@utils/crawler';
-import { saveError } from '@utils/logger';
+import { saveError, default as logger } from '@utils/logger';
 import * as FetchUtils from '@utils/fetchUtils';
 import * as cheerio from 'cheerio';
 
@@ -23,7 +23,7 @@ export async function getFromGoogleCache(
 
         const decodedLink = getDecodedLink(url);
         if (config.DEBUG_MODE) {
-            console.log('google cache: ', decodedLink);
+            logger.warn('google cache: ', { url: decodedLink });
         }
 
         ServerAnalysisRepo.saveGoogleCacheCall(decodedLink);

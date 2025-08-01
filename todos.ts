@@ -138,9 +138,7 @@
     //TODO : add generic sources on startup
     //TODO : add a json file to save default generic sources
 
-    //TODO : remove usage of console.log
     //TODO : crawler logger
     //TODO : logger
     //TODO : better error handling
     //TODO : add filename and line number to logger
-
