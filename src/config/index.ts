@@ -46,25 +46,25 @@ const configSchema = z.object({
 
     // Logging
     LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
-    PRINT_ERRORS: z.coerce.boolean().default(false),
+    PRINT_ERRORS: z.string().transform(val => val === "true" || val === "1").default(false),
     LOG_FILE_PATH: z.string().default(''),
 
     // Flags
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-    DEBUG_MODE: z.coerce.boolean().default(false),
-    EXTRA_DEBUG_MODE: z.coerce.boolean().default(false),
+    DEBUG_MODE: z.string().transform(val => val === "true" || val === "1").default(false),
+    EXTRA_DEBUG_MODE: z.string().transform(val => val === "true" || val === "1").default(false),
 
     // Crawler
-    DISABLE_CRAWLER: z.coerce.boolean().default(false),
-    DISABLE_TORRENT_CRAWLER: z.coerce.boolean().default(false),
+    DISABLE_CRAWLER: z.string().transform(val => val === "true" || val === "1").default(false),
+    DISABLE_TORRENT_CRAWLER: z.string().transform(val => val === "true" || val === "1").default(false),
     CRAWLER_CONCURRENCY: z.coerce.number().default(4),
-    PAUSE_CRAWLER_ON_HIGH_LOAD: z.coerce.boolean().default(true),
+    PAUSE_CRAWLER_ON_HIGH_LOAD: z.string().transform(val => val === "true" || val === "1").default(true),
     CRAWLER_TOTAL_MEMORY: z.coerce.number().default(1024),
     CRAWLER_MEMORY_LIMIT: z.coerce.number().default(0),
     CRAWLER_CPU_LIMIT: z.coerce.number().default(95),
     CRAWLER_PAUSE_DURATION_LIMIT: z.coerce.number().default(10),
-    CRAWLER_MANUAL_GC_ON_HIGH_LOAD: z.coerce.boolean().default(false),
-    IGNORE_HENTAI: z.coerce.boolean().default(false),
+    CRAWLER_MANUAL_GC_ON_HIGH_LOAD: z.string().transform(val => val === "true" || val === "1").default(false),
+    IGNORE_HENTAI: z.string().transform(val => val === "true" || val === "1").default(false),
     CORS_ALLOWED_ORIGINS: z.string().default('').transform(s => s.split('---').map(item => item.trim())),
 });
 
