@@ -11,7 +11,7 @@ import {
 } from '@/status/status';
 import { CrawlerErrors } from '@/status/warnings';
 import {
-    CrawlerExtraConfigs,
+    type CrawlerExtraConfigs,
     defaultCrawlerExtraConfigs,
     ExtraConfigsSwitchState,
 } from '@/types';
@@ -30,7 +30,7 @@ export async function crawlerCycle(): Promise<string> {
             await new Promise(resolve => setTimeout(resolve, 60 * 1000));
         }
         const sourcesObj = await SourcesRepo.getSourcesObjDB();
-        if (!sourcesObj) {
+        if (!sourcesObj || sourcesObj === "error") {
             ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.crawler.cycleCancelled);
             return CrawlerErrors.crawler.cycleCancelled;
         }
@@ -134,7 +134,7 @@ export async function crawler(
         await updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, isManualStart, crawlMode);
 
         const sourcesObj = await SourcesRepo.getSourcesObjDB();
-        if (!sourcesObj) {
+        if (!sourcesObj || sourcesObj === "error") {
             await updateCrawlerStatus_crawlerCrashed(CrawlerErrors.crawler.cancelled);
             ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.crawler.cancelled);
             return {
@@ -245,7 +245,7 @@ export async function torrentCrawlerSearch(
         await updateCrawlerStatus_crawlerStart(startTime, false, isManualStart, 0);
 
         const sourcesObj = await SourcesRepo.getSourcesObjDB();
-        if (!sourcesObj) {
+        if (!sourcesObj || sourcesObj === "error") {
             await updateCrawlerStatus_crawlerCrashed(CrawlerErrors.crawler.cancelled);
             ServerAnalysisRepo.saveCrawlerWarning(CrawlerErrors.crawler.cancelled);
             return {

@@ -71,6 +71,7 @@
     //TODO : add source 'movielandz'
     //TODO : add source 'hexdl'
     //TODO : add source 'https://bia2anime.us'
+    //TODO : add source 'https://animex.my'
 
     //TODO : better youtube trailer crawler job
 
@@ -113,6 +114,8 @@
     //TODO : remove unused files from s3 in movie-api
     //TODO : remove usage of rabbitmq in crawler
 
+    //TODO : save youtube trailer url in movies collection
+
     //TODO : refactor admin auth
     //TODO : refactor api validation
     //TODO : refactor admin apis
@@ -131,14 +134,3 @@
     //TODO : optimize crawler
 
     //TODO : new README.md
-
-    //TODO : save youtube trailer url in movies collection
-
-    //TODO : show navigation to admin panel to activate these sources
-    //TODO : add generic sources on startup
-    //TODO : add a json file to save default generic sources
-
-    //TODO : crawler logger
-    //TODO : logger
-    //TODO : better error handling
-    //TODO : add filename and line number to logger

@@ -6,15 +6,15 @@ export type SourceConfig = {
     movie_url: string;
     serial_url: string;
     anime_url: string;
-    lastCrawlDate: Date;
+    lastCrawlDate: Date | null;
     crawlCycle: number;
     cookies: [];
     disabled: boolean;
     isManualDisable: boolean;
-    disabledDate: Date;
+    disabledDate: Date | null;
     addDate: Date;
-    lastDomainChangeDate: Date,
-    lastConfigUpdateDate: Date,
+    lastDomainChangeDate: Date | null,
+    lastConfigUpdateDate: Date | null,
     description: string;
     status: {
         notRespondingFrom: number;

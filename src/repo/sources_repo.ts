@@ -1,7 +1,7 @@
 import { mongoDB } from '@services/database';
 import { saveError } from '@utils/logger';
 
-export async function getSourcesObjDB(adminCall: boolean = false): Promise<any | null> {
+export async function getSourcesObjDB(adminCall = false): Promise<any | null> {
     try {
         const db = await mongoDB.getDatabase();
         const collection = db.collection(mongoDB.collections.sources);
@@ -25,7 +25,7 @@ export async function getSourcesObjDB(adminCall: boolean = false): Promise<any |
         return result;
     } catch (error) {
         saveError(error);
-        return null;
+        return "error";
     }
 }
 

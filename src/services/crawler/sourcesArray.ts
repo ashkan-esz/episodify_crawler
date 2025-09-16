@@ -111,9 +111,9 @@ export function sourcesOb(): any {
         cookies: [],
         addDate: now,
         disabledDate: now,
-        lastCrawlDate: new Date(0),
-        lastDomainChangeDate: new Date(0),
-        lastConfigUpdateDate: new Date(0),
+        lastCrawlDate: null,
+        lastDomainChangeDate: null,
+        lastConfigUpdateDate: null,
         description: '',
         status: {
             notRespondingFrom: 0,
@@ -169,19 +169,246 @@ export function sourcesOb(): any {
         obj[torrentSourcesNames[i]] = newSource;
     }
 
+    for (let i = 0; i < defaultGenericSources.length; i++) {
+        const newSource = JSON.parse(JSON.stringify(defaultGenericSources[i]));
+        const name = newSource.config.sourceName;
+        // @ts-expect-error ...
+        obj[name] = newSource;
+    }
+
     return obj;
 }
 
 export async function insertSources(): Promise<string> {
-    const sources = await SourcesRepo.getSourcesObjDB();
-    if (sources) {
-        return 'ok';
+    const sources = sourcesOb();
+
+    const existingSources = await SourcesRepo.getSourcesObjDB();
+    if (existingSources === "error") {
+        return "error";
     }
 
-    const insertResult = await SourcesRepo.insertSourcesObjDB(sourcesOb());
-    if (insertResult) {
-        return 'ok';
+    if (!existingSources) {
+        // Sources doesn't exist at all, insert them
+        const insertResult = await SourcesRepo.insertSourcesObjDB(sources);
+        if (insertResult) {
+            return 'ok';
+        }
+
+        return 'error';
     }
 
-    return 'error';
+    let updateNeeded = false;
+    const keys = Object.keys(sources);
+    for (let i = 0; i < keys.length; i++) {
+        if (existingSources[keys[i]] === undefined) {
+            updateNeeded = true;
+            existingSources[keys[i]] = sources[keys[i]];
+        }
+    }
+
+    if (updateNeeded) {
+        await SourcesRepo.updateSourcesObjDB(existingSources);
+    }
+
+    return 'ok';
 }
+
+export const defaultGenericSources: SourceConfig[] = [
+    {
+        movie_url: 'https://vipofilm.com/category/film1/page/',
+        serial_url: '',
+        anime_url: '',
+        lastCrawlDate: null,
+        lastDomainChangeDate: null,
+        lastConfigUpdateDate: null,
+        description: '',
+        status: {
+            notRespondingFrom: 0,
+            lastCheck: 0,
+        },
+        crawlCycle: 0,
+        cookies: [],
+        disabled: true,
+        isManualDisable: true,
+        addDate: new Date(),
+        disabledDate: new Date(),
+        config: {
+            sourceName: 'vipofilm',
+            isGeneric: true,
+            checkTrailers: false,
+            headers: '{\n' +
+                '    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0",\n' +
+                '    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp",\n' +
+                '    "Connection": "keep-alive",\n' +
+                '    "Cookie": "analytics_token=c09c6121-cd28-676a-4afa-542f3afa1f51; _yngt=01JJQEES36PQYJ5NHVY1CD27SZ; _yngt_iframe=1; _lscache_vary=8bb6e3a92bc06f19362bac3601fa2972; analytics_session_token=800bc097-c9f2-b0b3-cf5d-53d019230679; yektanet_session_last_activity=2/1/2025; content-view-yn-notification-17161=12"\n' +
+                '}\n',
+            //------------------
+            is_censored: false,
+            is_half_network: false,
+            dontRemoveDimensions: false,
+            //------------------
+            has_watch_online: false,
+            has_summary: true,
+            has_poster: true,
+            has_wide_poster: true,
+            has_trailer: true,
+            has_subtitle: false,
+            use_google_cache: false,
+            //------------------
+            needHeadlessBrowser: false,
+            sourceAuthStatus: SourceAuthStatus.OK,
+            vpnStatus: Object.freeze({
+                poster: VPNStatus.ALL_OK,
+                trailer: VPNStatus.ALL_OK,
+                downloadLink: VPNStatus.NO_VPN,
+            }),
+            isTorrent: false,
+            replaceInfoOnDuplicate: true,
+            removeScriptAndStyleFromHtml: true,
+        },
+    },
+    {
+        movie_url: 'https://www.myf2m.com/movies/page/',
+        serial_url: 'https://www.myf2m.com/series/page/',
+        anime_url: '',
+        lastCrawlDate: null,
+        lastDomainChangeDate: null,
+        lastConfigUpdateDate: null,
+        description: '',
+        status: {
+            notRespondingFrom: 0,
+            lastCheck: 0,
+        },
+        crawlCycle: 0,
+        cookies: [],
+        disabled: true,
+        isManualDisable: true,
+        addDate: new Date(),
+        disabledDate: new Date(),
+        config: {
+            sourceName: 'f2m',
+            isGeneric: true,
+            checkTrailers: false,
+            headers: '',
+            //------------------
+            is_censored: false,
+            is_half_network: false,
+            dontRemoveDimensions: false,
+            //------------------
+            has_watch_online: false,
+            has_summary: true,
+            has_poster: true,
+            has_wide_poster: true,
+            has_trailer: true,
+            has_subtitle: false,
+            use_google_cache: false,
+            //------------------
+            needHeadlessBrowser: false,
+            sourceAuthStatus: SourceAuthStatus.OK,
+            vpnStatus: Object.freeze({
+                poster: VPNStatus.ALL_OK,
+                trailer: VPNStatus.ALL_OK,
+                downloadLink: VPNStatus.NO_VPN,
+            }),
+            isTorrent: false,
+            replaceInfoOnDuplicate: true,
+            removeScriptAndStyleFromHtml: true,
+        },
+    },
+    {
+        movie_url: 'https://bartarmoviz.com/category/movie/page/',
+        serial_url: 'https://bartarmoviz.com/category/seris/page/',
+        anime_url: '',
+        lastCrawlDate: null,
+        lastDomainChangeDate: null,
+        lastConfigUpdateDate: null,
+        description: '',
+        status: {
+            notRespondingFrom: 0,
+            lastCheck: 0,
+        },
+        crawlCycle: 0,
+        cookies: [],
+        disabled: true,
+        isManualDisable: true,
+        addDate: new Date(),
+        disabledDate: new Date(),
+        config: {
+            sourceName: 'bartarMoviez',
+            isGeneric: true,
+            checkTrailers: false,
+            headers: '',
+            //------------------
+            is_censored: false,
+            is_half_network: false,
+            dontRemoveDimensions: false,
+            //------------------
+            has_watch_online: false,
+            has_summary: true,
+            has_poster: true,
+            has_wide_poster: true,
+            has_trailer: true,
+            has_subtitle: false,
+            use_google_cache: false,
+            //------------------
+            needHeadlessBrowser: false,
+            sourceAuthStatus: SourceAuthStatus.OK,
+            vpnStatus: {
+                poster: VPNStatus.ALL_OK,
+                trailer: VPNStatus.ALL_OK,
+                downloadLink: VPNStatus.NO_VPN,
+            },
+            isTorrent: false,
+            replaceInfoOnDuplicate: true,
+            removeScriptAndStyleFromHtml: true,
+        },
+    },
+    {
+        movie_url: 'https://danofilm.com/?ad-s=1&type=movies&genr=all&countr=all&cat=all&hasdub=off&hassub=off&hasplay=off&order=news/page/',
+        serial_url: '',
+        anime_url: '',
+        lastCrawlDate: null,
+        lastDomainChangeDate: null,
+        lastConfigUpdateDate: null,
+        description: '',
+        status: {
+            notRespondingFrom: 0,
+            lastCheck: 0,
+        },
+        crawlCycle: 0,
+        cookies: [],
+        disabled: true,
+        isManualDisable: true,
+        addDate: new Date(),
+        disabledDate: new Date(),
+        config: {
+            sourceName: 'danofilm',
+            isGeneric: true,
+            checkTrailers: false,
+            headers: '',
+            //------------------
+            is_censored: false,
+            is_half_network: false,
+            dontRemoveDimensions: false,
+            //------------------
+            has_watch_online: false,
+            has_summary: true,
+            has_poster: true,
+            has_wide_poster: true,
+            has_trailer: true,
+            has_subtitle: false,
+            use_google_cache: false,
+            //------------------
+            needHeadlessBrowser: false,
+            sourceAuthStatus: SourceAuthStatus.OK,
+            vpnStatus: {
+                poster: VPNStatus.ALL_OK,
+                trailer: VPNStatus.ALL_OK,
+                downloadLink: VPNStatus.NO_VPN,
+            },
+            isTorrent: false,
+            replaceInfoOnDuplicate: true,
+            removeScriptAndStyleFromHtml: true,
+        },
+    },
+];
