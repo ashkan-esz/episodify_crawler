@@ -14,41 +14,34 @@ A high-performance web crawler for movies and series data collection, built with
   - Redis for caching and rate limiting
 - Docker containerization for easy deployment
 - Comprehensive logging and monitoring
+- Crawler:
+  - serve local poster/trailer.
+  - direct download link.
+  - efficient and low memory usage.
+  - handle sources url changes.
+  - authentication.
+
+## Future updates
+- [ ] Documentation.
+- [ ] Write test.
 
 ## Prerequisites
+### AWS S3 <br/>
 
-- [Bun](https://bun.sh/) >= 1.0.30
-- Docker and Docker Compose
-- Node.js >= 18 (for development tools)
+<details>
+<summary> Create buckets </summary>
 
-## Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/episodify_crawler.git
-cd episodify_crawler
-```
-
-2. Install dependencies:
-```bash
-bun install
-```
-
-3. Set up environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-4. Start the development environment:
-```bash
-docker-compose up -d
-```
-
-5. Start the development server:
-```bash
-bun run dev
-```
+- serverstatic
+- cast
+- download-subtitle
+- poster
+- download-trailer
+- profile-image
+- download-app
+- downloader-db-backup
+- media-file
+> **Note: all of them must be public and enable static website.**
+</details>
 
 ## Environment Variables
 
@@ -161,6 +154,11 @@ The project includes Docker support for both development and production environm
 
 - Development: `docker-compose up`
 - Production: `docker-compose -f docker-compose.prod.yml up`
+- docker repository: ashkanaz2828/episodify_crawler
+
+## Related
+- [episodify_api](https://github.com/ashkan-esz/episodify_api)
+
 
 ## Contributing
 
@@ -174,21 +172,6 @@ The project includes Docker support for both development and production environm
 
 This project is licensed under the ISC License.
 
-## Sentry Error Monitoring
-
-This project uses [Sentry](https://sentry.io/) for error monitoring and reporting.
-
-Set the following environment variable in your `.env` file:
-
-```
-CRAWLER_SENTRY_DNS=your_sentry_dsn_here
-```
-
-If this variable is set, all errors logged via `saveError` will be reported to Sentry.
-
-### Usage
-
-- Errors are automatically captured in the logger and sent to Sentry.
-- Unhandled exceptions and rejections are also reported.
-
-See `src/utils/logger.ts` for implementation details.
+##  Support
+Contributions, issues, and feature requests are welcome!
+Give a ⭐️ if you like this project!

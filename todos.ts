@@ -112,6 +112,7 @@
     //TODO : compress images in movie-api
     //TODO : download trailers from youtube and upload to s3 in movie-api
     //TODO : remove unused files from s3 in movie-api
+    //TODO : automatically create s3 buckets in movie-api
     //TODO : remove usage of rabbitmq in crawler
 
     //TODO : save youtube trailer url in movies collection
