@@ -123,8 +123,6 @@
     //TODO : option to choose between 'secure' or 'weak' authentication
     //TODO : add new simple method for authentication
 
-    //TODO : better rateLimit handling in jikan provider
-
     //TODO : check intervals
     //TODO : ask cursor about improvements
     //TODO : use profiler
@@ -134,4 +132,3 @@
     //TODO : optimize cheerio
     //TODO : optimize crawler
 
-    //TODO : new README.md

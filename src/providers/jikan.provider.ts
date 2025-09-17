@@ -19,33 +19,32 @@ import {
 } from '@/types/movie';
 import { Crawler as CrawlerUtils, FetchUtils } from '@/utils';
 import { isValidNumberString } from '@services/crawler/movieTitle';
-import { uploadTitlePosterAndAddToTitleModel } from '@services/crawler/posterAndTrailer';
+import {
+    uploadTitlePosterAndAddToTitleModel,
+} from '@services/crawler/posterAndTrailer';
 import { saveError } from '@utils/logger';
 import { LRUCache } from 'lru-cache';
 import type { ObjectId } from 'mongodb';
 import PQueue from 'p-queue';
 
-type RateLimitConfig = {
-    minuteLimit: number;
-    secondLimit: number;
-    minute: number;
-    minute_call: number;
-    second: number;
-    second_call: 0;
-};
-
 export class JikanProvider implements MediaProvider {
     public readonly name = 'Jikan';
     public readonly baseUrl = 'https://api.jikan.moe/v4';
     private cache: any;
-    private readonly rateLimitConfig: RateLimitConfig = {
-        minuteLimit: 60,
-        secondLimit: 1,
-        minute: new Date().getMinutes(),
-        minute_call: 0,
-        second: new Date().getSeconds(),
-        second_call: 0,
-    };
+
+    private readonly perMinuteQueue = new PQueue({
+        concurrency: 1,          // only one request at a time
+        intervalCap: 59,         // max 60 requests per interval
+        interval: 60 * 1000,     // interval = 1 minute
+        carryoverConcurrencyCount: true,
+    });
+
+    private readonly perSecondQueue = new PQueue({
+        concurrency: 1,          // up to 3 in parallel
+        intervalCap: 1,          // 3 per interval
+        interval: 950,          // per second
+        carryoverConcurrencyCount: true,
+    });
 
     constructor() {
         this.cache = new LRUCache({
@@ -400,29 +399,9 @@ export class JikanProvider implements MediaProvider {
         return titleObj;
     }
 
-    private async handleRateLimits(): Promise<void> {
-        while (true) {
-            const now = new Date();
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
-            if (this.rateLimitConfig.minute !== minute) {
-                this.rateLimitConfig.minute = minute;
-                this.rateLimitConfig.minute_call = 0;
-            }
-            if (this.rateLimitConfig.second !== second) {
-                this.rateLimitConfig.second = second;
-                this.rateLimitConfig.second_call = 0;
-            }
-            if (
-                this.rateLimitConfig.second_call < this.rateLimitConfig.secondLimit &&
-                this.rateLimitConfig.minute_call < this.rateLimitConfig.minuteLimit
-            ) {
-                this.rateLimitConfig.minute_call++;
-                this.rateLimitConfig.second_call++;
-                break;
-            }
-            await new Promise((resolve) => setTimeout(resolve, 50));
-        }
+    // Schedule task through both queues
+    private async schedule<T>(task: () => Promise<T>): Promise<void | T> {
+        return this.perSecondQueue.add(() => this.perMinuteQueue.add(task));
     }
 
     async callApi(url: string, timeoutSec: number): Promise<any> {
@@ -437,10 +416,8 @@ export class JikanProvider implements MediaProvider {
         let waitCounter = 0;
         while (waitCounter < 12) {
             try {
-                // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
-                const response: any = await new Promise(async (resolve, reject) => {
-                    await this.handleRateLimits();
-
+                const response: any = await this.schedule(async () => {
+                    // --- Abort + hard timeout handling ---
                     // Create an AbortController to cancel the request
                     const controller = new AbortController();
                     const signal = controller.signal;
@@ -456,38 +433,46 @@ export class JikanProvider implements MediaProvider {
                         controller.abort();
                     }, hardTimeout);
 
-                    FetchUtils.myFetch(url, {
-                        signal: signal,
-                        timeout: timeoutSec * 1000,
-                        retry: 0,
-                    })
-                        .then((result) => {
-                            clearTimeout(timeoutId);
-                            return resolve(result);
-                        })
-                        .catch((err) => {
-                            clearTimeout(timeoutId);
-
-                            // Check if the error was caused by abort
-                            if (err.name === 'AbortError') {
-                                return reject(new Error('hard timeout'));
-                            }
-                            return reject(err);
+                    try {
+                        const result = await FetchUtils.myFetch(url, {
+                            signal: signal,
+                            timeout: timeoutSec * 1000,
+                            retry: 0,
                         });
+                        clearTimeout(timeoutId);
+                        return result;
+                    } catch (err: any) {
+                        clearTimeout(timeoutId);
+                        // Check if the error was caused by abort
+                        if (err.name === 'AbortError') {
+                            return new Error('hard timeout');
+                        }
+                        return err;
+                    }
                 });
 
                 let data = response.data;
+
+                if (data.status === "429") {
+                    const waitTime = 2000;
+                    waitCounter++;
+                    await new Promise((resolve) => setTimeout(resolve, waitTime));
+                    continue;
+                }
+
                 if (response.pagination) {
                     data = {
                         pagination: response.pagination,
                         data: response.data,
                     };
                 }
+
                 this.cache.set(url, { ...data });
                 return data;
             } catch (error: any) {
+                // Retry & error handling
                 if (FetchUtils.checkErrStatusCode(error, 429)) {
-                    //too much request
+                    // too many requests → wait and retry
                     const waitTime = 2000;
                     waitCounter++;
                     await new Promise((resolve) => setTimeout(resolve, waitTime));
