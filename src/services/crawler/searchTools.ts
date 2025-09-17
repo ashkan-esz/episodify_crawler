@@ -614,7 +614,7 @@ async function getLinks(
         const uniqueLinks: string[] = [];
         for (let i = 0; i < links.length; i++) {
             if ($ && !hasSidebarClass($(links[i]))) {
-                let href = $(links[i]).attr('href') || '';
+                const href = $(links[i]).attr('href') || '';
 
                 if (
                     $(links[i]).children().length === 0 &&

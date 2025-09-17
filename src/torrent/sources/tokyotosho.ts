@@ -34,8 +34,9 @@ export default async function tokyotosho(
         });
         saveLinksStatus(sourceConfig.movie_url, PageType.MainPage, PageState.Fetching_End);
 
-        const $ = cheerio.load(res);
+        let $: cheerio.CheerioAPI | null = cheerio.load(res);
         const titles = extractLinks($, sourceConfig.movie_url, sourceConfig);
+        $ = null;
 
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
@@ -92,8 +93,9 @@ export async function searchByTitle(
         });
         saveLinksStatus(searchUrl, PageType.MainPage, PageState.Fetching_End);
 
-        const $ = cheerio.load(res.data);
+        let $: cheerio.CheerioAPI | null = cheerio.load(res);
         let titles = extractLinks($, sourceUrl, sourceConfig);
+        $ = null;
 
         if (extraConfigs.equalTitlesOnly) {
             titles = titles.filter((t) => t.title === title);

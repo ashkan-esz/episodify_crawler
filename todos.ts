@@ -123,12 +123,3 @@
     //TODO : option to choose between 'secure' or 'weak' authentication
     //TODO : add new simple method for authentication
 
-    //TODO : check intervals
-    //TODO : ask cursor about improvements
-    //TODO : use profiler
-    //TODO : reduce cpu usage
-    //TODO : reduce memory usage
-    //TODO : optimize project
-    //TODO : optimize cheerio
-    //TODO : optimize crawler
-
